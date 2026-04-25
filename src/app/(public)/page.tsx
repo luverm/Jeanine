@@ -1,6 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import { listActiveServices } from "@/lib/db/services";
+import { listPortfolioImages } from "@/lib/portfolio";
 import { ServiceCard } from "@/components/public/service-card";
 import { business } from "@/content/business";
 import { landing } from "@/content/landing";
@@ -13,10 +15,14 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const services = await listActiveServices();
+  const [services, portfolio] = await Promise.all([
+    listActiveServices(),
+    listPortfolioImages(),
+  ]);
   const regular = services.filter((s) => s.kind === "regular").slice(0, 3);
   const bridalTeaser = services.find((s) => s.kind === "bridal");
   const previewServices = bridalTeaser ? [...regular, bridalTeaser] : regular;
+  const portfolioStrip = portfolio.slice(0, 6);
 
   return (
     <>
@@ -83,17 +89,30 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-square rounded-lg bg-muted"
-                aria-hidden
-              />
-            ))}
+            {portfolioStrip.length > 0
+              ? portfolioStrip.map((img) => (
+                  <Link
+                    key={img.src}
+                    href="/portfolio"
+                    className="relative block aspect-square overflow-hidden rounded-lg bg-muted"
+                  >
+                    <Image
+                      src={img.src}
+                      alt={img.alt}
+                      fill
+                      sizes="(min-width: 1024px) 16vw, (min-width: 640px) 33vw, 50vw"
+                      className="object-cover transition-transform duration-300 hover:scale-105"
+                    />
+                  </Link>
+                ))
+              : Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="aspect-square rounded-lg bg-muted"
+                    aria-hidden
+                  />
+                ))}
           </div>
-          <p className="mt-6 text-xs text-muted-foreground">
-            Voeg afbeeldingen toe in <code>public/images/portfolio/</code>.
-          </p>
         </div>
       </section>
 
