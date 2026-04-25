@@ -99,28 +99,71 @@ export type GetSlotsArgs = {
   date: string;
 };
 
-export async function getAvailableSlots(args: GetSlotsArgs): Promise<Interval[]> {
+export type AvailabilityDiagnostics = {
+  staffId: string;
+  serviceId: string;
+  date: string;
+  weekday: number;
+  service: {
+    duration_min: number;
+    buffer_min: number;
+    is_online_bookable: boolean;
+    kind: string;
+    is_active: boolean;
+  } | null;
+  earlyExit: string | null;
+  openingBlocks: Array<{ start: string; end: string }>;
+  bookings: Array<{ starts_at: string; ends_at: string }>;
+  timeOff: Array<{ starts_at: string; ends_at: string }>;
+  slotCount: number;
+};
+
+export async function getAvailableSlotsWithDiagnostics(
+  args: GetSlotsArgs,
+): Promise<{ slots: Interval[]; diag: AvailabilityDiagnostics }> {
   const supabase = createSupabaseServiceClient();
   const { staffId, serviceId, date } = args;
+
+  const diag: AvailabilityDiagnostics = {
+    staffId,
+    serviceId,
+    date,
+    weekday: -1,
+    service: null,
+    earlyExit: null,
+    openingBlocks: [],
+    bookings: [],
+    timeOff: [],
+    slotCount: 0,
+  };
 
   const { data: service, error: svcErr } = await supabase
     .from("services")
     .select("duration_min, buffer_min, is_online_bookable, kind, is_active")
     .eq("id", serviceId)
     .single();
-  if (svcErr || !service) throw svcErr ?? new Error("Service not found");
-  if (!service.is_active || !service.is_online_bookable) return [];
-  if (service.kind !== "regular") return [];
+  if (svcErr || !service) {
+    diag.earlyExit = "service_not_found";
+    return { slots: [], diag };
+  }
+  diag.service = service;
+  if (!service.is_active || !service.is_online_bookable) {
+    diag.earlyExit = "service_inactive_or_not_bookable";
+    return { slots: [], diag };
+  }
+  if (service.kind !== "regular") {
+    diag.earlyExit = "service_not_regular";
+    return { slots: [], diag };
+  }
 
   const dayStart = startOfDayInTz(date);
   const dayEnd = endOfDayInTz(date);
 
-  // 48h-window: previous-day start to next-day end, so neighbouring bookings are visible.
   const windowStart = new Date(dayStart.getTime() - 24 * 60 * 60 * 1000);
   const windowEnd = new Date(dayEnd.getTime() + 24 * 60 * 60 * 1000);
 
-  // We need the weekday of the requested date in Europe/Amsterdam.
   const weekday = weekdayInTz(dayStart);
+  diag.weekday = weekday;
 
   const [{ data: hours, error: hoursErr }, { data: timeOff, error: toErr }, { data: bookings, error: bookErr }] =
     await Promise.all([
@@ -152,6 +195,9 @@ export async function getAvailableSlots(args: GetSlotsArgs): Promise<Interval[]>
     start: h.start_time.slice(0, 5),
     end: h.end_time.slice(0, 5),
   }));
+  diag.openingBlocks = openingBlocks;
+  diag.bookings = bookings ?? [];
+  diag.timeOff = timeOff ?? [];
 
   const bookingIntervals: Interval[] = (bookings ?? []).map(
     (b: { starts_at: string; ends_at: string }) => ({
@@ -168,12 +214,24 @@ export async function getAvailableSlots(args: GetSlotsArgs): Promise<Interval[]>
     }),
   );
 
-  return computeAvailableSlots({
+  const slots = computeAvailableSlots({
     date,
     openingBlocks,
     occupied: [...inflated, ...timeOffIntervals],
     durationMin: service.duration_min,
   });
+  diag.slotCount = slots.length;
+
+  if (slots.length === 0) {
+    console.warn("[availability] zero slots", JSON.stringify(diag));
+  }
+
+  return { slots, diag };
+}
+
+export async function getAvailableSlots(args: GetSlotsArgs): Promise<Interval[]> {
+  const { slots } = await getAvailableSlotsWithDiagnostics(args);
+  return slots;
 }
 
 export { TZ };
