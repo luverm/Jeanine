@@ -24,14 +24,15 @@ values
   ('bruid-styling',     'Bruid — styling op dag', 'Volledige hairstyling op de trouwdag.',          'bridal',  180, 30, 35000, false, 50)
 on conflict (slug) do nothing;
 
--- Opening hours: Mon–Sat 09:00–17:00 (weekday: 0=Sun,1=Mon,...,6=Sat)
+-- Opening hours: Mon–Fri 09:00–17:00 (weekday: 0=Sun,1=Mon,...,6=Sat).
+-- Saturdays are reserved for bridal styling, scheduled via consult.
 insert into opening_hours (staff_id, weekday, start_time, end_time)
 select
   '00000000-0000-0000-0000-000000000001',
   d,
   time '09:00',
   time '17:00'
-from generate_series(1, 6) as d
+from generate_series(1, 5) as d
 where not exists (
   select 1 from opening_hours
   where staff_id = '00000000-0000-0000-0000-000000000001' and weekday = d

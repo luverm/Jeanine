@@ -59,9 +59,9 @@ async function main() {
   if (svcErr) throw svcErr;
   console.log(`✓ ${services.length} services`);
 
-  // Opening hours: Mon–Sat 09:00–17:00.
+  // Opening hours: Mon–Fri 09:00–17:00. Saturdays reserved for bridal.
   await supabase.from("opening_hours").delete().eq("staff_id", STAFF_ID);
-  const hours = [1, 2, 3, 4, 5, 6].map((weekday) => ({
+  const hours = [1, 2, 3, 4, 5].map((weekday) => ({
     staff_id: STAFF_ID,
     weekday,
     start_time: "09:00:00",

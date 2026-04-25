@@ -1,9 +1,11 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { z } from "zod";
+import { CheckCircle2, Mail, MapPin } from "lucide-react";
 import { getBookingDetail } from "@/lib/db/bookings";
 import { formatHumanDateTime } from "@/lib/time";
 import { formatPrice } from "@/lib/db/services";
+import { business } from "@/content/business";
 
 export const dynamic = "force-dynamic";
 
@@ -21,50 +23,98 @@ export default async function BevestigdPage({
 }) {
   const params = await searchParams;
   const refResult = refSchema.safeParse(params?.ref);
-  const booking = refResult.success ? await getBookingDetail(refResult.data) : null;
+  const booking = refResult.success
+    ? await getBookingDetail(refResult.data)
+    : null;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-20">
-      <h1 className="text-4xl font-semibold tracking-tight">
-        Bedankt — je afspraak staat
-      </h1>
-      <p className="mt-4 text-muted-foreground">
-        Een bevestiging met agenda-bijlage is onderweg naar je e-mail.
+      <div className="flex items-center gap-3 text-primary">
+        <CheckCircle2 className="h-7 w-7" aria-hidden />
+        <p className="text-xs font-medium uppercase tracking-[0.2em]">
+          Bevestigd
+        </p>
+      </div>
+      <h1 className="mt-4 text-5xl tracking-tight">Tot snel!</h1>
+      <p className="mt-4 max-w-lg text-lg leading-relaxed text-muted-foreground">
+        Je afspraak staat in de agenda. Een bevestiging met agenda-bijlage is
+        onderweg naar je e-mail.
       </p>
 
       {booking && (
-        <dl className="mt-10 grid gap-3 rounded-lg border bg-muted/30 p-6 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">Dienst</dt>
-            <dd className="font-medium">{booking.service.name}</dd>
+        <div className="mt-10 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="border-b border-border bg-accent/30 px-6 py-4">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              Jouw afspraak
+            </p>
+            <p className="mt-1 text-lg tracking-tight">
+              {booking.service.name}
+            </p>
           </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">Wanneer</dt>
-            <dd className="font-medium">
-              {formatHumanDateTime(new Date(booking.starts_at))}
-            </dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">Op naam van</dt>
-            <dd className="font-medium">{booking.customer.full_name}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">Prijs</dt>
-            <dd className="font-medium">
-              {formatPrice(booking.service.price_cents)}
-            </dd>
-          </div>
-        </dl>
+          <dl className="divide-y divide-border text-sm">
+            <Row label="Wanneer" value={formatHumanDateTime(new Date(booking.starts_at))} />
+            <Row label="Op naam van" value={booking.customer.full_name} />
+            <Row label="Prijs" value={formatPrice(booking.service.price_cents)} />
+          </dl>
+        </div>
       )}
 
-      <div className="mt-10">
+      <div className="mt-10 grid gap-4 sm:grid-cols-2">
+        <InfoCard
+          icon={<Mail className="h-4 w-4" />}
+          title="Iets aanpassen?"
+          body="Reply op de bevestigings-e-mail of stuur een bericht — we plannen het opnieuw."
+        />
+        <InfoCard
+          icon={<MapPin className="h-4 w-4" />}
+          title="Locatie"
+          body={`${business.address.street}, ${business.address.postcode} ${business.address.city}`}
+        />
+      </div>
+
+      <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+        <Link
+          href="/portfolio"
+          className="inline-flex items-center justify-center rounded-full border border-border px-5 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+        >
+          Bekijk portfolio
+        </Link>
         <Link
           href="/"
-          className="inline-flex rounded-full border px-5 py-2 text-sm hover:bg-accent"
+          className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2 text-sm text-primary-foreground hover:bg-primary/90"
         >
           Terug naar de site
         </Link>
       </div>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 px-6 py-4">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right font-medium">{value}</dd>
+    </div>
+  );
+}
+
+function InfoCard({
+  icon,
+  title,
+  body,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-5">
+      <div className="flex items-center gap-2 text-primary">
+        {icon}
+        <p className="text-sm font-medium text-foreground">{title}</p>
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">{body}</p>
     </div>
   );
 }

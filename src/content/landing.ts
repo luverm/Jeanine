@@ -1,29 +1,20 @@
 export const landing = {
   hero: {
-    eyebrow: "Hair & bridal styling",
-    title: "{{HERO_TITLE}}",
-    subtitle: "{{HERO_SUBTITLE}}",
+    eyebrow: "Bruids- & feestkapsels in Zeeland",
+    title: "Jouw mooiste dag, perfect gestyled",
+    subtitle:
+      "Persoonlijke styling voor bruiden, bruidsmeisjes en feestgangers — bij jou op locatie of in de studio in Krabbendijke.",
     primaryCta: { label: "Boek afspraak", href: "/boeken" },
     secondaryCta: { label: "Bruid? Plan consult", href: "/bruid" },
   },
   about: {
     title: "Over Jeanine",
-    body: "{{OVER_MIJ_TEKST}}",
+    body: "Bij Hair and Bridal by Jeanine staan jouw mooiste momenten centraal — van de trouwdag tot een gala-avond of feestelijke gelegenheid. Vanuit de studio in Krabbendijke styled Jeanine kapsels die passen bij jou, je look en je dag. Persoonlijk, rustig en met oog voor detail.\n\nVoor bruidsstyling kom je vooraf op consult zodat we samen de planning, locatie en stijl voor de grote dag uitwerken — en op de dag zelf alles soepel verloopt.",
   },
-  reviews: [
-    {
-      quote: "{{REVIEW_QUOTE_1}}",
-      author: "{{REVIEW_AUTHOR_1}}",
-    },
-    {
-      quote: "{{REVIEW_QUOTE_2}}",
-      author: "{{REVIEW_AUTHOR_2}}",
-    },
-    {
-      quote: "{{REVIEW_QUOTE_3}}",
-      author: "{{REVIEW_AUTHOR_3}}",
-    },
-  ],
+  // Reviews are intentionally empty in v1 — the landing page falls back to
+  // an Instagram CTA when the array is empty. Add real testimonials here
+  // when ready (e.g. { quote: "...", author: "Sophie K." }).
+  reviews: [] as ReadonlyArray<{ quote: string; author: string }>,
   bridal: {
     title: "Bruidsstyling",
     intro:
