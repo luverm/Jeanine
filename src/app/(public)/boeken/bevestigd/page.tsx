@@ -1,11 +1,11 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { z } from "zod";
 import { CheckCircle2, Mail, MapPin } from "lucide-react";
 import { getBookingDetail } from "@/lib/db/bookings";
 import { formatHumanDateTime } from "@/lib/time";
 import { formatPrice } from "@/lib/db/services";
 import { business } from "@/content/business";
+import { uuidString } from "@/lib/schemas/uuid";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-const refSchema = z.string().uuid();
+const refSchema = uuidString();
 
 export default async function BevestigdPage({
   searchParams,

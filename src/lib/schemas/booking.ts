@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uuidString } from "@/lib/schemas/uuid";
 
 const phoneRegex = /^[+0-9()\s-]{6,20}$/;
 
@@ -14,12 +15,12 @@ export const customerInputSchema = z.object({
 });
 
 export const bookingInputSchema = z.object({
-  serviceId: z.string().uuid(),
-  staffId: z.string().uuid(),
+  serviceId: uuidString(),
+  staffId: uuidString(),
   // ISO 8601 (UTC) timestamps emitted by the form
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime(),
-  idempotencyKey: z.string().uuid(),
+  idempotencyKey: uuidString(),
   customer: customerInputSchema,
   // Honeypot — must be empty
   website: z.string().max(0).optional().or(z.literal("")),
