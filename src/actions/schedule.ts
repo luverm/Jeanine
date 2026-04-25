@@ -8,9 +8,10 @@ import {
   deleteTimeOff,
 } from "@/lib/db/admin-schedule";
 import { writeAuditLog } from "@/lib/db/bookings";
+import { uuidString } from "@/lib/schemas/uuid";
 
 const openingHoursSchema = z.object({
-  staffId: z.string().uuid(),
+  staffId: uuidString(),
   rows: z.array(
     z.object({
       weekday: z.number().int().min(0).max(6),
@@ -37,7 +38,7 @@ export async function saveOpeningHoursAction(
 }
 
 const timeOffSchema = z.object({
-  staffId: z.string().uuid(),
+  staffId: uuidString(),
   startsAt: z.string().datetime(),
   endsAt: z.string().datetime(),
   reason: z.string().trim().max(200).optional(),

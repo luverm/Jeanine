@@ -2,10 +2,11 @@
 
 import { z } from "zod";
 import { getAvailableSlots } from "@/lib/db/availability";
+import { uuidString } from "@/lib/schemas/uuid";
 
 const argsSchema = z.object({
-  staffId: z.string().uuid(),
-  serviceId: z.string().uuid(),
+  staffId: uuidString(),
+  serviceId: uuidString(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 

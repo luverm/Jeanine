@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { uuidString } from "@/lib/schemas/uuid";
 
 const slugRegex = /^[a-z0-9](-?[a-z0-9])*$/;
 
 export const serviceUpsertSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: uuidString().optional(),
   slug: z
     .string()
     .trim()
