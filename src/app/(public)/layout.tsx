@@ -8,6 +8,8 @@ const navLinks = [
   { href: "/bruid", label: "Bruid" },
 ];
 
+const isFilled = (v: string) => v.length > 0 && !v.startsWith("{{");
+
 export default function PublicLayout({
   children,
 }: {
@@ -32,7 +34,7 @@ export default function PublicLayout({
             <li>
               <Link
                 href="/boeken"
-                className="rounded-full bg-foreground px-4 py-2 text-background hover:opacity-90"
+                className="rounded-full bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
               >
                 Boek afspraak
               </Link>
@@ -57,13 +59,24 @@ export default function PublicLayout({
               </p>
             </div>
 
-            <div>
-              <p className="text-sm font-medium">Contact</p>
-              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                <li>{business.email}</li>
-                <li>{business.phone}</li>
-              </ul>
-            </div>
+            {(isFilled(business.email) || isFilled(business.phone)) && (
+              <div>
+                <p className="text-sm font-medium">Contact</p>
+                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                  {isFilled(business.email) && (
+                    <li>
+                      <a
+                        href={`mailto:${business.email}`}
+                        className="hover:text-foreground"
+                      >
+                        {business.email}
+                      </a>
+                    </li>
+                  )}
+                  {isFilled(business.phone) && <li>{business.phone}</li>}
+                </ul>
+              </div>
+            )}
 
             <div>
               <p className="text-sm font-medium">Adres</p>
@@ -78,16 +91,26 @@ export default function PublicLayout({
             <div>
               <p className="text-sm font-medium">Volg</p>
               <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                <li>Instagram: {business.socials.instagram}</li>
-                <li>TikTok: {business.socials.tiktok}</li>
+                {isFilled(business.socials.instagram) && (
+                  <li>
+                    <a
+                      href={business.socials.instagramUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hover:text-foreground"
+                    >
+                      Instagram · @{business.socials.instagram}
+                    </a>
+                  </li>
+                )}
+                {isFilled(business.socials.tiktok) && (
+                  <li>TikTok: {business.socials.tiktok}</li>
+                )}
               </ul>
             </div>
           </div>
 
           <div className="mt-8 flex flex-col items-start justify-between gap-2 border-t pt-6 text-xs text-muted-foreground md:flex-row">
-            <p>
-              KvK {business.kvk} · BTW {business.btw}
-            </p>
             <p>© {new Date().getFullYear()} {business.name}</p>
           </div>
         </div>

@@ -1,26 +1,108 @@
 @import "tailwindcss";
 
+/*
+ * Hair and Bridal by Jeanine — design tokens
+ *
+ * Palette: warm ivory background, dusty rose primary, pastel pink accents,
+ * soft warm-charcoal text. Tuned for an editorial bridal aesthetic.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbf7f0;
+  --foreground: #2a1f19;
+
+  --card: #ffffff;
+  --card-foreground: #2a1f19;
+
+  --popover: #ffffff;
+  --popover-foreground: #2a1f19;
+
+  --primary: #b08389;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f4e4e2;
+  --secondary-foreground: #2a1f19;
+
+  --muted: #f2eae0;
+  --muted-foreground: #7b6b61;
+
+  --accent: #f4e4e2;
+  --accent-foreground: #2a1f19;
+
+  --destructive: #9e2a2b;
+  --destructive-foreground: #ffffff;
+
+  --border: #e8dbcd;
+  --input: #e8dbcd;
+  --ring: #b08389;
+
+  --radius: 0.625rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--border);
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  html,
+  body {
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  body {
+    font-family: var(--font-body), system-ui, -apple-system, "Segoe UI",
+      sans-serif;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display), "Cormorant Garamond", Georgia, serif;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+  }
+
+  h1 {
+    line-height: 1.05;
+  }
 }

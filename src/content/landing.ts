@@ -1,8 +1,9 @@
 export const landing = {
   hero: {
-    eyebrow: "Hair & bridal styling",
-    title: "{{HERO_TITLE}}",
-    subtitle: "{{HERO_SUBTITLE}}",
+    eyebrow: "Bruids- & feestkapsels in Zeeland",
+    title: "Jouw mooiste dag, perfect gestyled",
+    subtitle:
+      "Persoonlijke styling voor bruiden, bruidsmeisjes en feestgangers — bij jou op locatie of in de studio in Krabbendijke.",
     primaryCta: { label: "Boek afspraak", href: "/boeken" },
     secondaryCta: { label: "Bruid? Plan consult", href: "/bruid" },
   },
