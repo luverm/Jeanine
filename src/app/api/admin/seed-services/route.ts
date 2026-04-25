@@ -1,16 +1,12 @@
-// One-shot reseed endpoint: upserts the canonical service catalogue
-// from src/content/services.ts into the database. Safe to call
-// repeatedly — uses ON CONFLICT (slug) DO UPDATE.
+// One-shot bootstrap endpoint that upserts the canonical service
+// catalogue from src/content/services.ts. Self-locking: once the live
+// table holds at least as many services as the seed list, the route
+// returns 423 Locked and refuses to run. That way it's safe to leave
+// in place — accidental hits after the initial seed have no effect.
 //
-// Auth: Bearer token equal to ADMIN_ICS_TOKEN (the same env var that
-// already exists for the iCal feed). Without it the route 401s.
-//
-// Usage from a browser address bar:
-//   /api/admin/seed-services?token=<ADMIN_ICS_TOKEN>
-//
-// Or via curl:
-//   curl -H "Authorization: Bearer $ADMIN_ICS_TOKEN" \
-//     https://<host>/api/admin/seed-services
+// Optionally still accepts ADMIN_ICS_TOKEN as a "force" override
+// (?token=...) so the catalogue can be re-applied after manual edits
+// without redeploying.
 
 import { NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
@@ -19,21 +15,48 @@ import { SEED_SERVICES } from "@/content/services";
 
 export const dynamic = "force-dynamic";
 
-function unauthorized() {
-  return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-}
-
 async function handle(req: Request) {
-  const { ADMIN_ICS_TOKEN } = getServerEnv();
   const url = new URL(req.url);
   const queryToken = url.searchParams.get("token");
   const headerToken = req.headers
     .get("authorization")
     ?.replace(/^Bearer\s+/i, "");
   const provided = queryToken ?? headerToken;
-  if (!provided || provided !== ADMIN_ICS_TOKEN) return unauthorized();
+
+  let force = false;
+  try {
+    const { ADMIN_ICS_TOKEN } = getServerEnv();
+    if (provided && provided === ADMIN_ICS_TOKEN) force = true;
+  } catch {
+    // env not fully configured — ignore force path
+  }
 
   const supabase = createSupabaseServiceClient();
+
+  if (!force) {
+    const { count, error: countErr } = await supabase
+      .from("services")
+      .select("slug", { count: "exact", head: true });
+    if (countErr) {
+      return NextResponse.json(
+        { error: countErr.message, details: countErr },
+        { status: 500 },
+      );
+    }
+    if ((count ?? 0) >= SEED_SERVICES.length) {
+      return NextResponse.json(
+        {
+          error: "locked",
+          reason:
+            "Service catalogue is already at or above the seed size. Pass ?token=<ADMIN_ICS_TOKEN> to force a re-apply.",
+          existingCount: count,
+          seedCount: SEED_SERVICES.length,
+        },
+        { status: 423 },
+      );
+    }
+  }
+
   const { data, error } = await supabase
     .from("services")
     .upsert(
@@ -49,6 +72,7 @@ async function handle(req: Request) {
   }
   return NextResponse.json({
     ok: true,
+    forced: force,
     upserted: data?.length ?? 0,
     services: data,
   });
