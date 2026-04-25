@@ -34,11 +34,28 @@ const STAFF_ID = "00000000-0000-0000-0000-000000000001";
 const STAFF_EMAIL = "jeanine@example.com";
 
 const services = [
-  { slug: "knippen", name: "Knippen", description: "Wassen, knippen, drogen.", kind: "regular", duration_min: 45, buffer_min: 10, price_cents: 4500, is_online_bookable: true, sort_order: 10 },
-  { slug: "kleuren", name: "Kleuren", description: "Volledige kleurbehandeling incl. wassen.", kind: "regular", duration_min: 120, buffer_min: 15, price_cents: 9500, is_online_bookable: true, sort_order: 20 },
-  { slug: "fohnen", name: "Föhnen / styling", description: "Föhnen of styling zonder knip.", kind: "regular", duration_min: 30, buffer_min: 5, price_cents: 3000, is_online_bookable: true, sort_order: 30 },
-  { slug: "bruid-proefsessie", name: "Bruid — proefsessie", description: "Proefsessie voor de grote dag.", kind: "bridal", duration_min: 90, buffer_min: 15, price_cents: 12000, is_online_bookable: false, sort_order: 40 },
-  { slug: "bruid-styling", name: "Bruid — styling op dag", description: "Volledige hairstyling op de trouwdag.", kind: "bridal", duration_min: 180, buffer_min: 30, price_cents: 35000, is_online_bookable: false, sort_order: 50 },
+  // Knippen
+  { slug: "knippen-dames", name: "Dames knippen + stylen", description: null, kind: "regular", duration_min: 60, buffer_min: 10, price_cents: 3495, is_online_bookable: true, sort_order: 110 },
+  { slug: "knippen-teen", name: "Meiden knippen + stylen teen (12–18 jaar)", description: null, kind: "regular", duration_min: 50, buffer_min: 10, price_cents: 2995, is_online_bookable: true, sort_order: 120 },
+  { slug: "knippen-junior", name: "Meiden knippen + stylen junior (6–12 jaar)", description: null, kind: "regular", duration_min: 40, buffer_min: 10, price_cents: 2595, is_online_bookable: true, sort_order: 130 },
+  { slug: "knippen-mini", name: "Meiden knippen + stylen mini (0–6 jaar)", description: null, kind: "regular", duration_min: 30, buffer_min: 10, price_cents: 1795, is_online_bookable: true, sort_order: 140 },
+  { slug: "pony-bijknippen", name: "Pony of curtain bangs bijknippen", description: null, kind: "regular", duration_min: 15, buffer_min: 5, price_cents: 995, is_online_bookable: true, sort_order: 150 },
+  // Party hair & make-up
+  { slug: "feestkapsel", name: "Feestkapsel", description: "Kom met schoon, droog haar: graag vooraf 2 keer wassen met shampoo.", kind: "regular", duration_min: 90, buffer_min: 15, price_cents: 4995, is_online_bookable: true, sort_order: 210 },
+  { slug: "feestkapsel-extensions", name: "Feestkapsel incl. clip-in haarextensions", description: "Kom met schoon, droog haar: graag vooraf 2 keer wassen met shampoo.", kind: "regular", duration_min: 90, buffer_min: 15, price_cents: 7495, is_online_bookable: true, sort_order: 220 },
+  { slug: "feestkapsel-makeup", name: "Feestkapsel incl. make-up", description: null, kind: "regular", duration_min: 120, buffer_min: 15, price_cents: 7495, is_online_bookable: true, sort_order: 230 },
+  { slug: "feestkapsel-mini", name: "Feestkapsel mini (0–6 jaar)", description: null, kind: "regular", duration_min: 30, buffer_min: 10, price_cents: 1995, is_online_bookable: true, sort_order: 240 },
+  { slug: "feestkapsel-kids", name: "Feestkapsel kids (6–12 jaar)", description: null, kind: "regular", duration_min: 45, buffer_min: 10, price_cents: 2995, is_online_bookable: true, sort_order: 250 },
+  // Kleuren
+  { slug: "kleur-highlights-half", name: "High en/of lowlights — Half head", description: "Subtiele, fijne plukjes die je haar een frisse uitstraling geven.", kind: "regular", duration_min: 240, buffer_min: 15, price_cents: 13995, is_online_bookable: true, sort_order: 310 },
+  { slug: "kleur-highlights-full", name: "High en/of lowlights — Full head", description: null, kind: "regular", duration_min: 240, buffer_min: 15, price_cents: 15995, is_online_bookable: true, sort_order: 320 },
+  { slug: "kleur-toner", name: "Toner / glansbehandeling (incl. föhnen en stylen)", description: "Voor het opfrissen van blond, neutraliseren van warmte of extra glans.", kind: "regular", duration_min: 80, buffer_min: 10, price_cents: 4495, is_online_bookable: true, sort_order: 330 },
+  { slug: "kleur-spoeling", name: "Kleurspoeling (incl. föhnen en stylen)", description: "Verfrissende, tijdelijke kleuring die glans en diepte geeft. Wast geleidelijk uit.", kind: "regular", duration_min: 120, buffer_min: 15, price_cents: 6995, is_online_bookable: true, sort_order: 340 },
+  // Bridal — request only
+  { slug: "bruid-locatie-haar", name: "Aanvraag: bruidshaarstyling op locatie incl. proefsessie", description: null, kind: "bridal", duration_min: 240, buffer_min: 30, price_cents: 24000, is_online_bookable: false, sort_order: 410 },
+  { slug: "bruid-locatie-haar-makeup", name: "Aanvraag: bruidshaarstyling en make-up op locatie incl. proefsessie", description: null, kind: "bridal", duration_min: 240, buffer_min: 30, price_cents: 31500, is_online_bookable: false, sort_order: 420 },
+  { slug: "bruid-proefsessie-haar", name: "Proefsessie bruidshaarstyling", description: null, kind: "bridal", duration_min: 180, buffer_min: 30, price_cents: 0, is_online_bookable: false, sort_order: 430 },
+  { slug: "bruid-proefsessie-haar-makeup", name: "Proefsessie bruidshaarstyling en make-up", description: null, kind: "bridal", duration_min: 210, buffer_min: 30, price_cents: 0, is_online_bookable: false, sort_order: 440 },
 ];
 
 async function main() {
