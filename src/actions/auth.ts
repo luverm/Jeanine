@@ -23,7 +23,12 @@ export async function sendMagicLink(formData: FormData): Promise<SignInResult> {
     email: parsed.data,
     options: {
       emailRedirectTo: `${siteUrl}/auth/callback`,
-      shouldCreateUser: false,
+      // Allow first-time signup so the operator can bootstrap their
+      // own admin account without needing Supabase Studio access.
+      // The /auth/callback route auto-claims the unlinked staff row,
+      // so granting RLS access still requires being the very first
+      // logged-in user (or having an existing staff link).
+      shouldCreateUser: true,
     },
   });
 
