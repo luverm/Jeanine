@@ -6,6 +6,7 @@ const serverSchema = z.object({
   RESEND_FROM_EMAIL: z.string().email(),
   ADMIN_NOTIFY_EMAIL: z.string().email(),
   TURNSTILE_SECRET_KEY: z.string().min(1),
+  ADMIN_ICS_TOKEN: z.string().min(16),
 });
 
 const clientSchema = z.object({
@@ -34,5 +35,6 @@ export function getServerEnv() {
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
     ADMIN_NOTIFY_EMAIL: process.env.ADMIN_NOTIFY_EMAIL,
     TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
+    ADMIN_ICS_TOKEN: process.env.ADMIN_ICS_TOKEN,
   });
 }

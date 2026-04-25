@@ -8,6 +8,7 @@ process.env.RESEND_API_KEY ??= "test-resend";
 process.env.RESEND_FROM_EMAIL ??= "test@example.com";
 process.env.ADMIN_NOTIFY_EMAIL ??= "admin@example.com";
 process.env.TURNSTILE_SECRET_KEY ??= "test-turnstile-secret";
+process.env.ADMIN_ICS_TOKEN ??= "test-ics-token-min-16-chars";
 
 // Ensure the Node test runner uses the same wall-clock zone as the app expects.
 process.env.TZ = "UTC";

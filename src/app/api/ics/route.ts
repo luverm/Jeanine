@@ -1,8 +1,65 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import * as ics from "ics";
+import { getServerEnv } from "@/lib/env";
+import { listUpcomingBookings } from "@/lib/db/admin-bookings";
+import { business } from "@/content/business";
 
-export async function GET() {
-  return NextResponse.json(
-    { error: "Not implemented — built in Phase 5" },
-    { status: 501 },
-  );
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+function dateToArray(iso: string): [number, number, number, number, number] {
+  const d = new Date(iso);
+  return [
+    d.getUTCFullYear(),
+    d.getUTCMonth() + 1,
+    d.getUTCDate(),
+    d.getUTCHours(),
+    d.getUTCMinutes(),
+  ];
+}
+
+export async function GET(request: NextRequest) {
+  const { ADMIN_ICS_TOKEN } = getServerEnv();
+  const token = request.nextUrl.searchParams.get("token");
+  if (!token || token !== ADMIN_ICS_TOKEN) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
+  const bookings = await listUpcomingBookings();
+
+  const events = bookings.map((b) => ({
+    uid: `booking-${b.id}@jeanine`,
+    title: `${b.service?.name ?? "Boeking"} — ${b.customer?.full_name ?? ""}`,
+    description: [
+      b.customer?.email && `E-mail: ${b.customer.email}`,
+      b.customer?.phone && `Tel: ${b.customer.phone}`,
+      b.notes && `Notitie: ${b.notes}`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    start: dateToArray(b.starts_at),
+    startInputType: "utc" as const,
+    end: dateToArray(b.ends_at),
+    endInputType: "utc" as const,
+    organizer: { name: business.name, email: business.email },
+    status:
+      b.status === "cancelled"
+        ? ("CANCELLED" as const)
+        : ("CONFIRMED" as const),
+    productId: "jeanine/admin-feed",
+  }));
+
+  const { error, value } = ics.createEvents(events);
+  if (error || !value) {
+    return new NextResponse("Failed to generate calendar", { status: 500 });
+  }
+
+  return new NextResponse(value, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/calendar; charset=utf-8",
+      "Cache-Control": "no-store",
+      "Content-Disposition": 'inline; filename="jeanine.ics"',
+    },
+  });
 }
