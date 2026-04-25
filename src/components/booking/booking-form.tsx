@@ -26,6 +26,7 @@ import { fetchAvailableSlots, type SlotDto } from "@/actions/availability";
 import { createBooking } from "@/actions/booking";
 import { SlotGrid, type Slot } from "@/components/booking/slot-grid";
 import { formatIsoDate, formatHumanDateTime, formatTime } from "@/lib/time";
+import { SERVICE_CATEGORIES, categoryForSlug } from "@/content/services";
 
 const STEPS = ["Dienst", "Datum", "Tijd", "Gegevens"] as const;
 const TOTAL_STEPS = STEPS.length;
@@ -300,6 +301,28 @@ function ServiceStep({
   onSelect: (id: string) => void;
   onNext: () => void;
 }) {
+  // Group services by UI category, in the order defined in SERVICE_CATEGORIES.
+  // Anything that doesn't match a known category falls into "Overig" so it
+  // stays bookable even if its slug doesn't follow the convention.
+  const groups: Array<{ key: string; label: string; items: Service[] }> = [];
+  const buckets = new Map<string, Service[]>();
+  for (const s of services) {
+    const cat = categoryForSlug(s.slug);
+    const key = cat?.key ?? "overig";
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key)!.push(s);
+  }
+  for (const cat of SERVICE_CATEGORIES) {
+    const items = buckets.get(cat.key);
+    if (items && items.length) {
+      groups.push({ key: cat.key, label: cat.label, items });
+    }
+  }
+  const overig = buckets.get("overig");
+  if (overig && overig.length) {
+    groups.push({ key: "overig", label: "Overig", items: overig });
+  }
+
   return (
     <section>
       <h2 className="text-2xl tracking-tight">Kies een dienst</h2>
@@ -307,52 +330,61 @@ function ServiceStep({
         Alle prijzen incl. wassen waar van toepassing.
       </p>
 
-      <div className="mt-6 grid gap-3">
-        {services.map((s) => {
-          const isSelected = s.id === selectedId;
-          return (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => onSelect(s.id)}
-              className={
-                "group flex w-full items-start gap-4 rounded-lg border p-5 text-left transition " +
-                (isSelected
-                  ? "border-primary bg-accent/30 shadow-sm"
-                  : "border-border bg-card hover:border-primary/40 hover:bg-accent/10")
-              }
-            >
-              <span
-                className={
-                  "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition " +
-                  (isSelected
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border")
-                }
-                aria-hidden
-              >
-                {isSelected && <Check className="h-3.5 w-3.5" />}
-              </span>
-              <div className="flex-1">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="text-lg tracking-tight">{s.name}</h3>
-                  <span className="font-medium">
-                    {formatPrice(s.price_cents)}
-                  </span>
-                </div>
-                {s.description && (
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {s.description}
-                  </p>
-                )}
-                <p className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  {formatDuration(s.duration_min)}
-                </p>
-              </div>
-            </button>
-          );
-        })}
+      <div className="mt-6 space-y-8">
+        {groups.map((g) => (
+          <div key={g.key}>
+            <p className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              {g.label}
+            </p>
+            <div className="grid gap-3">
+              {g.items.map((s) => {
+                const isSelected = s.id === selectedId;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => onSelect(s.id)}
+                    className={
+                      "group flex w-full items-start gap-4 rounded-lg border p-5 text-left transition " +
+                      (isSelected
+                        ? "border-primary bg-accent/30 shadow-sm"
+                        : "border-border bg-card hover:border-primary/40 hover:bg-accent/10")
+                    }
+                  >
+                    <span
+                      className={
+                        "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition " +
+                        (isSelected
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border")
+                      }
+                      aria-hidden
+                    >
+                      {isSelected && <Check className="h-3.5 w-3.5" />}
+                    </span>
+                    <div className="flex-1">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <h3 className="text-lg tracking-tight">{s.name}</h3>
+                        <span className="font-medium">
+                          {formatPrice(s.price_cents)}
+                        </span>
+                      </div>
+                      {s.description && (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {s.description}
+                        </p>
+                      )}
+                      <p className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {formatDuration(s.duration_min)}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="mt-8 flex justify-end">
