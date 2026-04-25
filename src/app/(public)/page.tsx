@@ -118,34 +118,82 @@ export default async function HomePage() {
       </section>
 
       {/* About */}
-      <section className="mx-auto max-w-3xl px-4 py-20">
-        <h2 className="text-3xl font-semibold tracking-tight">
-          {landing.about.title}
-        </h2>
-        <p className="mt-6 whitespace-pre-line text-lg leading-relaxed text-muted-foreground">
-          {landing.about.body}
-        </p>
+      <section className="mx-auto max-w-6xl px-4 py-20">
+        <div className="grid gap-12 md:grid-cols-2 md:items-center">
+          {portfolio.find((p) => p.src.includes("make-up")) && (
+            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-muted md:order-last">
+              <Image
+                src={
+                  portfolio.find((p) => p.src.includes("make-up"))!.src
+                }
+                alt="Bridal styling process"
+                fill
+                sizes="(min-width: 768px) 50vw, 100vw"
+                className="object-cover"
+              />
+            </div>
+          )}
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+              Over
+            </p>
+            <h2 className="mt-4 text-4xl tracking-tight">
+              {landing.about.title}
+            </h2>
+            <p className="mt-6 whitespace-pre-line text-lg leading-relaxed text-muted-foreground">
+              {landing.about.body}
+            </p>
+          </div>
+        </div>
       </section>
 
-      {/* Reviews */}
+      {/* Reviews or Instagram CTA */}
       <section className="border-t bg-muted/30">
         <div className="mx-auto max-w-6xl px-4 py-20">
-          <h2 className="text-3xl font-semibold tracking-tight">Reviews</h2>
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {landing.reviews.map((r, i) => (
-              <figure
-                key={i}
-                className="flex h-full flex-col rounded-lg border bg-background p-6"
+          {landing.reviews.length > 0 ? (
+            <>
+              <h2 className="text-3xl font-semibold tracking-tight">Reviews</h2>
+              <div className="mt-10 grid gap-6 md:grid-cols-3">
+                {landing.reviews.map((r, i) => (
+                  <figure
+                    key={i}
+                    className="flex h-full flex-col rounded-lg border bg-background p-6"
+                  >
+                    <blockquote className="flex-1 text-base leading-relaxed">
+                      &ldquo;{r.quote}&rdquo;
+                    </blockquote>
+                    <figcaption className="mt-4 text-sm text-muted-foreground">
+                      — {r.author}
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="max-w-xl">
+                <h2 className="text-3xl tracking-tight">
+                  Volg het werk op Instagram
+                </h2>
+                <p className="mt-3 text-muted-foreground">
+                  Nieuwe bruidslooks, feestkapsels en behind-the-scenes — bekijk
+                  het meest recente werk van Jeanine op{" "}
+                  <span className="font-medium text-foreground">
+                    @{business.socials.instagram}
+                  </span>
+                  .
+                </p>
+              </div>
+              <a
+                href={business.socials.instagramUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-base text-primary-foreground shadow-sm transition hover:bg-primary/90"
               >
-                <blockquote className="flex-1 text-base leading-relaxed">
-                  &ldquo;{r.quote}&rdquo;
-                </blockquote>
-                <figcaption className="mt-4 text-sm text-muted-foreground">
-                  — {r.author}
-                </figcaption>
-              </figure>
-            ))}
-          </div>
+                Volg op Instagram
+              </a>
+            </div>
+          )}
         </div>
       </section>
     </>

@@ -25,14 +25,15 @@ export default async function BoekenPage({
   const bookable = services.filter((s) => s.is_online_bookable);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16">
-      <header className="mb-10">
-        <h1 className="text-4xl font-semibold tracking-tight">
-          Boek je afspraak
-        </h1>
-        <p className="mt-3 text-muted-foreground">
+    <div className="mx-auto max-w-6xl px-4 py-16">
+      <header className="mb-12 max-w-2xl">
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          Online boeken
+        </p>
+        <h1 className="mt-4 text-5xl tracking-tight">Boek je afspraak</h1>
+        <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
           Kies een dienst, een datum en een tijd. Bevestiging volgt direct per
-          e-mail.
+          e-mail, met agenda-bijlage.
         </p>
       </header>
 

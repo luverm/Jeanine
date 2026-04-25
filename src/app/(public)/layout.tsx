@@ -111,6 +111,14 @@ export default function PublicLayout({
           </div>
 
           <div className="mt-8 flex flex-col items-start justify-between gap-2 border-t pt-6 text-xs text-muted-foreground md:flex-row">
+            <p>
+              {[
+                isFilled(business.kvk) && `KvK ${business.kvk}`,
+                isFilled(business.btw) && `BTW ${business.btw}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
             <p>© {new Date().getFullYear()} {business.name}</p>
           </div>
         </div>

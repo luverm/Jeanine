@@ -15,9 +15,13 @@ export default async function PortfolioPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-16">
       <header className="max-w-2xl">
-        <h1 className="text-4xl font-semibold tracking-tight">Portfolio</h1>
-        <p className="mt-4 text-muted-foreground">
-          Een selectie uit recent werk — knip, kleur en bruid.
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          Werk
+        </p>
+        <h1 className="mt-4 text-5xl tracking-tight">Portfolio</h1>
+        <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+          Een selectie uit recent werk — bruidsstyling, feestkapsels en
+          klassiek kapperswerk.
         </p>
       </header>
 
@@ -33,18 +37,23 @@ export default async function PortfolioPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {images.map((img) => (
+        <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {images.map((img, i) => (
             <div
               key={img.src}
-              className="relative aspect-square overflow-hidden rounded-lg bg-muted"
+              className={
+                "relative overflow-hidden rounded-lg bg-muted " +
+                // Mosaic: every third image gets a tall (3:4) aspect ratio
+                // so the grid feels editorial instead of perfectly square.
+                (i % 3 === 1 ? "aspect-[3/4]" : "aspect-square")
+              }
             >
               <Image
                 src={img.src}
                 alt={img.alt}
                 fill
                 sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                className="object-cover"
+                className="object-cover transition-transform duration-500 hover:scale-[1.03]"
               />
             </div>
           ))}

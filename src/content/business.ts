@@ -11,7 +11,7 @@ export const business = {
     postcode: "4413 DG",
     city: "Krabbendijke",
   },
-  kvk: "{{KVK_NUMMER}}",
+  kvk: "97905674",
   btw: "{{BTW_NUMMER}}",
   iban: "{{IBAN}}",
   socials: {
