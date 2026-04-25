@@ -32,7 +32,7 @@
 
 | Laag | Keuze | Reden |
 |---|---|---|
-| Framework | **Next.js 15** (App Router, Server Components) | SSR voor SEO van publieke pagina's; server actions voor formulieren. |
+| Framework | **Next.js 16** (App Router, Server Components) | SSR voor SEO van publieke pagina's; server actions voor formulieren. |
 | Taal | **TypeScript** (strict) | Typeveiligheid op DB-modellen en formulieren. |
 | Database | **Supabase Postgres** | Relationeel schema past bij agenda/klanten; RLS voor admin-only routes. |
 | Auth | **Supabase Auth** (alleen admin) | Magic link voor Jeanine; geen wachtwoord-beheer nodig. |
@@ -44,10 +44,10 @@
 | Hosting | **Vercel** | Native Next.js, edge runtime voor publieke pagina's. |
 | Analytics | **Vercel Analytics** + **Plausible** (optioneel) | Privacy-vriendelijk. |
 
-**Versies (pin in `package.json`):**
-- `next@15.x`, `react@19.x`, `typescript@5.x`
-- `@supabase/supabase-js@2.x`, `@supabase/ssr@latest`
-- `tailwindcss@4.x`, `zod@3.x`, `react-hook-form@7.x`
+**Versies (geïnstalleerd in Fase 1):**
+- `next@16.x`, `react@19.x`, `typescript@5.x`
+- `@supabase/supabase-js@2.x`, `@supabase/ssr@0.10.x`
+- `tailwindcss@4.x`, `zod@4.x`, `react-hook-form@7.x`
 
 ---
 
@@ -126,9 +126,9 @@
     │   │   ├── leads/page.tsx        # A3 — bruidsleads
     │   │   ├── leads/[id]/page.tsx
     │   │   ├── klanten/page.tsx
-    │   │   ├── diensten/page.tsx
     │   │   └── instellingen/
     │   │       ├── page.tsx          # bedrijf, contact
+    │   │       ├── diensten/page.tsx # CRUD op services (admin)
     │   │       ├── openingstijden/page.tsx
     │   │       └── vrije-dagen/page.tsx
     │   ├── api/
@@ -461,8 +461,10 @@ Wireframe-codes: **K1–K3** = klant-pagina's, **A1–A3** = admin-pagina's. And
 
 ### Ondersteunende admin-pagina's
 - `/klanten` — zoekbare lijst, samengevoegd op e-mail.
-- `/diensten` — CRUD op `services`.
-- `/instellingen` — bedrijfsgegevens, e-mailtemplates, openingstijden, vrije dagen.
+- `/instellingen` — bedrijfsgegevens, e-mailtemplates.
+- `/instellingen/diensten` — CRUD op `services` (admin; `/diensten` is voor klanten).
+- `/instellingen/openingstijden` — werktijden per weekdag.
+- `/instellingen/vrije-dagen` — vakantie / blokkades.
 
 ---
 
@@ -657,7 +659,7 @@ Lees CLAUDE.md volledig. Bouw nu Fase 1 (Skelet):
    (knippen, kleuren, föhnen, bruid-proefsessie, bruid-styling),
    openingstijden ma–za 09:00–17:00.
 9. Implementeer middleware.ts dat /dashboard, /boekingen, /leads, /klanten,
-   /diensten, /instellingen redirect naar /login zonder sessie.
+   /instellingen redirect naar /login zonder sessie.
 10. Schrijf README.md met setup-stappen (env, supabase start, migrate,
     seed, dev).
 
@@ -749,8 +751,9 @@ Lees CLAUDE.md, §6 (A1, A2, A3). Bouw Fase 5 (Admin):
    /leads/[id] met alle velden, status-dropdown, notes, "Maak boeking" knop
    die /boekingen/nieuw pre-fillt.
 6. /klanten: zoekbare lijst.
-7. /diensten: CRUD-tabel.
-8. /instellingen: bedrijfsgegevens + openingstijden + vrije dagen pagina's.
+7. /instellingen: bedrijfsgegevens, plus subpagina's:
+   /instellingen/diensten (CRUD), /instellingen/openingstijden,
+   /instellingen/vrije-dagen.
 9. /api/ics/route.ts: lever iCal-feed van komende boekingen, beveiligd met
    token uit env.
 
