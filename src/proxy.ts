@@ -6,7 +6,6 @@ const PROTECTED_PREFIXES = [
   "/boekingen",
   "/leads",
   "/klanten",
-  "/diensten",
   "/instellingen",
 ];
 
@@ -16,7 +15,7 @@ function isProtected(pathname: string) {
   );
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (!isProtected(pathname)) return NextResponse.next();
 
@@ -59,7 +58,6 @@ export const config = {
     "/boekingen/:path*",
     "/leads/:path*",
     "/klanten/:path*",
-    "/diensten/:path*",
     "/instellingen/:path*",
   ],
 };

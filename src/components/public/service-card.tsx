@@ -5,7 +5,7 @@ import {
   formatDuration,
   formatPrice,
   type Service,
-} from "@/lib/db/services";
+} from "@/lib/services-format";
 
 export function ServiceCard({ service }: { service: Service }) {
   const bookable = service.kind === "regular" && service.is_online_bookable;

@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ServiceForm } from "@/components/admin/service-form";
-import type { Service } from "@/lib/db/services";
-import { formatPrice, formatDuration } from "@/lib/db/services";
+import type { Service } from "@/lib/services-format";
+import { formatPrice, formatDuration } from "@/lib/services-format";
 
 export function ServiceRow({ service }: { service: Service }) {
   const [open, setOpen] = useState(false);

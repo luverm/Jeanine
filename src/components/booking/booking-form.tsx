@@ -20,7 +20,7 @@ import {
   formatPrice,
   formatDuration,
   type Service,
-} from "@/lib/db/services";
+} from "@/lib/services-format";
 import { fetchAvailableSlots, type SlotDto } from "@/actions/availability";
 import { createBooking } from "@/actions/booking";
 import { SlotGrid, type Slot } from "@/components/booking/slot-grid";

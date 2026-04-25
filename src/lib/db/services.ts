@@ -1,20 +1,12 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { Service, ServiceKind } from "@/lib/services-format";
 
-export type ServiceKind = "regular" | "bridal";
-
-export type Service = {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  kind: ServiceKind;
-  duration_min: number;
-  buffer_min: number;
-  price_cents: number;
-  is_online_bookable: boolean;
-  sort_order: number;
-};
+// Re-export for backwards-compat with existing server-side imports.
+// Client components must import these from "@/lib/services-format"
+// to avoid pulling in next/headers via the supabase server client.
+export type { Service, ServiceKind } from "@/lib/services-format";
+export { formatPrice, formatDuration } from "@/lib/services-format";
 
 export async function listActiveServices(kind?: ServiceKind): Promise<Service[]> {
   const supabase = await createSupabaseServerClient();
@@ -31,20 +23,4 @@ export async function listActiveServices(kind?: ServiceKind): Promise<Service[]>
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as Service[];
-}
-
-export function formatPrice(cents: number): string {
-  return new Intl.NumberFormat("nl-NL", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(cents / 100);
-}
-
-export function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m === 0 ? `${h} uur` : `${h} uur ${m} min`;
 }

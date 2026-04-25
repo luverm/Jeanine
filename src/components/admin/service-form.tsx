@@ -20,7 +20,7 @@ import {
   saveServiceAction,
   deleteServiceAction,
 } from "@/actions/service";
-import type { Service } from "@/lib/db/services";
+import type { Service } from "@/lib/services-format";
 
 const DEFAULT_VALUES: ServiceUpsertInput = {
   slug: "",
