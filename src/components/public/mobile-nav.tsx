@@ -15,6 +15,7 @@ const links = [
   { href: "/diensten", label: "Diensten" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/bruid", label: "Bruid" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 export function MobileNav() {

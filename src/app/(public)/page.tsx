@@ -3,7 +3,9 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { listActiveServices } from "@/lib/db/services";
 import { listPortfolioImages } from "@/lib/portfolio";
+import { listVisibleReviews } from "@/lib/db/reviews";
 import { ServiceCard } from "@/components/public/service-card";
+import { JsonLd } from "@/components/seo/json-ld";
 import { business } from "@/content/business";
 import { landing } from "@/content/landing";
 
@@ -15,17 +17,43 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [services, portfolio] = await Promise.all([
+  const [services, portfolio, dbReviews] = await Promise.all([
     listActiveServices(),
     listPortfolioImages(),
+    listVisibleReviews(),
   ]);
   const regular = services.filter((s) => s.kind === "regular").slice(0, 3);
   const bridalTeaser = services.find((s) => s.kind === "bridal");
   const previewServices = bridalTeaser ? [...regular, bridalTeaser] : regular;
   const portfolioStrip = portfolio.slice(0, 6);
+  const reviews =
+    dbReviews.length > 0
+      ? dbReviews.map((r) => ({ quote: r.quote, author: r.author }))
+      : landing.reviews;
+
+  const filled = (v: string) => (v && !v.startsWith("{{") ? v : undefined);
 
   return (
     <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "HairSalon",
+          name: business.name,
+          description: business.tagline,
+          url: process.env.NEXT_PUBLIC_SITE_URL,
+          telephone: filled(business.phone),
+          email: filled(business.email),
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: filled(business.address.street),
+            postalCode: filled(business.address.postcode),
+            addressLocality: filled(business.address.city),
+            addressCountry: "NL",
+          },
+        }}
+      />
+
       {/* Hero */}
       <section className="relative overflow-hidden border-b bg-gradient-to-br from-accent/40 via-background to-muted/40">
         <div className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-accent/50 blur-3xl" />
@@ -150,11 +178,11 @@ export default async function HomePage() {
       {/* Reviews or Instagram CTA */}
       <section className="border-t bg-muted/30">
         <div className="mx-auto max-w-6xl px-4 py-20">
-          {landing.reviews.length > 0 ? (
+          {reviews.length > 0 ? (
             <>
               <h2 className="text-3xl font-semibold tracking-tight">Reviews</h2>
               <div className="mt-10 grid gap-6 md:grid-cols-3">
-                {landing.reviews.map((r, i) => (
+                {reviews.map((r, i) => (
                   <figure
                     key={i}
                     className="flex h-full flex-col rounded-lg border bg-background p-6"

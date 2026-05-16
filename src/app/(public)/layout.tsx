@@ -6,6 +6,7 @@ const navLinks = [
   { href: "/diensten", label: "Diensten" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/bruid", label: "Bruid" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 const isFilled = (v: string) => v.length > 0 && !v.startsWith("{{");

@@ -75,6 +75,22 @@ export default function InstellingenPage() {
               E-maillog
             </Link>
           </li>
+          <li>
+            <Link
+              href="/instellingen/reviews"
+              className="text-foreground underline underline-offset-4 hover:opacity-80"
+            >
+              Reviews
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/instellingen/wachtlijst"
+              className="text-foreground underline underline-offset-4 hover:opacity-80"
+            >
+              Wachtlijst
+            </Link>
+          </li>
         </ul>
       </Card>
     </div>

@@ -25,6 +25,7 @@ import {
 import { fetchAvailableSlots, type SlotDto } from "@/actions/availability";
 import { createBooking } from "@/actions/booking";
 import { SlotGrid, type Slot } from "@/components/booking/slot-grid";
+import { WaitlistCta } from "@/components/booking/waitlist-cta";
 import { formatIsoDate, formatHumanDateTime, formatTime } from "@/lib/time";
 import { SERVICE_CATEGORIES, categoryForSlug } from "@/content/services";
 
@@ -199,6 +200,8 @@ export function BookingForm({
           {step === 2 && (
             <TimeStep
               date={date}
+              dateStr={dateStr}
+              serviceId={service?.id ?? null}
               slots={slots}
               selected={selectedStartIso}
               onSelect={setSelectedStartIso}
@@ -454,6 +457,8 @@ function DateStep({
 
 function TimeStep({
   date,
+  dateStr,
+  serviceId,
   slots,
   selected,
   onSelect,
@@ -462,6 +467,8 @@ function TimeStep({
   onNext,
 }: {
   date: Date | undefined;
+  dateStr: string | null;
+  serviceId: string | null;
   slots: Slot[];
   selected: string | null;
   onSelect: (iso: string) => void;
@@ -485,6 +492,11 @@ function TimeStep({
           onSelect={onSelect}
           loading={loading}
         />
+        {!loading && slots.length === 0 && dateStr && (
+          <div className="mt-4">
+            <WaitlistCta serviceId={serviceId} preferredDate={dateStr} />
+          </div>
+        )}
       </div>
 
       <div className="mt-8 flex justify-between">
