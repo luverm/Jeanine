@@ -15,6 +15,7 @@ export type LeadRow = {
   budget_cents: number | null;
   message: string | null;
   notes: string | null;
+  attachment_paths: string[] | null;
   status: LeadStatus;
   assigned_staff: string | null;
   created_at: string;

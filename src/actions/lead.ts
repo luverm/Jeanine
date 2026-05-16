@@ -13,6 +13,7 @@ import { sendEmail } from "@/lib/email/client";
 import { leadAdminText, leadCustomerAckText } from "@/lib/email/messages";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 export type CreateLeadResult =
   | { ok: true; leadId: string }
@@ -57,6 +58,18 @@ export async function createLead(input: unknown): Promise<CreateLeadResult> {
     budgetCents: data.budgetCents ?? null,
     message: data.message?.trim() || undefined,
   });
+
+  // Best-effort: link uploaded inspiration images. Never block the lead
+  // if the column/bucket isn't there yet.
+  if (data.attachmentPaths && data.attachmentPaths.length > 0) {
+    await safe(async () => {
+      const svc = createSupabaseServiceClient();
+      await svc
+        .from("bridal_leads")
+        .update({ attachment_paths: data.attachmentPaths })
+        .eq("id", lead.id);
+    });
+  }
 
   await safe(() =>
     writeAuditLog({

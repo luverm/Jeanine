@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { uploadBridalAttachments } from "@/actions/bridal-upload";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ export function LeadForm() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [budgetEur, setBudgetEur] = useState<number | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   const form = useForm<LeadInput>({
     resolver: zodResolver(leadInputSchema),
@@ -58,9 +60,21 @@ export function LeadForm() {
 
   function onSubmit(values: LeadInput) {
     startTransition(async () => {
+      let attachmentPaths: string[] | undefined;
+      if (files.length > 0) {
+        try {
+          const fd = new FormData();
+          files.slice(0, 8).forEach((f) => fd.append("files", f));
+          const { paths } = await uploadBridalAttachments(fd);
+          if (paths.length > 0) attachmentPaths = paths;
+        } catch {
+          // never block the lead on an upload problem
+        }
+      }
       const payload: LeadInput = {
         ...values,
         budgetCents: budgetEur === null ? null : budgetEur * 100,
+        attachmentPaths,
       };
       const result = await createLead(payload);
       if (result.ok) {
@@ -258,6 +272,23 @@ export function LeadForm() {
       <div>
         <Label htmlFor="message">Bericht (optioneel)</Label>
         <Textarea id="message" rows={5} {...form.register("message")} />
+      </div>
+
+      <div>
+        <Label htmlFor="inspiration">
+          Inspiratiebeelden (optioneel, max 8)
+        </Label>
+        <input
+          id="inspiration"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          multiple
+          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+          className="mt-1.5 block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:bg-background file:px-3 file:py-1.5 file:text-sm"
+        />
+        <p className="mt-1 text-xs text-muted-foreground">
+          Bijv. een Pinterest-screenshot of foto van de gewenste look.
+        </p>
       </div>
 
       <div className="flex justify-end">

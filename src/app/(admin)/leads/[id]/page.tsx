@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LeadStatusSelect } from "@/components/admin/lead-status-select";
 import { LeadNotesForm } from "@/components/admin/lead-notes-form";
+import { signBridalAttachments } from "@/actions/bridal-upload";
 import { leadStatusLabel, leadStatusVariant } from "@/lib/status-labels";
 
 export const metadata: Metadata = {
@@ -24,6 +25,8 @@ export default async function LeadDetailPage({
   const { id } = await params;
   const lead = await getLead(id);
   if (!lead) notFound();
+
+  const attachments = await signBridalAttachments(lead.attachment_paths ?? []);
 
   const wedding = lead.wedding_date
     ? format(new Date(lead.wedding_date), "EEEE d MMMM yyyy")
@@ -90,6 +93,30 @@ export default async function LeadDetailPage({
           <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
             {lead.message}
           </p>
+        </Card>
+      )}
+
+      {attachments.length > 0 && (
+        <Card className="mt-6 p-6">
+          <h2 className="text-base font-semibold">Inspiratiebeelden</h2>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {attachments.map((url, i) => (
+              <a
+                key={i}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="block overflow-hidden rounded-lg border"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt={`Inspiratie ${i + 1}`}
+                  className="aspect-square w-full object-cover"
+                />
+              </a>
+            ))}
+          </div>
         </Card>
       )}
 

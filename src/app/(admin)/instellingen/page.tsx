@@ -84,6 +84,14 @@ export default async function InstellingenPage() {
           </li>
           <li>
             <Link
+              href="/instellingen/portfolio"
+              className="text-foreground underline underline-offset-4 hover:opacity-80"
+            >
+              Portfolio
+            </Link>
+          </li>
+          <li>
+            <Link
               href="/instellingen/reviews"
               className="text-foreground underline underline-offset-4 hover:opacity-80"
             >

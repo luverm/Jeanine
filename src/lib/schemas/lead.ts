@@ -53,6 +53,8 @@ export const leadInputSchema = z.object({
     .optional()
     .nullable(),
   message: z.string().trim().max(2000).optional().or(z.literal("")),
+  // Storage object paths of uploaded inspiration images
+  attachmentPaths: z.array(z.string().max(300)).max(8).optional(),
   // Honeypot
   website: z.string().max(0).optional().or(z.literal("")),
 });
