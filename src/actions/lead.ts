@@ -37,7 +37,7 @@ export async function createLead(input: unknown): Promise<CreateLeadResult> {
   }
 
   const ip = await getClientIp();
-  const limited = rateLimit({
+  const limited = await rateLimit({
     key: `lead:${ip}`,
     max: RATE_LIMIT.max,
     windowMs: RATE_LIMIT.windowMs,

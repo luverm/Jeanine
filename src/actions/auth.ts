@@ -29,7 +29,10 @@ export async function signInWithPassword(
   formData: FormData,
 ): Promise<AuthResult> {
   const ip = await getClientIp();
-  if (!rateLimit({ key: `login:${ip}`, max: 10, windowMs: 5 * 60 * 1000 }).ok) {
+  if (
+    !(await rateLimit({ key: `login:${ip}`, max: 10, windowMs: 5 * 60 * 1000 }))
+      .ok
+  ) {
     return { ok: false, message: "Te veel pogingen. Wacht een paar minuten." };
   }
 
@@ -67,7 +70,10 @@ export async function signInWithPassword(
 
 export async function setupAdmin(formData: FormData): Promise<AuthResult> {
   const ip = await getClientIp();
-  if (!rateLimit({ key: `setup:${ip}`, max: 5, windowMs: 10 * 60 * 1000 }).ok) {
+  if (
+    !(await rateLimit({ key: `setup:${ip}`, max: 5, windowMs: 10 * 60 * 1000 }))
+      .ok
+  ) {
     return { ok: false, message: "Te veel pogingen. Wacht even." };
   }
 
