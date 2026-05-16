@@ -10,7 +10,9 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
+import { AlertTriangle } from "lucide-react";
 import { listBookings, type BookingListItem } from "@/lib/db/admin-bookings";
+import { getNoShowFlags } from "@/lib/db/no-show";
 import { formatIsoDate, formatTime } from "@/lib/time";
 
 const WEEKDAYS = ["ma", "di", "wo", "do", "vr", "za", "zo"];
@@ -75,6 +77,8 @@ export async function MonthCalendar({
     arr.sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   }
 
+  const flagged = await getNoShowFlags(bookings.map((b) => b.customer_id));
+
   const monthIndex = Number(format(base, "M")) - 1;
   const title = `${MONTHS_NL[monthIndex]} ${format(base, "yyyy")}`;
   const prev = format(addMonths(base, -1), "yyyy-MM");
@@ -116,6 +120,7 @@ export async function MonthCalendar({
           byDay={byDay}
           currentMonth={currentMonth}
           todayKey={todayKey}
+          flagged={flagged}
         />
       ) : (
       <div className="overflow-x-auto">
@@ -176,6 +181,14 @@ export async function MonthCalendar({
                           }
                           aria-hidden
                         />
+                        {flagged.has(b.customer_id) && (
+                          <AlertTriangle
+                            className="h-3 w-3 shrink-0 text-amber-600"
+                            aria-label={`Let op: klant met ${flagged.get(
+                              b.customer_id,
+                            )} no-shows`}
+                          />
+                        )}
                         <span className="font-mono">
                           {formatTime(new Date(b.starts_at))}
                         </span>
@@ -209,11 +222,13 @@ function MonthList({
   byDay,
   currentMonth,
   todayKey,
+  flagged,
 }: {
   days: Date[];
   byDay: Map<string, BookingListItem[]>;
   currentMonth: string;
   todayKey: string;
+  flagged: Map<string, number>;
 }) {
   const listDays = days.filter(
     (d) =>
@@ -269,6 +284,14 @@ function MonthList({
                       }
                       aria-hidden
                     />
+                    {flagged.has(b.customer_id) && (
+                      <AlertTriangle
+                        className="h-4 w-4 shrink-0 text-amber-600"
+                        aria-label={`Let op: klant met ${flagged.get(
+                          b.customer_id,
+                        )} no-shows`}
+                      />
+                    )}
                     <span className="font-mono text-xs">
                       {formatTime(new Date(b.starts_at))}
                     </span>

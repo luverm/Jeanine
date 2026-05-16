@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { AlertTriangle } from "lucide-react";
 import { listBookings } from "@/lib/db/admin-bookings";
 import { listAllServices } from "@/lib/db/admin-services";
+import { getNoShowFlags } from "@/lib/db/no-show";
 import {
   Table,
   TableBody,
@@ -64,6 +66,8 @@ export default async function BoekingenPage({
     }),
     getDeviceInfo(),
   ]);
+
+  const flagged = await getNoShowFlags(bookings.map((b) => b.customer_id));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -159,7 +163,15 @@ export default async function BoekingenPage({
                   {bookingStatusLabel(b.status)}
                 </Badge>
               </div>
-              <p className="mt-2 text-sm font-medium">
+              <p className="mt-2 flex items-center gap-1.5 text-sm font-medium">
+                {flagged.has(b.customer_id) && (
+                  <AlertTriangle
+                    className="h-4 w-4 shrink-0 text-amber-600"
+                    aria-label={`Let op: ${flagged.get(
+                      b.customer_id,
+                    )} no-shows`}
+                  />
+                )}
                 {b.customer?.full_name ?? "—"}
               </p>
               {b.customer?.email && (
@@ -198,7 +210,17 @@ export default async function BoekingenPage({
                 </TableCell>
                 <TableCell>
                   <Link href={`/boekingen/${b.id}`} className="block">
-                    <span className="font-medium">{b.customer?.full_name ?? "—"}</span>
+                    <span className="inline-flex items-center gap-1.5 font-medium">
+                      {flagged.has(b.customer_id) && (
+                        <AlertTriangle
+                          className="h-4 w-4 shrink-0 text-amber-600"
+                          aria-label={`Let op: ${flagged.get(
+                            b.customer_id,
+                          )} no-shows`}
+                        />
+                      )}
+                      {b.customer?.full_name ?? "—"}
+                    </span>
                     <span className="ml-2 text-xs text-muted-foreground">
                       {b.customer?.email}
                     </span>

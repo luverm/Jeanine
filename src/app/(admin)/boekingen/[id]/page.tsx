@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { AlertTriangle } from "lucide-react";
 import { getBookingDetail } from "@/lib/db/bookings";
+import { getNoShowFlags } from "@/lib/db/no-show";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingStatusActions } from "@/components/admin/booking-status-actions";
 import { BookingNotesForm } from "@/components/admin/booking-notes-form";
+import { NoShowDismiss } from "@/components/admin/no-show-dismiss";
 import { formatHumanDateTime } from "@/lib/time";
 import { formatPrice, formatDuration } from "@/lib/db/services";
 import { bookingStatusLabel, bookingStatusVariant } from "@/lib/status-labels";
@@ -26,6 +29,9 @@ export default async function BookingDetailPage({
   const booking = await getBookingDetail(id);
   if (!booking) notFound();
 
+  const flagged = await getNoShowFlags([booking.customer_id]);
+  const noShowCount = flagged.get(booking.customer_id);
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <Link
@@ -44,6 +50,26 @@ export default async function BookingDetailPage({
           {bookingStatusLabel(booking.status)}
         </Badge>
       </div>
+
+      {noShowCount !== undefined && (
+        <div className="mt-6 flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+            <div>
+              <p className="text-sm font-semibold">
+                Let op: deze klant heeft {noShowCount} no-shows
+              </p>
+              <p className="text-xs">
+                Houd hier rekening mee — bv. bevestiging vragen of
+                vooruitbetaling.
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0">
+            <NoShowDismiss customerId={booking.customer_id} />
+          </div>
+        </div>
+      )}
 
       <Card className="mt-8 grid gap-3 p-6 text-sm">
         <Row label="Klant" value={booking.customer.full_name} />

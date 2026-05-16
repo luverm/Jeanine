@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { writeAuditLog, cancelBooking } from "@/lib/db/bookings";
+import { dismissNoShowFlag } from "@/lib/db/no-show";
 
 const statusSchema = z.enum([
   "pending",
@@ -62,5 +63,24 @@ export async function updateBookingNotesAction(
     payload: { length: trimmed.length },
   }).catch(() => {});
 
+  return { ok: true };
+}
+
+export async function dismissNoShowFlagAction(
+  customerId: string,
+): Promise<{ ok: boolean }> {
+  try {
+    await dismissNoShowFlag(customerId);
+  } catch (err) {
+    console.error("[no-show] dismiss failed:", err);
+    return { ok: false };
+  }
+  await writeAuditLog({
+    actor: "admin",
+    action: "customer.no_show_ack",
+    entity: "customer",
+    entityId: customerId,
+    payload: {},
+  }).catch(() => {});
   return { ok: true };
 }
