@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/admin/login-form";
+import { needsAdminSetup } from "@/lib/auth/staff-bootstrap";
 import { business } from "@/content/business";
 
 export const metadata: Metadata = {
@@ -12,6 +14,10 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  if (await needsAdminSetup()) {
+    redirect("/login/setup");
+  }
+
   const params = await searchParams;
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-16">
@@ -19,7 +25,7 @@ export default async function LoginPage({
         {business.name} — admin
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Voer je e-mailadres in om een magische inloglink te ontvangen.
+        Log in met je e-mailadres en wachtwoord.
       </p>
 
       <div className="mt-8">
@@ -28,7 +34,7 @@ export default async function LoginPage({
 
       {params?.error && (
         <p className="mt-6 rounded border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-          Inloggen mislukt. De link is mogelijk verlopen — vraag een nieuwe aan.
+          Inloggen mislukt. Probeer het opnieuw.
         </p>
       )}
     </div>
