@@ -48,6 +48,7 @@ export default async function DashboardPage({
       </section>
 
       <section className="mt-6 flex flex-wrap gap-2">
+        <QuickAction href="/boekingen/nieuw" label="Nieuwe boeking" />
         <QuickAction href="/boekingen" label="Alle boekingen" />
         <QuickAction href="/boekingen/dag" label="Dagstaat" />
         <QuickAction href="/instellingen/vrije-dagen" label="Vrije dag blokkeren" />

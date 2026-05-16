@@ -71,12 +71,20 @@ export default async function BoekingenPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <header className="mb-6 flex items-baseline justify-between">
+      <header className="mb-6 flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-3xl font-semibold tracking-tight">Boekingen</h1>
-        <p className="text-sm text-muted-foreground">
-          {bookings.length}{" "}
-          {bookings.length === 1 ? "boeking" : "boekingen"}
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-sm text-muted-foreground">
+            {bookings.length}{" "}
+            {bookings.length === 1 ? "boeking" : "boekingen"}
+          </p>
+          <Link
+            href="/boekingen/nieuw"
+            className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Nieuwe boeking
+          </Link>
+        </div>
       </header>
 
       <form

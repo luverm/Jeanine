@@ -7,6 +7,7 @@ import { getNoShowFlags } from "@/lib/db/no-show";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingStatusActions } from "@/components/admin/booking-status-actions";
+import { RescheduleBooking } from "@/components/admin/reschedule-booking";
 import { BookingNotesForm } from "@/components/admin/booking-notes-form";
 import { NoShowDismiss } from "@/components/admin/no-show-dismiss";
 import { formatHumanDateTime } from "@/lib/time";
@@ -83,8 +84,16 @@ export default async function BookingDetailPage({
 
       <Card className="mt-6 p-6">
         <h2 className="text-base font-semibold">Acties</h2>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-col gap-4">
           <BookingStatusActions bookingId={booking.id} status={booking.status} />
+          {booking.status !== "cancelled" && (
+            <RescheduleBooking
+              bookingId={booking.id}
+              serviceId={booking.service_id}
+              staffId={booking.staff_id}
+              durationMin={booking.service.duration_min}
+            />
+          )}
         </div>
       </Card>
 

@@ -9,17 +9,14 @@ import {
   isExclusionViolation,
   writeAuditLog,
 } from "@/lib/db/bookings";
-import { signBooking, verifyBookingToken } from "@/lib/booking-token";
+import { verifyBookingToken } from "@/lib/booking-token";
 import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
 import {
-  bookingConfirmationText,
-  bookingAdminText,
-  googleCalendarUrl,
-} from "@/lib/email/messages";
-import { bookingIcs } from "@/lib/email/ics";
-import { business } from "@/content/business";
+  sendBookingConfirmation,
+  sendBookingAdminNotice,
+} from "@/lib/email/booking-emails";
 
 export type CreateBookingResult =
   | { ok: true; bookingId: string }
@@ -140,75 +137,17 @@ async function sendBookingEmails(args: {
     notes?: string;
   };
 }) {
-  const startsAt = new Date(args.booking.starts_at);
-  const endsAt = new Date(args.booking.ends_at);
-  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const title = `${business.name} — ${args.service.name}`;
-  const cancelUrl = `${siteUrl}/afspraak/${args.booking.id}?token=${signBooking(
-    args.booking.id,
-  )}`;
-  const calendarUrl = googleCalendarUrl({
-    title,
-    startsAt,
-    endsAt,
-    details: `Afspraak voor ${args.service.name}`,
-  });
-  const ics = bookingIcs({
-    id: args.booking.id,
-    title,
-    startsAt,
-    endsAt,
-    description: `Afspraak voor ${args.service.name}`,
-  });
-
-  const jobs = [
-    sendEmail({
-      to: args.customer.email,
-      subject: `Afspraak bevestigd — ${args.service.name}`,
-      context: "booking_confirmation",
-      text: bookingConfirmationText({
-        customerName: args.customer.fullName,
-        serviceName: args.service.name,
-        startsAt,
-        calendarUrl,
-        cancelUrl,
-      }),
-      attachments: ics
-        ? [
-            {
-              filename: "afspraak.ics",
-              content: ics,
-              contentType: "text/calendar",
-            },
-          ]
-        : undefined,
-    }),
-  ];
-
-  if (adminEmail) {
-    jobs.push(
-      sendEmail({
-        to: adminEmail,
-        subject: `Nieuwe boeking — ${args.service.name}`,
-        context: "booking_admin",
-        text: bookingAdminText({
-          serviceName: args.service.name,
-          startsAt,
-          customerName: args.customer.fullName,
-          customerEmail: args.customer.email,
-          customerPhone: args.customer.phone,
-          notes: args.customer.notes,
-          bookingUrl: `${siteUrl}/boekingen/${args.booking.id}`,
-        }),
-        replyTo: args.customer.email,
-      }),
-    );
-  } else {
-    console.warn("[email] ADMIN_NOTIFY_EMAIL not set — admin booking notice skipped");
-  }
-
-  await Promise.all(jobs);
+  const mail = {
+    bookingId: args.booking.id,
+    startsAt: new Date(args.booking.starts_at),
+    endsAt: new Date(args.booking.ends_at),
+    serviceName: args.service.name,
+    customer: args.customer,
+  };
+  await Promise.all([
+    sendBookingConfirmation(mail),
+    sendBookingAdminNotice(mail),
+  ]);
 }
 
 async function safe<T>(fn: () => Promise<T>): Promise<T | null> {

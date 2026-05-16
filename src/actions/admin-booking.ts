@@ -1,11 +1,26 @@
 "use server";
 
 import { z } from "zod";
+import { v4 as uuidv4 } from "uuid";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
-import { writeAuditLog, cancelBooking } from "@/lib/db/bookings";
+import {
+  writeAuditLog,
+  cancelBooking,
+  insertBooking,
+  isExclusionViolation,
+  getBookingDetail,
+} from "@/lib/db/bookings";
+import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { dismissNoShowFlag } from "@/lib/db/no-show";
 import { getEmailLogEntry } from "@/lib/db/email-log";
 import { sendEmail } from "@/lib/email/client";
+import {
+  sendBookingConfirmation,
+  sendBookingAdminNotice,
+  sendBookingRescheduled,
+} from "@/lib/email/booking-emails";
+import { customerInputSchema } from "@/lib/schemas/booking";
+import { uuidString } from "@/lib/schemas/uuid";
 
 const statusSchema = z.enum([
   "pending",
@@ -103,5 +118,144 @@ export async function resendEmailAction(
     console.error("[email] resend failed:", err);
     return { ok: false };
   }
+  return { ok: true };
+}
+
+const adminBookingSchema = z.object({
+  serviceId: uuidString(),
+  staffId: uuidString(),
+  startsAt: z.string().datetime(),
+  endsAt: z.string().datetime(),
+  customer: customerInputSchema,
+});
+
+export type CreateAdminBookingResult =
+  | { ok: true; bookingId: string }
+  | { ok: false; code: "INVALID_INPUT" | "SLOT_TAKEN" | "INTERNAL"; message?: string };
+
+export async function createAdminBooking(
+  input: unknown,
+): Promise<CreateAdminBookingResult> {
+  const parsed = adminBookingSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, code: "INVALID_INPUT", message: parsed.error.message };
+  }
+  const data = parsed.data;
+  if (new Date(data.endsAt) <= new Date(data.startsAt)) {
+    return { ok: false, code: "INVALID_INPUT", message: "Eindtijd ligt voor de starttijd" };
+  }
+
+  const customer = await upsertCustomerByEmail({
+    email: data.customer.email,
+    full_name: data.customer.fullName,
+    phone: data.customer.phone,
+  });
+
+  let booking;
+  try {
+    booking = await insertBooking({
+      staffId: data.staffId,
+      serviceId: data.serviceId,
+      customerId: customer.id,
+      startsAt: data.startsAt,
+      endsAt: data.endsAt,
+      notes: data.customer.notes || undefined,
+      idempotencyKey: uuidv4(),
+    });
+  } catch (err) {
+    if (isExclusionViolation(err)) return { ok: false, code: "SLOT_TAKEN" };
+    throw err;
+  }
+
+  const svc = createSupabaseServiceClient();
+  const { data: service } = await svc
+    .from("services")
+    .select("name")
+    .eq("id", data.serviceId)
+    .maybeSingle();
+  const serviceName = (service as { name?: string } | null)?.name ?? "Afspraak";
+
+  await writeAuditLog({
+    actor: "admin",
+    action: "booking.create",
+    entity: "booking",
+    entityId: booking.id,
+    payload: { manual: true },
+  }).catch(() => {});
+
+  const mail = {
+    bookingId: booking.id,
+    startsAt: new Date(booking.starts_at),
+    endsAt: new Date(booking.ends_at),
+    serviceName,
+    customer: data.customer,
+  };
+  try {
+    await sendBookingConfirmation(mail);
+    await sendBookingAdminNotice(mail);
+  } catch (err) {
+    console.error("[admin-booking] email failed:", err);
+  }
+
+  return { ok: true, bookingId: booking.id };
+}
+
+const rescheduleSchema = z.object({
+  id: uuidString(),
+  startsAt: z.string().datetime(),
+  endsAt: z.string().datetime(),
+});
+
+export type RescheduleResult =
+  | { ok: true }
+  | { ok: false; code: "INVALID_INPUT" | "SLOT_TAKEN" | "NOT_FOUND" };
+
+export async function rescheduleBooking(
+  input: unknown,
+): Promise<RescheduleResult> {
+  const parsed = rescheduleSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, code: "INVALID_INPUT" };
+  const { id, startsAt, endsAt } = parsed.data;
+  if (new Date(endsAt) <= new Date(startsAt)) {
+    return { ok: false, code: "INVALID_INPUT" };
+  }
+
+  const before = await getBookingDetail(id);
+  if (!before) return { ok: false, code: "NOT_FOUND" };
+
+  const svc = createSupabaseServiceClient();
+  const { error } = await svc
+    .from("bookings")
+    .update({ starts_at: startsAt, ends_at: endsAt })
+    .eq("id", id);
+  if (error) {
+    if (isExclusionViolation(error)) return { ok: false, code: "SLOT_TAKEN" };
+    throw error;
+  }
+
+  await writeAuditLog({
+    actor: "admin",
+    action: "booking.reschedule",
+    entity: "booking",
+    entityId: id,
+    payload: { startsAt, endsAt },
+  }).catch(() => {});
+
+  try {
+    await sendBookingRescheduled({
+      bookingId: id,
+      startsAt: new Date(startsAt),
+      endsAt: new Date(endsAt),
+      serviceName: before.service.name,
+      customer: {
+        fullName: before.customer.full_name,
+        email: before.customer.email,
+        phone: before.customer.phone ?? "",
+      },
+    });
+  } catch (err) {
+    console.error("[admin-booking] reschedule email failed:", err);
+  }
+
   return { ok: true };
 }
