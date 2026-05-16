@@ -8,7 +8,6 @@ import { leadAdminText, leadCustomerAckText } from "@/lib/email/messages";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
-import { getServerEnv } from "@/lib/env";
 
 export type CreateLeadResult =
   | { ok: true; leadId: string }
@@ -86,35 +85,44 @@ async function sendLeadEmails(args: {
   leadId: string;
   data: ReturnType<typeof leadInputSchema.parse>;
 }) {
-  const { ADMIN_NOTIFY_EMAIL } = getServerEnv();
+  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const leadUrl = `${siteUrl}/leads/${args.leadId}`;
 
-  await Promise.all([
-    sendEmail({
-      to: ADMIN_NOTIFY_EMAIL,
-      subject: `Nieuwe bruidslead — ${args.data.fullName}`,
-      text: leadAdminText({
-        fullName: args.data.fullName,
-        email: args.data.email,
-        phone: args.data.phone,
-        weddingDate: args.data.weddingDate,
-        city: args.data.city,
-        postcode: args.data.postcode,
-        partySize: args.data.partySize,
-        servicesWanted: args.data.servicesWanted,
-        budgetCents: args.data.budgetCents ?? null,
-        message: args.data.message || undefined,
-        leadUrl,
-      }),
-      replyTo: args.data.email,
-    }),
+  const jobs = [
     sendEmail({
       to: args.data.email,
       subject: "We hebben je bericht ontvangen",
       text: leadCustomerAckText(args.data.fullName),
     }),
-  ]);
+  ];
+
+  if (adminEmail) {
+    jobs.push(
+      sendEmail({
+        to: adminEmail,
+        subject: `Nieuwe bruidslead — ${args.data.fullName}`,
+        text: leadAdminText({
+          fullName: args.data.fullName,
+          email: args.data.email,
+          phone: args.data.phone,
+          weddingDate: args.data.weddingDate,
+          city: args.data.city,
+          postcode: args.data.postcode,
+          partySize: args.data.partySize,
+          servicesWanted: args.data.servicesWanted,
+          budgetCents: args.data.budgetCents ?? null,
+          message: args.data.message || undefined,
+          leadUrl,
+        }),
+        replyTo: args.data.email,
+      }),
+    );
+  } else {
+    console.warn("[email] ADMIN_NOTIFY_EMAIL not set — admin lead notice skipped");
+  }
+
+  await Promise.all(jobs);
 }
 
 async function safe<T>(fn: () => Promise<T>): Promise<T | null> {

@@ -12,7 +12,6 @@ import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
 import { bookingConfirmationText, bookingAdminText } from "@/lib/email/messages";
-import { getServerEnv } from "@/lib/env";
 
 export type CreateBookingResult =
   | { ok: true; bookingId: string }
@@ -134,10 +133,10 @@ async function sendBookingEmails(args: {
   };
 }) {
   const startsAt = new Date(args.booking.starts_at);
-  const { ADMIN_NOTIFY_EMAIL } = getServerEnv();
+  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-  await Promise.all([
+  const jobs = [
     sendEmail({
       to: args.customer.email,
       subject: `Afspraak bevestigd — ${args.service.name}`,
@@ -147,21 +146,30 @@ async function sendBookingEmails(args: {
         startsAt,
       }),
     }),
-    sendEmail({
-      to: ADMIN_NOTIFY_EMAIL,
-      subject: `Nieuwe boeking — ${args.service.name}`,
-      text: bookingAdminText({
-        serviceName: args.service.name,
-        startsAt,
-        customerName: args.customer.fullName,
-        customerEmail: args.customer.email,
-        customerPhone: args.customer.phone,
-        notes: args.customer.notes,
-        bookingUrl: `${siteUrl}/boekingen/${args.booking.id}`,
+  ];
+
+  if (adminEmail) {
+    jobs.push(
+      sendEmail({
+        to: adminEmail,
+        subject: `Nieuwe boeking — ${args.service.name}`,
+        text: bookingAdminText({
+          serviceName: args.service.name,
+          startsAt,
+          customerName: args.customer.fullName,
+          customerEmail: args.customer.email,
+          customerPhone: args.customer.phone,
+          notes: args.customer.notes,
+          bookingUrl: `${siteUrl}/boekingen/${args.booking.id}`,
+        }),
+        replyTo: args.customer.email,
       }),
-      replyTo: args.customer.email,
-    }),
-  ]);
+    );
+  } else {
+    console.warn("[email] ADMIN_NOTIFY_EMAIL not set — admin booking notice skipped");
+  }
+
+  await Promise.all(jobs);
 }
 
 async function safe<T>(fn: () => Promise<T>): Promise<T | null> {
