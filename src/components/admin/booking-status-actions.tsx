@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { updateBookingStatusAction } from "@/actions/admin-booking";
+import { bookingStatusLabel } from "@/lib/status-labels";
 import type { BookingRow } from "@/lib/db/bookings";
 
 const TRANSITIONS: Record<BookingRow["status"], BookingRow["status"][]> = {
@@ -13,14 +14,6 @@ const TRANSITIONS: Record<BookingRow["status"], BookingRow["status"][]> = {
   cancelled: [],
   no_show: [],
   completed: [],
-};
-
-const LABELS: Record<BookingRow["status"], string> = {
-  pending: "in afwachting",
-  confirmed: "bevestigd",
-  cancelled: "geannuleerd",
-  no_show: "no-show",
-  completed: "afgerond",
 };
 
 export function BookingStatusActions({
@@ -42,7 +35,7 @@ export function BookingStatusActions({
       const result = await updateBookingStatusAction(bookingId, target);
       setBusyTarget(null);
       if (result.ok) {
-        toast.success(`Status gewijzigd naar ${LABELS[target]}`);
+        toast.success(`Status gewijzigd naar ${bookingStatusLabel(target)}`);
         router.refresh();
       } else {
         toast.error("Wijzigen mislukt.");
@@ -55,7 +48,7 @@ export function BookingStatusActions({
   if (options.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Status {LABELS[status]} — geen verdere acties.
+        Status {bookingStatusLabel(status)} — geen verdere acties.
       </p>
     );
   }
@@ -69,7 +62,7 @@ export function BookingStatusActions({
           disabled={pending}
           onClick={() => dispatch(opt)}
         >
-          {busyTarget === opt ? "..." : `Markeer als ${LABELS[opt]}`}
+          {busyTarget === opt ? "..." : `Markeer als ${bookingStatusLabel(opt)}`}
         </Button>
       ))}
     </div>

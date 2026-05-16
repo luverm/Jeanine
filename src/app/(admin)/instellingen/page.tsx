@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
+function display(value: string): string {
+  return value && !value.startsWith("{{") ? value : "—";
+}
+
 export default function InstellingenPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -24,16 +28,16 @@ export default function InstellingenPage() {
           </code>{" "}
           en deployen.
         </p>
-        <Row label="Naam" value={business.name} />
-        <Row label="Eigenaar" value={business.ownerName} />
-        <Row label="E-mail" value={business.email} />
-        <Row label="Telefoon" value={business.phone} />
+        <Row label="Naam" value={display(business.name)} />
+        <Row label="Eigenaar" value={display(business.ownerName)} />
+        <Row label="E-mail" value={display(business.email)} />
+        <Row label="Telefoon" value={display(business.phone)} />
         <Row
           label="Adres"
           value={`${business.address.street}, ${business.address.postcode} ${business.address.city}`}
         />
-        <Row label="KvK" value={business.kvk} />
-        <Row label="BTW" value={business.btw} />
+        <Row label="KvK" value={display(business.kvk)} />
+        <Row label="BTW" value={display(business.btw)} />
       </Card>
 
       <Card className="mt-6 p-6">

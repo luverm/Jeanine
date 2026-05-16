@@ -5,8 +5,10 @@ import { getBookingDetail } from "@/lib/db/bookings";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingStatusActions } from "@/components/admin/booking-status-actions";
+import { BookingNotesForm } from "@/components/admin/booking-notes-form";
 import { formatHumanDateTime } from "@/lib/time";
 import { formatPrice, formatDuration } from "@/lib/db/services";
+import { bookingStatusLabel, bookingStatusVariant } from "@/lib/status-labels";
 
 export const metadata: Metadata = {
   title: "Boeking detail",
@@ -38,7 +40,9 @@ export default async function BookingDetailPage({
       </h1>
       <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
         <span>{formatHumanDateTime(new Date(booking.starts_at))}</span>
-        <Badge variant="outline">{booking.status}</Badge>
+        <Badge variant={bookingStatusVariant(booking.status)}>
+          {bookingStatusLabel(booking.status)}
+        </Badge>
       </div>
 
       <Card className="mt-8 grid gap-3 p-6 text-sm">
@@ -49,13 +53,22 @@ export default async function BookingDetailPage({
         )}
         <Row label="Duur" value={formatDuration(booking.service.duration_min)} />
         <Row label="Prijs" value={formatPrice(booking.service.price_cents)} />
-        {booking.notes && <Row label="Notitie" value={booking.notes} />}
       </Card>
 
       <Card className="mt-6 p-6">
         <h2 className="text-base font-semibold">Acties</h2>
         <div className="mt-4">
           <BookingStatusActions bookingId={booking.id} status={booking.status} />
+        </div>
+      </Card>
+
+      <Card className="mt-6 p-6">
+        <h2 className="text-base font-semibold">Interne notitie</h2>
+        <div className="mt-4">
+          <BookingNotesForm
+            bookingId={booking.id}
+            initialNotes={booking.notes}
+          />
         </div>
       </Card>
     </div>

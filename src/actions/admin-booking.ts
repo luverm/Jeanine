@@ -39,3 +39,28 @@ export async function updateBookingStatusAction(
 
   return { ok: true };
 }
+
+const notesSchema = z.string().max(2000);
+
+export async function updateBookingNotesAction(
+  id: string,
+  rawNotes: string,
+): Promise<{ ok: boolean }> {
+  const trimmed = notesSchema.parse(rawNotes).trim();
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("bookings")
+    .update({ notes: trimmed || null })
+    .eq("id", id);
+  if (error) throw error;
+
+  await writeAuditLog({
+    actor: "admin",
+    action: "booking.notes_update",
+    entity: "booking",
+    entityId: id,
+    payload: { length: trimmed.length },
+  }).catch(() => {});
+
+  return { ok: true };
+}

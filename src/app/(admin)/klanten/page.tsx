@@ -84,12 +84,26 @@ export default async function KlantenPage({
             )}
             {customers.map((c) => (
               <TableRow key={c.id}>
-                <TableCell className="font-medium">{c.full_name}</TableCell>
+                <TableCell className="font-medium">
+                  <Link
+                    href={`/boekingen?q=${encodeURIComponent(c.email)}`}
+                    className="underline-offset-4 hover:underline"
+                  >
+                    {c.full_name}
+                  </Link>
+                </TableCell>
                 <TableCell>
                   <a href={`mailto:${c.email}`}>{c.email}</a>
                 </TableCell>
                 <TableCell>{c.phone ?? "—"}</TableCell>
-                <TableCell className="text-right">{c.bookings_count}</TableCell>
+                <TableCell className="text-right">
+                  <Link
+                    href={`/boekingen?q=${encodeURIComponent(c.email)}`}
+                    className="underline-offset-4 hover:underline"
+                  >
+                    {c.bookings_count}
+                  </Link>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

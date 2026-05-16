@@ -16,6 +16,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { formatHumanDateTime } from "@/lib/time";
 import { formatPrice } from "@/lib/db/services";
+import {
+  BOOKING_STATUS_LABELS,
+  bookingStatusLabel,
+  bookingStatusVariant,
+} from "@/lib/status-labels";
 
 export const metadata: Metadata = {
   title: "Boekingen",
@@ -26,11 +31,10 @@ export const dynamic = "force-dynamic";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Alle statussen" },
-  { value: "confirmed", label: "Bevestigd" },
-  { value: "pending", label: "In afwachting" },
-  { value: "cancelled", label: "Geannuleerd" },
-  { value: "completed", label: "Afgerond" },
-  { value: "no_show", label: "No-show" },
+  ...Object.entries(BOOKING_STATUS_LABELS).map(([value, label]) => ({
+    value,
+    label,
+  })),
 ];
 
 type SearchParams = {
@@ -61,8 +65,12 @@ export default async function BoekingenPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <header className="mb-6 flex items-center justify-between">
+      <header className="mb-6 flex items-baseline justify-between">
         <h1 className="text-3xl font-semibold tracking-tight">Boekingen</h1>
+        <p className="text-sm text-muted-foreground">
+          {bookings.length}{" "}
+          {bookings.length === 1 ? "boeking" : "boekingen"}
+        </p>
       </header>
 
       <form
@@ -165,7 +173,9 @@ export default async function BoekingenPage({
                 </TableCell>
                 <TableCell>{b.service?.name ?? "—"}</TableCell>
                 <TableCell>
-                  <Badge variant={statusVariant(b.status)}>{b.status}</Badge>
+                  <Badge variant={bookingStatusVariant(b.status)}>
+                    {bookingStatusLabel(b.status)}
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   {b.service ? formatPrice(b.service.price_cents) : "—"}
@@ -177,20 +187,4 @@ export default async function BoekingenPage({
       </div>
     </div>
   );
-}
-
-function statusVariant(
-  status: string,
-): "default" | "secondary" | "outline" | "destructive" {
-  switch (status) {
-    case "confirmed":
-      return "default";
-    case "pending":
-      return "secondary";
-    case "cancelled":
-    case "no_show":
-      return "destructive";
-    default:
-      return "outline";
-  }
 }

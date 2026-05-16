@@ -6,6 +6,7 @@ import { getLead } from "@/lib/db/leads";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LeadStatusSelect } from "@/components/admin/lead-status-select";
+import { leadStatusLabel, leadStatusVariant } from "@/lib/status-labels";
 
 export const metadata: Metadata = {
   title: "Lead detail",
@@ -43,7 +44,9 @@ export default async function LeadDetailPage({
           </h1>
           <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
             <span>Trouwdatum: {wedding}</span>
-            <Badge variant="outline">{lead.status}</Badge>
+            <Badge variant={leadStatusVariant(lead.status)}>
+              {leadStatusLabel(lead.status)}
+            </Badge>
           </div>
         </div>
         <div>

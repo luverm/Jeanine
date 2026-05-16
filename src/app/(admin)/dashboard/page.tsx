@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/db/services";
 import { formatTime, formatIsoDate } from "@/lib/time";
+import { bookingStatusLabel, bookingStatusVariant } from "@/lib/status-labels";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -39,6 +40,13 @@ export default async function DashboardPage() {
         <Kpi label="Omzet deze week" value={formatPrice(kpis.weekRevenueCents)} />
         <Kpi label="Open leads" value={String(kpis.openLeads)} />
         <Kpi label="No-shows (30d)" value={String(kpis.noShowsLast30Days)} />
+      </section>
+
+      <section className="mt-6 flex flex-wrap gap-2">
+        <QuickAction href="/boekingen" label="Alle boekingen" />
+        <QuickAction href="/instellingen/vrije-dagen" label="Vrije dag blokkeren" />
+        <QuickAction href="/instellingen/openingstijden" label="Openingstijden" />
+        <QuickAction href="/instellingen/diensten" label="Diensten" />
       </section>
 
       <section className="mt-10 grid gap-6 lg:grid-cols-3">
@@ -95,6 +103,17 @@ export default async function DashboardPage() {
   );
 }
 
+function QuickAction({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex h-9 items-center justify-center rounded-md border bg-background px-4 text-sm font-medium hover:bg-accent"
+    >
+      {label}
+    </Link>
+  );
+}
+
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
     <Card className="p-5">
@@ -129,8 +148,11 @@ function AgendaList({
                 {formatTime(new Date(b.starts_at))}
               </span>
               <span>{b.service?.name ?? "—"}</span>
-              <Badge variant="outline" className="ml-2">
-                {b.status}
+              <Badge
+                variant={bookingStatusVariant(b.status)}
+                className="ml-2"
+              >
+                {bookingStatusLabel(b.status)}
               </Badge>
             </div>
             <span className="text-muted-foreground">
