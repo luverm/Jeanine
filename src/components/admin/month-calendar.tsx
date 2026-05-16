@@ -46,7 +46,13 @@ function monthBase(month?: string): Date {
   return startOfMonth(parseISO(`${formatIsoDate(new Date()).slice(0, 7)}-01`));
 }
 
-export async function MonthCalendar({ month }: { month?: string }) {
+export async function MonthCalendar({
+  month,
+  layout = "grid",
+}: {
+  month?: string;
+  layout?: "grid" | "list";
+}) {
   const base = monthBase(month);
   const gridStart = startOfWeek(startOfMonth(base), { weekStartsOn: 1 });
   const gridEnd = endOfWeek(endOfMonth(base), { weekStartsOn: 1 });
@@ -104,6 +110,14 @@ export async function MonthCalendar({ month }: { month?: string }) {
         </div>
       </div>
 
+      {layout === "list" ? (
+        <MonthList
+          days={days}
+          byDay={byDay}
+          currentMonth={currentMonth}
+          todayKey={todayKey}
+        />
+      ) : (
       <div className="overflow-x-auto">
         <div className="min-w-[700px]">
           <div className="grid grid-cols-7 border-b bg-muted/30 text-xs font-medium text-muted-foreground">
@@ -185,6 +199,92 @@ export async function MonthCalendar({ month }: { month?: string }) {
           </div>
         </div>
       </div>
+      )}
     </section>
+  );
+}
+
+function MonthList({
+  days,
+  byDay,
+  currentMonth,
+  todayKey,
+}: {
+  days: Date[];
+  byDay: Map<string, BookingListItem[]>;
+  currentMonth: string;
+  todayKey: string;
+}) {
+  const listDays = days.filter(
+    (d) =>
+      format(d, "yyyy-MM") === currentMonth &&
+      (byDay.get(format(d, "yyyy-MM-dd"))?.length ?? 0) > 0,
+  );
+
+  if (listDays.length === 0) {
+    return (
+      <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+        Geen afspraken deze maand.
+      </p>
+    );
+  }
+
+  return (
+    <div className="divide-y">
+      {listDays.map((day) => {
+        const key = format(day, "yyyy-MM-dd");
+        const items = byDay.get(key) ?? [];
+        const isToday = key === todayKey;
+        const weekday = WEEKDAYS[Number(format(day, "i")) - 1];
+        const monthName = MONTHS_NL[Number(format(day, "M")) - 1];
+
+        return (
+          <div key={key} className="px-4 py-3">
+            <div className="flex items-center gap-2">
+              <span
+                className={
+                  "text-sm font-medium " +
+                  (isToday
+                    ? "rounded bg-foreground px-1.5 py-0.5 text-background"
+                    : "")
+                }
+              >
+                {weekday} {format(day, "d")} {monthName}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                · {items.length}
+              </span>
+            </div>
+            <ul className="mt-2 divide-y rounded-md border">
+              {items.map((b) => (
+                <li key={b.id}>
+                  <Link
+                    href={`/boekingen/${b.id}`}
+                    className="flex items-center gap-3 px-3 py-3 text-sm hover:bg-accent"
+                  >
+                    <span
+                      className={
+                        "h-2 w-2 shrink-0 rounded-full " +
+                        (DOT[b.status] ?? "bg-muted-foreground")
+                      }
+                      aria-hidden
+                    />
+                    <span className="font-mono text-xs">
+                      {formatTime(new Date(b.starts_at))}
+                    </span>
+                    <span className="flex-1 truncate">
+                      {b.service?.name ?? "—"}
+                    </span>
+                    <span className="max-w-[40%] truncate text-xs text-muted-foreground">
+                      {b.customer?.full_name ?? ""}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
   );
 }

@@ -18,7 +18,7 @@ export default function BruidContactPage() {
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Bruidsstyling
           </p>
-          <h1 className="mt-4 text-5xl tracking-tight">
+          <h1 className="mt-4 text-pretty text-4xl tracking-tight sm:text-5xl">
             Plan een vrijblijvend consult
           </h1>
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground">

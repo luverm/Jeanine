@@ -33,7 +33,7 @@ export default async function HomePage() {
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             {landing.hero.eyebrow}
           </p>
-          <h1 className="mt-6 max-w-3xl text-5xl tracking-tight md:text-7xl">
+          <h1 className="mt-6 max-w-3xl text-pretty text-4xl tracking-tight sm:text-5xl md:text-7xl">
             {landing.hero.title}
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">

@@ -4,6 +4,7 @@ import { loadDashboardKpis } from "@/lib/db/admin-bookings";
 import { listLeads } from "@/lib/db/leads";
 import { Card } from "@/components/ui/card";
 import { MonthCalendar } from "@/components/admin/month-calendar";
+import { getDeviceInfo } from "@/lib/device";
 import { formatPrice } from "@/lib/db/services";
 
 export const metadata: Metadata = {
@@ -19,9 +20,10 @@ export default async function DashboardPage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const { month } = await searchParams;
-  const [kpis, leads] = await Promise.all([
+  const [kpis, leads, device] = await Promise.all([
     loadDashboardKpis(),
     listLeads("new"),
+    getDeviceInfo(),
   ]);
 
   return (
@@ -45,7 +47,10 @@ export default async function DashboardPage({
       </section>
 
       <div className="mt-8">
-        <MonthCalendar month={month} />
+        <MonthCalendar
+          month={month}
+          layout={device.isMobile ? "list" : "grid"}
+        />
       </div>
 
       <Card className="mt-8 p-6">
