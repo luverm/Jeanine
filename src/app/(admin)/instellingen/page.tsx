@@ -1,43 +1,50 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
-import { business } from "@/content/business";
+import { getBusiness } from "@/lib/db/business-settings";
+import { BusinessSettingsForm } from "@/components/admin/business-settings-form";
 
 export const metadata: Metadata = {
   title: "Instellingen",
   robots: { index: false },
 };
 
-function display(value: string): string {
-  return value && !value.startsWith("{{") ? value : "—";
-}
+export const dynamic = "force-dynamic";
 
-export default function InstellingenPage() {
+export default async function InstellingenPage() {
+  const b = await getBusiness();
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <header className="mb-6">
         <h1 className="text-3xl font-semibold tracking-tight">Instellingen</h1>
       </header>
 
-      <Card className="grid gap-3 p-6 text-sm">
+      <Card className="p-6">
         <h2 className="text-base font-semibold">Bedrijfsgegevens</h2>
-        <p className="text-xs text-muted-foreground">
-          Aanpassen via{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5">
-            src/content/business.ts
-          </code>{" "}
-          en deployen.
+        <p className="mt-1 text-xs text-muted-foreground">
+          Wijzigingen verschijnen direct op de website (kop, footer,
+          contact).
         </p>
-        <Row label="Naam" value={display(business.name)} />
-        <Row label="Eigenaar" value={display(business.ownerName)} />
-        <Row label="E-mail" value={display(business.email)} />
-        <Row label="Telefoon" value={display(business.phone)} />
-        <Row
-          label="Adres"
-          value={`${business.address.street}, ${business.address.postcode} ${business.address.city}`}
-        />
-        <Row label="KvK" value={display(business.kvk)} />
-        <Row label="BTW" value={display(business.btw)} />
+        <div className="mt-5">
+          <BusinessSettingsForm
+            initial={{
+              name: b.name,
+              ownerName: b.ownerName,
+              tagline: b.tagline,
+              email: b.email,
+              phone: b.phone,
+              street: b.address.street,
+              postcode: b.address.postcode,
+              city: b.address.city,
+              kvk: b.kvk,
+              btw: b.btw,
+              instagram: b.socials.instagram,
+              instagramUrl: b.socials.instagramUrl,
+              tiktok: b.socials.tiktok,
+            }}
+          />
+        </div>
       </Card>
 
       <Card className="mt-6 p-6">
@@ -93,15 +100,6 @@ export default function InstellingenPage() {
           </li>
         </ul>
       </Card>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-4 border-b py-2 last:border-b-0 last:pb-0">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium">{value}</span>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { business } from "@/content/business";
+import { getBusiness } from "@/lib/db/business-settings";
 import { MobileNav } from "@/components/public/mobile-nav";
 
 const navLinks = [
@@ -11,11 +11,12 @@ const navLinks = [
 
 const isFilled = (v: string) => v.length > 0 && !v.startsWith("{{");
 
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const business = await getBusiness();
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
