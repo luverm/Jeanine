@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { loadDashboardKpis } from "@/lib/db/admin-bookings";
+import { loadInsights } from "@/lib/db/insights";
 import { listLeads } from "@/lib/db/leads";
 import { Card } from "@/components/ui/card";
 import { MonthCalendar } from "@/components/admin/month-calendar";
 import { getDeviceInfo } from "@/lib/device";
 import { formatPrice } from "@/lib/db/services";
+import { format, parseISO } from "date-fns";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -20,11 +22,17 @@ export default async function DashboardPage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const { month } = await searchParams;
-  const [kpis, leads, device] = await Promise.all([
+  const [kpis, insights, leads, device] = await Promise.all([
     loadDashboardKpis(),
+    loadInsights(),
     listLeads("new"),
     getDeviceInfo(),
   ]);
+
+  const maxRevenue = Math.max(
+    1,
+    ...insights.revenueWeeks.map((w) => w.cents),
+  );
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -41,9 +49,64 @@ export default async function DashboardPage({
 
       <section className="mt-6 flex flex-wrap gap-2">
         <QuickAction href="/boekingen" label="Alle boekingen" />
+        <QuickAction href="/boekingen/dag" label="Dagstaat" />
         <QuickAction href="/instellingen/vrije-dagen" label="Vrije dag blokkeren" />
         <QuickAction href="/instellingen/openingstijden" label="Openingstijden" />
         <QuickAction href="/instellingen/diensten" label="Diensten" />
+      </section>
+
+      <section className="mt-8 grid gap-6 lg:grid-cols-3">
+        <Card className="p-6 lg:col-span-2">
+          <h2 className="text-lg font-semibold">Omzet per week</h2>
+          <p className="text-xs text-muted-foreground">
+            Bevestigde en afgeronde afspraken, laatste 6 weken.
+          </p>
+          <div className="mt-6 flex h-40 items-end gap-3">
+            {insights.revenueWeeks.map((w) => (
+              <div key={w.weekStart} className="flex flex-1 flex-col items-center gap-2">
+                <div className="flex h-32 w-full items-end">
+                  <div
+                    className="w-full rounded-t bg-primary/80"
+                    style={{
+                      height: `${Math.round((w.cents / maxRevenue) * 100)}%`,
+                    }}
+                    title={formatPrice(w.cents)}
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground">
+                  {format(parseISO(w.weekStart), "d/M")}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold">Kerncijfers</h2>
+          <dl className="mt-4 space-y-4 text-sm">
+            <div>
+              <dt className="text-xs uppercase tracking-wider text-muted-foreground">
+                No-showpercentage (30d)
+              </dt>
+              <dd className="mt-1 text-2xl font-semibold">
+                {Math.round(insights.noShowRate * 100)}%
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  van {insights.noShowSample}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wider text-muted-foreground">
+                Bruidsleads
+              </dt>
+              <dd className="mt-1 text-sm">
+                <span className="font-semibold">{insights.leadsWon}</span> gewonnen ·{" "}
+                <span className="font-semibold">{insights.leadsOpen}</span> open ·{" "}
+                <span className="font-semibold">{insights.leadsLost}</span> verloren
+              </dd>
+            </div>
+          </dl>
+        </Card>
       </section>
 
       <div className="mt-8">

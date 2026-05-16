@@ -10,6 +10,79 @@ export type CustomerListItem = {
   bookings_count: number;
 };
 
+export type CustomerBooking = {
+  id: string;
+  starts_at: string;
+  status: string;
+  service: { name: string; price_cents: number } | null;
+};
+
+export type CustomerDetail = {
+  id: string;
+  email: string;
+  full_name: string;
+  phone: string | null;
+  notes: string | null;
+  created_at: string;
+  bookings: CustomerBooking[];
+  totalBookings: number;
+  noShowCount: number;
+  spentCents: number;
+};
+
+export async function getCustomerDetail(
+  id: string,
+): Promise<CustomerDetail | null> {
+  const supabase = createSupabaseServiceClient();
+  const { data: c, error: cErr } = await supabase
+    .from("customers")
+    .select("id, email, full_name, phone, notes, created_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (cErr) throw cErr;
+  if (!c) return null;
+
+  const { data: b, error: bErr } = await supabase
+    .from("bookings")
+    .select("id, starts_at, status, service:services(name, price_cents)")
+    .eq("customer_id", id)
+    .order("starts_at", { ascending: false });
+  if (bErr) throw bErr;
+
+  const bookings = (b ?? []) as unknown as CustomerBooking[];
+  const noShowCount = bookings.filter((x) => x.status === "no_show").length;
+  const spentCents = bookings
+    .filter((x) => x.status === "completed")
+    .reduce((acc, x) => acc + (x.service?.price_cents ?? 0), 0);
+
+  return {
+    ...(c as {
+      id: string;
+      email: string;
+      full_name: string;
+      phone: string | null;
+      notes: string | null;
+      created_at: string;
+    }),
+    bookings,
+    totalBookings: bookings.length,
+    noShowCount,
+    spentCents,
+  };
+}
+
+export async function updateCustomerNotes(
+  id: string,
+  notes: string,
+): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("customers")
+    .update({ notes: notes || null })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export async function listCustomers(q?: string): Promise<CustomerListItem[]> {
   const supabase = createSupabaseServiceClient();
   let query = supabase

@@ -43,7 +43,7 @@ export function AdminNav({
 
   return (
     <>
-      <aside className="hidden w-56 shrink-0 border-r bg-muted/30 md:flex md:flex-col">
+      <aside className="hidden w-56 shrink-0 border-r bg-muted/30 md:flex md:flex-col print:hidden">
         <div className="px-4 py-5">
           <p className="text-sm font-semibold tracking-tight">Admin</p>
           {email && (
@@ -61,7 +61,7 @@ export function AdminNav({
         </div>
       </aside>
 
-      <header className="border-b bg-muted/30 md:hidden">
+      <header className="border-b bg-muted/30 md:hidden print:hidden">
         <div className="flex items-center gap-3 px-4 py-3">
           <p className="text-sm font-semibold">Admin</p>
           <button

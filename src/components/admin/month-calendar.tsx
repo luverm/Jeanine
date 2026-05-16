@@ -152,7 +152,7 @@ export async function MonthCalendar({
                 >
                   <div className="flex items-center justify-between">
                     <Link
-                      href={`/boekingen?from=${key}&to=${key}`}
+                      href={`/boekingen/dag?date=${key}`}
                       className={
                         "inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs hover:bg-accent " +
                         (isToday
@@ -199,7 +199,7 @@ export async function MonthCalendar({
                     ))}
                     {extra > 0 && (
                       <Link
-                        href={`/boekingen?from=${key}&to=${key}`}
+                        href={`/boekingen/dag?date=${key}`}
                         className="px-1 text-[11px] text-muted-foreground hover:underline"
                       >
                         +{extra} meer

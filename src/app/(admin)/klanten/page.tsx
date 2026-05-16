@@ -75,7 +75,7 @@ export default async function KlantenPage({
             <div key={c.id} className="rounded-lg border p-4">
               <div className="flex items-start justify-between gap-3">
                 <Link
-                  href={`/boekingen?q=${encodeURIComponent(c.email)}`}
+                  href={`/klanten/${c.id}`}
                   className="font-medium underline-offset-4 hover:underline"
                 >
                   {c.full_name}
@@ -121,7 +121,7 @@ export default async function KlantenPage({
               <TableRow key={c.id}>
                 <TableCell className="font-medium">
                   <Link
-                    href={`/boekingen?q=${encodeURIComponent(c.email)}`}
+                    href={`/klanten/${c.id}`}
                     className="underline-offset-4 hover:underline"
                   >
                     {c.full_name}
