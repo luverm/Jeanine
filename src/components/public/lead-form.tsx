@@ -20,7 +20,6 @@ import {
   type LeadInput,
 } from "@/lib/schemas/lead";
 import { createLead } from "@/actions/lead";
-import { Turnstile } from "@/components/public/turnstile";
 
 const SERVICE_LABELS: Record<BridalServiceOption, string> = {
   bruid: "Bruidsstyling",
@@ -34,7 +33,7 @@ const BUDGET_MIN_EUR = 0;
 const BUDGET_MAX_EUR = 5000;
 const BUDGET_STEP = 250;
 
-export function LeadForm({ turnstileSiteKey }: { turnstileSiteKey: string }) {
+export function LeadForm() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [budgetEur, setBudgetEur] = useState<number | null>(null);
@@ -53,7 +52,6 @@ export function LeadForm({ turnstileSiteKey }: { turnstileSiteKey: string }) {
       budgetCents: null,
       message: "",
       website: "",
-      turnstileToken: "",
     },
     mode: "onBlur",
   });
@@ -72,9 +70,6 @@ export function LeadForm({ turnstileSiteKey }: { turnstileSiteKey: string }) {
       switch (result.code) {
         case "RATE_LIMITED":
           toast.error("Te veel verzoeken — probeer het later opnieuw.");
-          break;
-        case "VERIFICATION_FAILED":
-          toast.error("Verificatie mislukt — probeer het opnieuw.");
           break;
         default:
           toast.error("Er ging iets mis. Probeer het opnieuw.");
@@ -221,25 +216,34 @@ export function LeadForm({ turnstileSiteKey }: { turnstileSiteKey: string }) {
       </div>
 
       <div>
-        <Label>
-          Budget (optioneel)
-          <span className="ml-2 text-xs text-muted-foreground">
+        <div className="flex items-baseline justify-between">
+          <Label>Budget (optioneel)</Label>
+          <span className="text-sm font-semibold">
             {budgetEur === null
-              ? "geen voorkeur"
-              : `± € ${budgetEur.toLocaleString("nl-NL")}`}
+              ? "Geen voorkeur"
+              : `± € ${budgetEur.toLocaleString("nl-NL")}${
+                  budgetEur >= BUDGET_MAX_EUR ? "+" : ""
+                }`}
           </span>
-        </Label>
-        <Slider
-          className="mt-3"
-          min={BUDGET_MIN_EUR}
-          max={BUDGET_MAX_EUR}
-          step={BUDGET_STEP}
-          value={[budgetEur ?? BUDGET_MIN_EUR]}
-          onValueChange={(values) => {
-            const next = Array.isArray(values) ? values[0] : values;
-            setBudgetEur(next ?? 0);
-          }}
-        />
+        </div>
+        <div className="mt-3 rounded-lg border bg-muted/30 px-4 py-5">
+          <Slider
+            min={BUDGET_MIN_EUR}
+            max={BUDGET_MAX_EUR}
+            step={BUDGET_STEP}
+            value={[budgetEur ?? BUDGET_MIN_EUR]}
+            onValueChange={(values) => {
+              const next = Array.isArray(values) ? values[0] : values;
+              setBudgetEur(next ?? 0);
+            }}
+          />
+          <div className="mt-3 flex justify-between text-xs text-muted-foreground">
+            <span>€ 0</span>
+            <span>
+              € {BUDGET_MAX_EUR.toLocaleString("nl-NL")}+
+            </span>
+          </div>
+        </div>
         {budgetEur !== null && (
           <button
             type="button"
@@ -254,24 +258,6 @@ export function LeadForm({ turnstileSiteKey }: { turnstileSiteKey: string }) {
       <div>
         <Label htmlFor="message">Bericht (optioneel)</Label>
         <Textarea id="message" rows={5} {...form.register("message")} />
-      </div>
-
-      <div>
-        <Controller
-          control={form.control}
-          name="turnstileToken"
-          render={({ field }) => (
-            <Turnstile
-              siteKey={turnstileSiteKey}
-              onVerify={(token) => field.onChange(token)}
-            />
-          )}
-        />
-        {errors.turnstileToken && (
-          <p className="mt-2 text-xs text-red-600">
-            {errors.turnstileToken.message}
-          </p>
-        )}
       </div>
 
       <div className="flex justify-end">

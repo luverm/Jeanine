@@ -11,13 +11,6 @@ export const metadata: Metadata = {
 };
 
 export default function BruidContactPage() {
-  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  if (!turnstileSiteKey) {
-    throw new Error(
-      "NEXT_PUBLIC_TURNSTILE_SITE_KEY is missing — set it in .env.local",
-    );
-  }
-
   return (
     <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:grid-cols-[1fr_320px]">
       <div>
@@ -34,7 +27,7 @@ export default function BruidContactPage() {
           </p>
         </header>
 
-        <LeadForm turnstileSiteKey={turnstileSiteKey} />
+        <LeadForm />
       </div>
 
       <aside className="md:sticky md:top-24 md:self-start">

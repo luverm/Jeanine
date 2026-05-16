@@ -30,15 +30,6 @@ vi.mock("@/lib/db/bookings", () => ({
   writeAuditLog: vi.fn(async () => {}),
 }));
 
-const verifyMock = vi.fn(async (token: string, ip?: string) => {
-  void token;
-  void ip;
-  return true;
-});
-vi.mock("@/lib/turnstile", () => ({
-  verifyTurnstile: (token: string, ip?: string) => verifyMock(token, ip),
-}));
-
 vi.mock("@/lib/request-ip", () => ({
   getClientIp: async () => "10.0.0.1",
 }));
@@ -62,14 +53,11 @@ const validInput = {
   budgetCents: 200000,
   message: "Op locatie graag.",
   website: "",
-  turnstileToken: "ts-ok",
 };
 
 beforeEach(() => {
   insertedLeads.length = 0;
   _resetRateLimitStore();
-  verifyMock.mockReset();
-  verifyMock.mockResolvedValue(true);
 });
 
 describe("createLead", () => {
@@ -83,14 +71,6 @@ describe("createLead", () => {
     const result = await createLead({ ...validInput, website: "spam" });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe("INVALID_INPUT");
-    expect(insertedLeads.length).toBe(0);
-  });
-
-  it("returns VERIFICATION_FAILED when Turnstile rejects", async () => {
-    verifyMock.mockResolvedValueOnce(false);
-    const result = await createLead(validInput);
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.code).toBe("VERIFICATION_FAILED");
     expect(insertedLeads.length).toBe(0);
   });
 

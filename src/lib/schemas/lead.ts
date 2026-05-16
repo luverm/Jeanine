@@ -55,8 +55,6 @@ export const leadInputSchema = z.object({
   message: z.string().trim().max(2000).optional().or(z.literal("")),
   // Honeypot
   website: z.string().max(0).optional().or(z.literal("")),
-  // Cloudflare Turnstile token
-  turnstileToken: z.string().min(1, "Verifieer dat je geen robot bent"),
 });
 
 export type LeadInput = z.infer<typeof leadInputSchema>;

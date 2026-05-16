@@ -5,7 +5,6 @@ import { insertLead, updateLeadStatus, type LeadStatus } from "@/lib/db/leads";
 import { writeAuditLog } from "@/lib/db/bookings";
 import { sendEmail } from "@/lib/email/client";
 import { leadAdminText, leadCustomerAckText } from "@/lib/email/messages";
-import { verifyTurnstile } from "@/lib/turnstile";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 
@@ -13,11 +12,7 @@ export type CreateLeadResult =
   | { ok: true; leadId: string }
   | {
       ok: false;
-      code:
-        | "INVALID_INPUT"
-        | "RATE_LIMITED"
-        | "VERIFICATION_FAILED"
-        | "INTERNAL";
+      code: "INVALID_INPUT" | "RATE_LIMITED" | "INTERNAL";
       message?: string;
     };
 
@@ -43,11 +38,6 @@ export async function createLead(input: unknown): Promise<CreateLeadResult> {
   });
   if (!limited.ok) {
     return { ok: false, code: "RATE_LIMITED" };
-  }
-
-  const ok = await verifyTurnstile(data.turnstileToken, ip);
-  if (!ok) {
-    return { ok: false, code: "VERIFICATION_FAILED" };
   }
 
   const lead = await insertLead({
