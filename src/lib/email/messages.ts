@@ -25,6 +25,8 @@ export function bookingConfirmationText(args: {
   customerName: string;
   serviceName: string;
   startsAt: Date;
+  calendarUrl?: string;
+  cancelUrl?: string;
 }): string {
   return [
     `Hoi ${args.customerName},`,
@@ -35,6 +37,9 @@ export function bookingConfirmationText(args: {
     `Wanneer: ${formatHumanDateTime(args.startsAt)}`,
     locationLine(),
     "",
+    args.calendarUrl ? `Zet in je agenda: ${args.calendarUrl}` : null,
+    args.cancelUrl ? `Verzetten of annuleren? ${args.cancelUrl}` : null,
+    args.calendarUrl || args.cancelUrl ? "" : null,
     contactLine(),
     "",
     "Tot snel,",
@@ -42,6 +47,52 @@ export function bookingConfirmationText(args: {
   ]
     .filter((line) => line !== null)
     .join("\n");
+}
+
+export function bookingReminderText(args: {
+  customerName: string;
+  serviceName: string;
+  startsAt: Date;
+  cancelUrl?: string;
+}): string {
+  return [
+    `Hoi ${args.customerName},`,
+    "",
+    `Kleine herinnering aan je afspraak bij ${business.name}:`,
+    "",
+    `Dienst: ${args.serviceName}`,
+    `Wanneer: ${formatHumanDateTime(args.startsAt)}`,
+    locationLine(),
+    "",
+    args.cancelUrl
+      ? `Niet meer nodig? Verzetten of annuleren: ${args.cancelUrl}`
+      : contactLine(),
+    "",
+    "Tot snel,",
+    business.ownerName,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+}
+
+/** Google Calendar "add event" template link. */
+export function googleCalendarUrl(args: {
+  title: string;
+  startsAt: Date;
+  endsAt: Date;
+  details?: string;
+  location?: string;
+}): string {
+  const fmt = (d: Date) =>
+    d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: args.title,
+    dates: `${fmt(args.startsAt)}/${fmt(args.endsAt)}`,
+  });
+  if (args.details) params.set("details", args.details);
+  if (args.location) params.set("location", args.location);
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 export function bookingAdminText(args: {

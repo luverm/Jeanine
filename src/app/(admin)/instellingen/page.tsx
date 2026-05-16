@@ -67,6 +67,14 @@ export default function InstellingenPage() {
               Vrije dagen / blokkades
             </Link>
           </li>
+          <li>
+            <Link
+              href="/instellingen/e-mails"
+              className="text-foreground underline underline-offset-4 hover:opacity-80"
+            >
+              E-maillog
+            </Link>
+          </li>
         </ul>
       </Card>
     </div>

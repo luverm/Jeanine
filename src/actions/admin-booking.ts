@@ -4,6 +4,8 @@ import { z } from "zod";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { writeAuditLog, cancelBooking } from "@/lib/db/bookings";
 import { dismissNoShowFlag } from "@/lib/db/no-show";
+import { getEmailLogEntry } from "@/lib/db/email-log";
+import { sendEmail } from "@/lib/email/client";
 
 const statusSchema = z.enum([
   "pending",
@@ -82,5 +84,24 @@ export async function dismissNoShowFlagAction(
     entityId: customerId,
     payload: {},
   }).catch(() => {});
+  return { ok: true };
+}
+
+export async function resendEmailAction(
+  id: number,
+): Promise<{ ok: boolean }> {
+  const entry = await getEmailLogEntry(id);
+  if (!entry) return { ok: false };
+  try {
+    await sendEmail({
+      to: entry.to_email,
+      subject: entry.subject,
+      text: entry.body,
+      context: `resend:${entry.context ?? "onbekend"}`,
+    });
+  } catch (err) {
+    console.error("[email] resend failed:", err);
+    return { ok: false };
+  }
   return { ok: true };
 }

@@ -4,14 +4,22 @@ import { bookingInputSchema } from "@/lib/schemas/booking";
 import {
   cancelBooking as dbCancelBooking,
   findBookingByIdempotencyKey,
+  getBookingDetail,
   insertBooking,
   isExclusionViolation,
   writeAuditLog,
 } from "@/lib/db/bookings";
+import { signBooking, verifyBookingToken } from "@/lib/booking-token";
 import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
-import { bookingConfirmationText, bookingAdminText } from "@/lib/email/messages";
+import {
+  bookingConfirmationText,
+  bookingAdminText,
+  googleCalendarUrl,
+} from "@/lib/email/messages";
+import { bookingIcs } from "@/lib/email/ics";
+import { business } from "@/content/business";
 
 export type CreateBookingResult =
   | { ok: true; bookingId: string }
@@ -133,18 +141,48 @@ async function sendBookingEmails(args: {
   };
 }) {
   const startsAt = new Date(args.booking.starts_at);
+  const endsAt = new Date(args.booking.ends_at);
   const adminEmail = process.env.ADMIN_NOTIFY_EMAIL;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const title = `${business.name} — ${args.service.name}`;
+  const cancelUrl = `${siteUrl}/afspraak/${args.booking.id}?token=${signBooking(
+    args.booking.id,
+  )}`;
+  const calendarUrl = googleCalendarUrl({
+    title,
+    startsAt,
+    endsAt,
+    details: `Afspraak voor ${args.service.name}`,
+  });
+  const ics = bookingIcs({
+    id: args.booking.id,
+    title,
+    startsAt,
+    endsAt,
+    description: `Afspraak voor ${args.service.name}`,
+  });
 
   const jobs = [
     sendEmail({
       to: args.customer.email,
       subject: `Afspraak bevestigd — ${args.service.name}`,
+      context: "booking_confirmation",
       text: bookingConfirmationText({
         customerName: args.customer.fullName,
         serviceName: args.service.name,
         startsAt,
+        calendarUrl,
+        cancelUrl,
       }),
+      attachments: ics
+        ? [
+            {
+              filename: "afspraak.ics",
+              content: ics,
+              contentType: "text/calendar",
+            },
+          ]
+        : undefined,
     }),
   ];
 
@@ -153,6 +191,7 @@ async function sendBookingEmails(args: {
       sendEmail({
         to: adminEmail,
         subject: `Nieuwe boeking — ${args.service.name}`,
+        context: "booking_admin",
         text: bookingAdminText({
           serviceName: args.service.name,
           startsAt,
@@ -191,5 +230,52 @@ export async function cancelBookingAction(id: string): Promise<{ ok: boolean }> 
       entityId: id,
     }),
   );
+  return { ok: true };
+}
+
+export type CancelOwnResult =
+  | { ok: true }
+  | { ok: false; code: "INVALID" | "ALREADY" | "NOT_FOUND" };
+
+export async function cancelOwnBooking(
+  id: string,
+  token: string,
+): Promise<CancelOwnResult> {
+  if (!token || !verifyBookingToken(id, token)) {
+    return { ok: false, code: "INVALID" };
+  }
+  const booking = await getBookingDetail(id);
+  if (!booking) return { ok: false, code: "NOT_FOUND" };
+  if (booking.status === "cancelled") return { ok: false, code: "ALREADY" };
+
+  await dbCancelBooking(id);
+
+  await safe(() =>
+    writeAuditLog({
+      actor: "public",
+      action: "booking.cancel",
+      entity: "booking",
+      entityId: id,
+    }),
+  );
+
+  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL;
+  if (adminEmail) {
+    await safe(() =>
+      sendEmail({
+        to: adminEmail,
+        subject: `Afspraak geannuleerd — ${booking.service.name}`,
+        context: "booking_cancelled_admin",
+        text: [
+          "Een klant heeft zelf een afspraak geannuleerd.",
+          "",
+          `Dienst: ${booking.service.name}`,
+          `Klant: ${booking.customer.full_name} <${booking.customer.email}>`,
+          `Het slot is weer vrij.`,
+        ].join("\n"),
+      }),
+    );
+  }
+
   return { ok: true };
 }

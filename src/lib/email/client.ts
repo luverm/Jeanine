@@ -1,5 +1,6 @@
 import "server-only";
 import nodemailer, { type Transporter } from "nodemailer";
+import { recordEmail } from "@/lib/db/email-log";
 
 type MailConfig = {
   host: string;
@@ -39,28 +40,66 @@ function getTransporter(cfg: MailConfig): Transporter {
   return _transporter;
 }
 
+export type EmailAttachment = {
+  filename: string;
+  content: string;
+  contentType?: string;
+};
+
 export type SendArgs = {
   to: string | string[];
   subject: string;
   text: string;
   replyTo?: string;
+  attachments?: EmailAttachment[];
+  /** Short tag for the email log, e.g. "booking_confirmation". */
+  context?: string;
 };
 
 export async function sendEmail(args: SendArgs): Promise<{ id: string | null }> {
+  const recipients = Array.isArray(args.to) ? args.to.join(", ") : args.to;
   const cfg = getMailConfig();
+
   if (!cfg) {
-    const recipients = Array.isArray(args.to) ? args.to.join(", ") : args.to;
     console.warn(
       `[email] SMTP not configured — skipped "${args.subject}" to ${recipients}`,
     );
+    await recordEmail({
+      to: recipients,
+      subject: args.subject,
+      body: args.text,
+      status: "skipped",
+      context: args.context,
+    });
     return { id: null };
   }
-  const info = await getTransporter(cfg).sendMail({
-    from: cfg.from,
-    to: args.to,
-    subject: args.subject,
-    text: args.text,
-    replyTo: args.replyTo,
-  });
-  return { id: info.messageId ?? null };
+
+  try {
+    const info = await getTransporter(cfg).sendMail({
+      from: cfg.from,
+      to: args.to,
+      subject: args.subject,
+      text: args.text,
+      replyTo: args.replyTo,
+      attachments: args.attachments,
+    });
+    await recordEmail({
+      to: recipients,
+      subject: args.subject,
+      body: args.text,
+      status: "sent",
+      context: args.context,
+    });
+    return { id: info.messageId ?? null };
+  } catch (err) {
+    await recordEmail({
+      to: recipients,
+      subject: args.subject,
+      body: args.text,
+      status: "failed",
+      error: err instanceof Error ? err.message : String(err),
+      context: args.context,
+    });
+    throw err;
+  }
 }
