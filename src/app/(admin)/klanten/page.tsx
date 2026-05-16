@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { getDeviceInfo } from "@/lib/device";
 
 export const metadata: Metadata = {
   title: "Klanten",
@@ -26,7 +27,10 @@ export default async function KlantenPage({
   searchParams: Promise<{ q?: string }>;
 }) {
   const params = await searchParams;
-  const customers = await listCustomers(params.q);
+  const [customers, device] = await Promise.all([
+    listCustomers(params.q),
+    getDeviceInfo(),
+  ]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -61,6 +65,47 @@ export default async function KlantenPage({
         </div>
       </form>
 
+      {customers.length === 0 ? (
+        <p className="mt-6 rounded-lg border p-8 text-center text-sm text-muted-foreground">
+          Geen klanten gevonden.
+        </p>
+      ) : device.isMobile ? (
+        <div className="mt-6 grid gap-3">
+          {customers.map((c) => (
+            <div key={c.id} className="rounded-lg border p-4">
+              <div className="flex items-start justify-between gap-3">
+                <Link
+                  href={`/boekingen?q=${encodeURIComponent(c.email)}`}
+                  className="font-medium underline-offset-4 hover:underline"
+                >
+                  {c.full_name}
+                </Link>
+                <Link
+                  href={`/boekingen?q=${encodeURIComponent(c.email)}`}
+                  className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs"
+                >
+                  {c.bookings_count} boeking
+                  {c.bookings_count === 1 ? "" : "en"}
+                </Link>
+              </div>
+              <a
+                href={`mailto:${c.email}`}
+                className="mt-2 block text-sm break-all text-muted-foreground"
+              >
+                {c.email}
+              </a>
+              {c.phone && (
+                <a
+                  href={`tel:${c.phone}`}
+                  className="mt-1 block text-sm text-muted-foreground"
+                >
+                  {c.phone}
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="mt-6 overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader>
@@ -72,16 +117,6 @@ export default async function KlantenPage({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {customers.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="text-center text-sm text-muted-foreground"
-                >
-                  Geen klanten gevonden.
-                </TableCell>
-              </TableRow>
-            )}
             {customers.map((c) => (
               <TableRow key={c.id}>
                 <TableCell className="font-medium">
@@ -109,6 +144,7 @@ export default async function KlantenPage({
           </TableBody>
         </Table>
       </div>
+      )}
     </div>
   );
 }

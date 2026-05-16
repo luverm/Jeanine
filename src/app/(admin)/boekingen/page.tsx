@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { formatHumanDateTime } from "@/lib/time";
 import { formatPrice } from "@/lib/db/services";
+import { getDeviceInfo } from "@/lib/device";
 import {
   BOOKING_STATUS_LABELS,
   bookingStatusLabel,
@@ -52,7 +53,7 @@ export default async function BoekingenPage({
 }) {
   const params = await searchParams;
 
-  const [services, bookings] = await Promise.all([
+  const [services, bookings, device] = await Promise.all([
     listAllServices(),
     listBookings({
       from: params.from || undefined,
@@ -61,6 +62,7 @@ export default async function BoekingenPage({
       serviceId: params.service || undefined,
       q: params.q || undefined,
     }),
+    getDeviceInfo(),
   ]);
 
   return (
@@ -137,6 +139,44 @@ export default async function BoekingenPage({
         </div>
       </form>
 
+      {bookings.length === 0 ? (
+        <p className="mt-6 rounded-lg border p-8 text-center text-sm text-muted-foreground">
+          Geen boekingen gevonden.
+        </p>
+      ) : device.isMobile ? (
+        <div className="mt-6 grid gap-3">
+          {bookings.map((b) => (
+            <Link
+              key={b.id}
+              href={`/boekingen/${b.id}`}
+              className="block rounded-lg border p-4 hover:bg-accent"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-sm font-medium">
+                  {formatHumanDateTime(new Date(b.starts_at))}
+                </span>
+                <Badge variant={bookingStatusVariant(b.status)}>
+                  {bookingStatusLabel(b.status)}
+                </Badge>
+              </div>
+              <p className="mt-2 text-sm font-medium">
+                {b.customer?.full_name ?? "—"}
+              </p>
+              {b.customer?.email && (
+                <p className="text-xs text-muted-foreground break-all">
+                  {b.customer.email}
+                </p>
+              )}
+              <div className="mt-2 flex items-center justify-between text-sm">
+                <span>{b.service?.name ?? "—"}</span>
+                <span className="font-medium">
+                  {b.service ? formatPrice(b.service.price_cents) : "—"}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
       <div className="mt-6 overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader>
@@ -149,13 +189,6 @@ export default async function BoekingenPage({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bookings.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
-                  Geen boekingen gevonden.
-                </TableCell>
-              </TableRow>
-            )}
             {bookings.map((b) => (
               <TableRow key={b.id} className="cursor-pointer">
                 <TableCell>
@@ -185,6 +218,7 @@ export default async function BoekingenPage({
           </TableBody>
         </Table>
       </div>
+      )}
     </div>
   );
 }

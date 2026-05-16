@@ -642,7 +642,7 @@ function Summary({
 }) {
   const empty = !service && !date && !slot;
   return (
-    <aside className="lg:sticky lg:top-24 lg:self-start">
+    <aside className="order-first lg:order-none lg:sticky lg:top-24 lg:self-start">
       <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Samenvatting
