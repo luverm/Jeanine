@@ -14,6 +14,7 @@ export type LeadRow = {
   services_wanted: string[] | null;
   budget_cents: number | null;
   message: string | null;
+  notes: string | null;
   status: LeadStatus;
   assigned_staff: string | null;
   created_at: string;
@@ -87,6 +88,18 @@ export async function updateLeadStatus(
   const { error } = await supabase
     .from("bridal_leads")
     .update({ status })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateLeadNotes(
+  id: string,
+  notes: string,
+): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("bridal_leads")
+    .update({ notes: notes || null })
     .eq("id", id);
   if (error) throw error;
 }

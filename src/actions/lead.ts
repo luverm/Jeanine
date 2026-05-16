@@ -1,7 +1,13 @@
 "use server";
 
+import { z } from "zod";
 import { leadInputSchema } from "@/lib/schemas/lead";
-import { insertLead, updateLeadStatus, type LeadStatus } from "@/lib/db/leads";
+import {
+  insertLead,
+  updateLeadStatus,
+  updateLeadNotes,
+  type LeadStatus,
+} from "@/lib/db/leads";
 import { writeAuditLog } from "@/lib/db/bookings";
 import { sendEmail } from "@/lib/email/client";
 import { leadAdminText, leadCustomerAckText } from "@/lib/email/messages";
@@ -136,6 +142,31 @@ export async function updateLeadStatusAction(
       entity: "bridal_lead",
       entityId: id,
       payload: { status },
+    }),
+  );
+  return { ok: true };
+}
+
+const leadNotesSchema = z.string().max(2000);
+
+export async function updateLeadNotesAction(
+  id: string,
+  rawNotes: string,
+): Promise<{ ok: boolean }> {
+  const trimmed = leadNotesSchema.parse(rawNotes).trim();
+  try {
+    await updateLeadNotes(id, trimmed);
+  } catch (err) {
+    console.error("[lead] notes update failed:", err);
+    return { ok: false };
+  }
+  await safe(() =>
+    writeAuditLog({
+      actor: "admin",
+      action: "lead.notes_update",
+      entity: "bridal_lead",
+      entityId: id,
+      payload: { length: trimmed.length },
     }),
   );
   return { ok: true };

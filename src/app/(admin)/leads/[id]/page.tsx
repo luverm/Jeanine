@@ -6,6 +6,7 @@ import { getLead } from "@/lib/db/leads";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LeadStatusSelect } from "@/components/admin/lead-status-select";
+import { LeadNotesForm } from "@/components/admin/lead-notes-form";
 import { leadStatusLabel, leadStatusVariant } from "@/lib/status-labels";
 
 export const metadata: Metadata = {
@@ -85,6 +86,13 @@ export default async function LeadDetailPage({
           </p>
         </Card>
       )}
+
+      <Card className="mt-6 p-6">
+        <h2 className="text-base font-semibold">Interne notitie</h2>
+        <div className="mt-4">
+          <LeadNotesForm leadId={lead.id} initialNotes={lead.notes} />
+        </div>
+      </Card>
     </div>
   );
 }
