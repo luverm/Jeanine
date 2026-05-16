@@ -11,11 +11,8 @@ import {
 import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
-import { bookingToIcs } from "@/lib/email/ics";
-import { BookingConfirmation } from "@/lib/email/templates/booking-confirmation";
-import { BookingAdminNotify } from "@/lib/email/templates/booking-admin-notify";
+import { bookingConfirmationText, bookingAdminText } from "@/lib/email/messages";
 import { getServerEnv } from "@/lib/env";
-import { business } from "@/content/business";
 
 export type CreateBookingResult =
   | { ok: true; bookingId: string }
@@ -137,16 +134,6 @@ async function sendBookingEmails(args: {
   };
 }) {
   const startsAt = new Date(args.booking.starts_at);
-  const endsAt = new Date(args.booking.ends_at);
-  const ics = bookingToIcs({
-    id: args.booking.id,
-    title: `${business.name} — ${args.service.name}`,
-    startsAt,
-    endsAt,
-    description: `Afspraak voor ${args.service.name}`,
-    customerEmail: args.customer.email,
-  });
-
   const { ADMIN_NOTIFY_EMAIL } = getServerEnv();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -154,26 +141,18 @@ async function sendBookingEmails(args: {
     sendEmail({
       to: args.customer.email,
       subject: `Afspraak bevestigd — ${args.service.name}`,
-      react: BookingConfirmation({
+      text: bookingConfirmationText({
         customerName: args.customer.fullName,
         serviceName: args.service.name,
         startsAt,
-        endsAt,
       }),
-      attachments: [
-        {
-          filename: "afspraak.ics",
-          content: Buffer.from(ics, "utf-8").toString("base64"),
-        },
-      ],
     }),
     sendEmail({
       to: ADMIN_NOTIFY_EMAIL,
       subject: `Nieuwe boeking — ${args.service.name}`,
-      react: BookingAdminNotify({
+      text: bookingAdminText({
         serviceName: args.service.name,
         startsAt,
-        endsAt,
         customerName: args.customer.fullName,
         customerEmail: args.customer.email,
         customerPhone: args.customer.phone,

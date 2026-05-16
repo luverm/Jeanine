@@ -102,10 +102,6 @@ vi.mock("@/lib/email/client", () => ({
   sendEmail: vi.fn(async () => ({ id: "stub-email" })),
 }));
 
-vi.mock("@/lib/email/ics", () => ({
-  bookingToIcs: () => "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n",
-}));
-
 import { createBooking } from "@/actions/booking";
 
 beforeEach(() => {

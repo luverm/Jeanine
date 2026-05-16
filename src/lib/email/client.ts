@@ -1,39 +1,66 @@
 import "server-only";
-import { Resend } from "resend";
-import { getServerEnv } from "@/lib/env";
+import nodemailer, { type Transporter } from "nodemailer";
 
-let _resend: Resend | null = null;
+type MailConfig = {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  pass: string;
+  from: string;
+};
 
-function getResend(): Resend {
-  if (!_resend) {
-    const { RESEND_API_KEY } = getServerEnv();
-    _resend = new Resend(RESEND_API_KEY);
+/**
+ * Reads SMTP config from the environment. Returns null when it is not
+ * (fully) configured so callers can skip sending instead of crashing —
+ * a missing mail setup must never block a booking or lead.
+ */
+function getMailConfig(): MailConfig | null {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.MAIL_FROM ?? user;
+  if (!host || !user || !pass || !from) return null;
+  const port = Number(process.env.SMTP_PORT ?? 587);
+  return { host, port, secure: port === 465, user, pass, from };
+}
+
+let _transporter: Transporter | null = null;
+
+function getTransporter(cfg: MailConfig): Transporter {
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      host: cfg.host,
+      port: cfg.port,
+      secure: cfg.secure,
+      auth: { user: cfg.user, pass: cfg.pass },
+    });
   }
-  return _resend;
+  return _transporter;
 }
 
 export type SendArgs = {
   to: string | string[];
   subject: string;
-  react: React.ReactElement;
-  attachments?: Array<{
-    filename: string;
-    content: string; // base64 or utf-8 string
-  }>;
+  text: string;
   replyTo?: string;
 };
 
 export async function sendEmail(args: SendArgs): Promise<{ id: string | null }> {
-  const { RESEND_FROM_EMAIL } = getServerEnv();
-  const resend = getResend();
-  const { data, error } = await resend.emails.send({
-    from: RESEND_FROM_EMAIL,
+  const cfg = getMailConfig();
+  if (!cfg) {
+    const recipients = Array.isArray(args.to) ? args.to.join(", ") : args.to;
+    console.warn(
+      `[email] SMTP not configured — skipped "${args.subject}" to ${recipients}`,
+    );
+    return { id: null };
+  }
+  const info = await getTransporter(cfg).sendMail({
+    from: cfg.from,
     to: args.to,
     subject: args.subject,
-    react: args.react,
-    attachments: args.attachments,
+    text: args.text,
     replyTo: args.replyTo,
   });
-  if (error) throw error;
-  return { id: data?.id ?? null };
+  return { id: info.messageId ?? null };
 }

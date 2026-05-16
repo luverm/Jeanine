@@ -43,10 +43,27 @@ SUPABASE_SERVICE_ROLE_KEY=<service_role key from supabase start>
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA   # Cloudflare test key
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA   # Cloudflare test key
-RESEND_API_KEY=re_test
-RESEND_FROM_EMAIL=afspraak@example.com
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=                        # je mailadres
+SMTP_PASS=                        # app-wachtwoord (niet je gewone wachtwoord)
+MAIL_FROM=                        # leeg = SMTP_USER
 ADMIN_NOTIFY_EMAIL=jeanine@example.com
 ```
+
+### E-mail (bevestigingen)
+
+Bevestigingsmails gaan via gewone SMTP vanuit een bestaande mailbox — geen
+Resend, geen domeinverificatie.
+
+- **Gmail:** zet tweestapsverificatie aan en maak een
+  [app-wachtwoord](https://myaccount.google.com/apppasswords) aan. Vul dat in
+  bij `SMTP_PASS` en je adres bij `SMTP_USER`.
+- **Andere provider:** gebruik de SMTP-host/poort/gebruiker/wachtwoord van je
+  mailhosting (poort 465 = SSL, 587 = STARTTLS).
+
+Zijn de SMTP-velden leeg, dan worden mails simpelweg overgeslagen — een
+boeking of lead gaat dan nog steeds gewoon door.
 
 ### 4. Apply migration & seed
 

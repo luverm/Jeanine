@@ -4,8 +4,7 @@ import { leadInputSchema } from "@/lib/schemas/lead";
 import { insertLead, updateLeadStatus, type LeadStatus } from "@/lib/db/leads";
 import { writeAuditLog } from "@/lib/db/bookings";
 import { sendEmail } from "@/lib/email/client";
-import { LeadAdminNotify } from "@/lib/email/templates/lead-admin-notify";
-import { LeadCustomerAck } from "@/lib/email/templates/lead-customer-ack";
+import { leadAdminText, leadCustomerAckText } from "@/lib/email/messages";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
@@ -95,7 +94,7 @@ async function sendLeadEmails(args: {
     sendEmail({
       to: ADMIN_NOTIFY_EMAIL,
       subject: `Nieuwe bruidslead — ${args.data.fullName}`,
-      react: LeadAdminNotify({
+      text: leadAdminText({
         fullName: args.data.fullName,
         email: args.data.email,
         phone: args.data.phone,
@@ -113,7 +112,7 @@ async function sendLeadEmails(args: {
     sendEmail({
       to: args.data.email,
       subject: "We hebben je bericht ontvangen",
-      react: LeadCustomerAck({ fullName: args.data.fullName }),
+      text: leadCustomerAckText(args.data.fullName),
     }),
   ]);
 }
