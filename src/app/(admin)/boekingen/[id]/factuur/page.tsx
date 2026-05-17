@@ -17,13 +17,15 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+const LOGO_FILE = "HB-cocoa-transparent.png";
+
 function clean(v: string): string {
   return v && !v.startsWith("{{") ? v : "";
 }
 
 async function logoExists(): Promise<boolean> {
   try {
-    await fs.access(path.join(process.cwd(), "public", "logo.png"));
+    await fs.access(path.join(process.cwd(), "public", LOGO_FILE));
     return true;
   } catch {
     return false;
@@ -71,7 +73,11 @@ export default async function InvoicePage({
           <div>
             {hasLogo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src="/logo.png" alt={business.name} className="h-20 w-auto" />
+              <img
+                src={`/${LOGO_FILE}`}
+                alt={business.name}
+                className="h-24 w-auto"
+              />
             ) : (
               <div>
                 <p className="text-2xl font-semibold tracking-tight">
