@@ -22,7 +22,7 @@ import {
   formatDuration,
   type Service,
 } from "@/lib/services-format";
-import { fetchAvailableSlots, type SlotDto } from "@/actions/availability";
+import { fetchDaySlots, type DaySlotDto } from "@/actions/availability";
 import { createBooking } from "@/actions/booking";
 import { SlotGrid, type Slot } from "@/components/booking/slot-grid";
 import { WaitlistCta } from "@/components/booking/waitlist-cta";
@@ -55,6 +55,7 @@ export function BookingForm({
   const [fetchedSlots, setFetchedSlots] = useState<Slot[]>([]);
   const [fetchedFor, setFetchedFor] = useState<string | null>(null);
   const [selectedStartIso, setSelectedStartIso] = useState<string | null>(null);
+  const [waitlistTime, setWaitlistTime] = useState<string | null>(null);
   // Idempotency-key generated once per mount via lazy useState initialiser.
   // Different value on server vs. client is fine — it isn't rendered into HTML.
   const [idempotencyKey] = useState<string>(() => uuidv4());
@@ -78,13 +79,14 @@ export function BookingForm({
   useEffect(() => {
     if (!service || !dateStr || !requestKey) return;
     let cancelled = false;
-    fetchAvailableSlots({ staffId, serviceId: service.id, date: dateStr })
-      .then((dtos: SlotDto[]) => {
+    fetchDaySlots({ staffId, serviceId: service.id, date: dateStr })
+      .then((dtos: DaySlotDto[]) => {
         if (cancelled) return;
         setFetchedSlots(
           dtos.map((s) => ({
             startsAt: new Date(s.startsAt),
             endsAt: new Date(s.endsAt),
+            available: s.available,
           })),
         );
         setFetchedFor(requestKey);
@@ -109,6 +111,7 @@ export function BookingForm({
     setFetchedSlots([]);
     setFetchedFor(null);
     setSelectedStartIso(null);
+    setWaitlistTime(null);
   }
 
   function handleSelectDate(d: Date | undefined) {
@@ -116,17 +119,19 @@ export function BookingForm({
     setFetchedSlots([]);
     setFetchedFor(null);
     setSelectedStartIso(null);
+    setWaitlistTime(null);
   }
 
   function refreshSlots() {
     if (!service || !dateStr || !requestKey) return;
     setFetchedFor(null);
-    fetchAvailableSlots({ staffId, serviceId: service.id, date: dateStr }).then(
+    fetchDaySlots({ staffId, serviceId: service.id, date: dateStr }).then(
       (dtos) => {
         setFetchedSlots(
           dtos.map((s) => ({
             startsAt: new Date(s.startsAt),
             endsAt: new Date(s.endsAt),
+            available: s.available,
           })),
         );
         setFetchedFor(requestKey);
@@ -139,7 +144,8 @@ export function BookingForm({
   );
 
   function onSubmit(values: CustomerInput) {
-    if (!service || !selectedSlot || !idempotencyKey) return;
+    if (!service || !selectedSlot || !selectedSlot.available || !idempotencyKey)
+      return;
     startTransition(async () => {
       const result = await createBooking({
         serviceId: service.id,
@@ -205,6 +211,8 @@ export function BookingForm({
               slots={slots}
               selected={selectedStartIso}
               onSelect={setSelectedStartIso}
+              waitlistTime={waitlistTime}
+              onWaitlist={(s) => setWaitlistTime(formatTime(s.startsAt))}
               loading={slotsLoading}
               onBack={() => setStep(1)}
               onNext={() => setStep(3)}
@@ -462,6 +470,8 @@ function TimeStep({
   slots,
   selected,
   onSelect,
+  waitlistTime,
+  onWaitlist,
   loading,
   onBack,
   onNext,
@@ -472,10 +482,17 @@ function TimeStep({
   slots: Slot[];
   selected: string | null;
   onSelect: (iso: string) => void;
+  waitlistTime: string | null;
+  onWaitlist: (slot: Slot) => void;
   loading: boolean;
   onBack: () => void;
   onNext: () => void;
 }) {
+  const showWaitlist =
+    !loading &&
+    !!dateStr &&
+    (slots.length === 0 || slots.some((s) => !s.available));
+
   return (
     <section>
       <h2 className="text-2xl tracking-tight">Kies een tijd</h2>
@@ -490,11 +507,17 @@ function TimeStep({
           slots={slots}
           selected={selected}
           onSelect={onSelect}
+          onWaitlist={onWaitlist}
           loading={loading}
         />
-        {!loading && slots.length === 0 && dateStr && (
+        {showWaitlist && dateStr && (
           <div className="mt-4">
-            <WaitlistCta serviceId={serviceId} preferredDate={dateStr} />
+            <WaitlistCta
+              key={`${dateStr}:${waitlistTime ?? "day"}`}
+              serviceId={serviceId}
+              preferredDate={dateStr}
+              preferredTime={waitlistTime ?? undefined}
+            />
           </div>
         )}
       </div>

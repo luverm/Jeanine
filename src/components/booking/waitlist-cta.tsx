@@ -10,11 +10,13 @@ import { joinWaitlist } from "@/actions/waitlist";
 export function WaitlistCta({
   serviceId,
   preferredDate,
+  preferredTime,
 }: {
   serviceId: string | null;
   preferredDate: string;
+  preferredTime?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!preferredTime);
   const [done, setDone] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -47,6 +49,7 @@ export function WaitlistCta({
         fullName: String(formData.get("wl_name") ?? ""),
         email: String(formData.get("wl_email") ?? ""),
         phone: String(formData.get("wl_phone") ?? ""),
+        note: preferredTime ? `Voorkeurstijd: ${preferredTime}` : "",
         website: String(formData.get("wl_website") ?? ""),
       });
       if (result.ok) {
@@ -65,8 +68,9 @@ export function WaitlistCta({
       className="grid gap-3 rounded-lg border bg-muted/30 p-4"
     >
       <p className="text-sm">
-        Geen vrije tijd op deze dag? Laat je gegevens achter — we nemen
-        contact op zodra er iets vrijkomt.
+        {preferredTime
+          ? `De tijd van ${preferredTime} is bezet. Laat je gegevens achter — komt er iets vrij op deze dag, dan nemen we contact op.`
+          : "Geen vrije tijd op deze dag? Laat je gegevens achter — we nemen contact op zodra er iets vrijkomt."}
       </p>
       <input
         type="text"

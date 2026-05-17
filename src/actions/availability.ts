@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { getAvailableSlots } from "@/lib/db/availability";
+import { getAvailableSlots, getDaySlotStatuses } from "@/lib/db/availability";
 import { uuidString } from "@/lib/schemas/uuid";
 
 const argsSchema = z.object({
@@ -18,5 +18,21 @@ export async function fetchAvailableSlots(input: unknown): Promise<SlotDto[]> {
   return slots.map((s) => ({
     startsAt: s.startsAt.toISOString(),
     endsAt: s.endsAt.toISOString(),
+  }));
+}
+
+export type DaySlotDto = {
+  startsAt: string;
+  endsAt: string;
+  available: boolean;
+};
+
+export async function fetchDaySlots(input: unknown): Promise<DaySlotDto[]> {
+  const args = argsSchema.parse(input);
+  const statuses = await getDaySlotStatuses(args);
+  return statuses.map((s) => ({
+    startsAt: s.startsAt.toISOString(),
+    endsAt: s.endsAt.toISOString(),
+    available: s.available,
   }));
 }

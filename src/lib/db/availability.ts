@@ -72,6 +72,55 @@ export function computeAvailableSlots(input: ComputeSlotsInput): Interval[] {
   return slots;
 }
 
+export type SlotStatus = { startsAt: Date; endsAt: Date; available: boolean };
+
+/**
+ * Like {@link computeAvailableSlots} but keeps the occupied candidates
+ * too, tagged `available: false`, so the UI can show a fully-booked day
+ * and offer the waitlist. Past / within-lead-time candidates are still
+ * dropped (they aren't "booked", just not offerable). The available
+ * subset is identical to {@link computeAvailableSlots}.
+ */
+export function computeSlotStatuses(input: ComputeSlotsInput): SlotStatus[] {
+  const {
+    date,
+    openingBlocks,
+    occupied,
+    durationMin,
+    stepMin = 15,
+    minLeadMin = 120,
+    now = new Date(),
+  } = input;
+
+  const earliestStart = new Date(now.getTime() + minLeadMin * MS_PER_MIN);
+  const out: SlotStatus[] = [];
+
+  for (const block of openingBlocks) {
+    const blockStart = zonedDateTimeToUtc(date, block.start);
+    const blockEnd = zonedDateTimeToUtc(date, block.end);
+    const stepMs = stepMin * MS_PER_MIN;
+    const durMs = durationMin * MS_PER_MIN;
+
+    for (
+      let cursor = blockStart.getTime();
+      cursor + durMs <= blockEnd.getTime();
+      cursor += stepMs
+    ) {
+      const startsAt = new Date(cursor);
+      const endsAt = new Date(cursor + durMs);
+
+      if (startsAt < earliestStart) continue;
+
+      const overlap = occupied.some((o) =>
+        intervalsOverlap(startsAt, endsAt, o.startsAt, o.endsAt),
+      );
+      out.push({ startsAt, endsAt, available: !overlap });
+    }
+  }
+
+  return out;
+}
+
 function intervalsOverlap(
   aStart: Date,
   aEnd: Date,
@@ -120,7 +169,11 @@ export type AvailabilityDiagnostics = {
 
 export async function getAvailableSlotsWithDiagnostics(
   args: GetSlotsArgs,
-): Promise<{ slots: Interval[]; diag: AvailabilityDiagnostics }> {
+): Promise<{
+  slots: Interval[];
+  statuses: SlotStatus[];
+  diag: AvailabilityDiagnostics;
+}> {
   const supabase = createSupabaseServiceClient();
   const { staffId, serviceId, date } = args;
 
@@ -144,16 +197,16 @@ export async function getAvailableSlotsWithDiagnostics(
     .single();
   if (svcErr || !service) {
     diag.earlyExit = "service_not_found";
-    return { slots: [], diag };
+    return { slots: [], statuses: [], diag };
   }
   diag.service = service;
   if (!service.is_active || !service.is_online_bookable) {
     diag.earlyExit = "service_inactive_or_not_bookable";
-    return { slots: [], diag };
+    return { slots: [], statuses: [], diag };
   }
   if (service.kind !== "regular") {
     diag.earlyExit = "service_not_regular";
-    return { slots: [], diag };
+    return { slots: [], statuses: [], diag };
   }
 
   const dayStart = startOfDayInTz(date);
@@ -214,24 +267,33 @@ export async function getAvailableSlotsWithDiagnostics(
     }),
   );
 
-  const slots = computeAvailableSlots({
+  const computeInput = {
     date,
     openingBlocks,
     occupied: [...inflated, ...timeOffIntervals],
     durationMin: service.duration_min,
-  });
+  };
+  const slots = computeAvailableSlots(computeInput);
+  const statuses = computeSlotStatuses(computeInput);
   diag.slotCount = slots.length;
 
   if (slots.length === 0) {
     console.warn("[availability] zero slots", JSON.stringify(diag));
   }
 
-  return { slots, diag };
+  return { slots, statuses, diag };
 }
 
 export async function getAvailableSlots(args: GetSlotsArgs): Promise<Interval[]> {
   const { slots } = await getAvailableSlotsWithDiagnostics(args);
   return slots;
+}
+
+export async function getDaySlotStatuses(
+  args: GetSlotsArgs,
+): Promise<SlotStatus[]> {
+  const { statuses } = await getAvailableSlotsWithDiagnostics(args);
+  return statuses;
 }
 
 export { TZ };
