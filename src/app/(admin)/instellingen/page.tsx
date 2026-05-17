@@ -79,6 +79,14 @@ export default async function InstellingenPage() {
           </li>
           <li>
             <Link
+              href="/instellingen/agenda"
+              className="text-foreground underline underline-offset-4 hover:opacity-80"
+            >
+              Agenda in je telefoon
+            </Link>
+          </li>
+          <li>
+            <Link
               href="/instellingen/financien"
               className="text-foreground underline underline-offset-4 hover:opacity-80"
             >
