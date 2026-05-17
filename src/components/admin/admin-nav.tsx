@@ -3,17 +3,27 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  CalendarDays,
+  Heart,
+  UserRound,
+  Settings,
+  type LucideIcon,
+} from "lucide-react";
 import { SignOutButton } from "@/components/admin/sign-out-button";
 
-type Item = { href: string; label: string };
+type Item = { href: string; label: string; icon: LucideIcon };
 
-export function AdminNav({
-  items,
-  email,
-}: {
-  items: Item[];
-  email: string | null;
-}) {
+const NAV_ITEMS: Item[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/boekingen", label: "Boekingen", icon: CalendarDays },
+  { href: "/leads", label: "Leads", icon: Heart },
+  { href: "/klanten", label: "Klanten", icon: UserRound },
+  { href: "/instellingen", label: "Instellingen", icon: Settings },
+];
+
+export function AdminNav({ email }: { email: string | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -21,8 +31,9 @@ export function AdminNav({
     pathname === href || pathname.startsWith(`${href}/`);
 
   const renderLinks = (onNavigate?: () => void) =>
-    items.map((item) => {
+    NAV_ITEMS.map((item) => {
       const active = isActive(item.href);
+      const Icon = item.icon;
       return (
         <Link
           key={item.href}
@@ -30,12 +41,13 @@ export function AdminNav({
           onClick={onNavigate}
           aria-current={active ? "page" : undefined}
           className={
-            "rounded px-2 py-1.5 text-sm transition " +
+            "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition " +
             (active
               ? "bg-accent font-medium text-accent-foreground"
               : "text-foreground hover:bg-accent")
           }
         >
+          <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
           {item.label}
         </Link>
       );

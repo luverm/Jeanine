@@ -2,14 +2,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Toaster } from "@/components/ui/sonner";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/boekingen", label: "Boekingen" },
-  { href: "/leads", label: "Leads" },
-  { href: "/klanten", label: "Klanten" },
-  { href: "/instellingen", label: "Instellingen" },
-];
-
 export default async function AdminLayout({
   children,
 }: {
@@ -28,7 +20,7 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <AdminNav items={navItems} email={user.email ?? null} />
+      <AdminNav email={user.email ?? null} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <main className="flex-1">{children}</main>

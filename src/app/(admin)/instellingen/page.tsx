@@ -1,5 +1,19 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import {
+  Scissors,
+  Clock,
+  CalendarOff,
+  CalendarClock,
+  RefreshCw,
+  Mail,
+  ListChecks,
+  Image as ImageIcon,
+  Star,
+  Wallet,
+  ChevronRight,
+  type LucideIcon,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { getBusiness } from "@/lib/db/business-settings";
 import { BusinessSettingsForm } from "@/components/admin/business-settings-form";
@@ -10,6 +24,120 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
+
+type HubItem = {
+  href: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+const GROUPS: { title: string; items: HubItem[] }[] = [
+  {
+    title: "Agenda & boeken",
+    items: [
+      {
+        href: "/instellingen/diensten",
+        label: "Diensten",
+        description: "Behandelingen, prijzen en duur",
+        icon: Scissors,
+      },
+      {
+        href: "/instellingen/openingstijden",
+        label: "Openingstijden",
+        description: "Werktijden per weekdag",
+        icon: Clock,
+      },
+      {
+        href: "/instellingen/vrije-dagen",
+        label: "Vrije dagen / blokkades",
+        description: "Vakantie, vrije dagen en pauzes",
+        icon: CalendarOff,
+      },
+      {
+        href: "/instellingen/agenda",
+        label: "Agenda in je telefoon",
+        description: "Boekingen automatisch in je telefoonagenda",
+        icon: CalendarClock,
+      },
+    ],
+  },
+  {
+    title: "Klantcontact",
+    items: [
+      {
+        href: "/instellingen/terugkommail",
+        label: "Terugkom-mail",
+        description: "Automatische ‘tijd voor een nieuwe afspraak’",
+        icon: RefreshCw,
+      },
+      {
+        href: "/instellingen/e-mails",
+        label: "E-maillog",
+        description: "Verzonden mails bekijken en opnieuw sturen",
+        icon: Mail,
+      },
+      {
+        href: "/instellingen/wachtlijst",
+        label: "Wachtlijst",
+        description: "Klanten die op een vrij plekje wachten",
+        icon: ListChecks,
+      },
+    ],
+  },
+  {
+    title: "Website & content",
+    items: [
+      {
+        href: "/instellingen/portfolio",
+        label: "Portfolio",
+        description: "Foto’s op de website",
+        icon: ImageIcon,
+      },
+      {
+        href: "/instellingen/reviews",
+        label: "Reviews",
+        description: "Klantbeoordelingen beheren",
+        icon: Star,
+      },
+    ],
+  },
+  {
+    title: "Financieel",
+    items: [
+      {
+        href: "/instellingen/financien",
+        label: "Financieel & BTW",
+        description: "Omzet, BTW en boekhoud-export",
+        icon: Wallet,
+      },
+    ],
+  },
+];
+
+function HubRow({ item }: { item: HubItem }) {
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.href}
+      className="group flex items-center gap-4 rounded-lg border p-4 transition hover:border-foreground/20 hover:bg-accent"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+        <Icon className="size-4" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium">{item.label}</span>
+        <span className="block truncate text-xs text-muted-foreground">
+          {item.description}
+        </span>
+      </span>
+      <ChevronRight
+        className="size-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5"
+        aria-hidden
+      />
+    </Link>
+  );
+}
 
 export default async function InstellingenPage() {
   const b = await getBusiness();
@@ -50,91 +178,18 @@ export default async function InstellingenPage() {
         </div>
       </Card>
 
-      <Card className="mt-6 p-6">
-        <h2 className="text-base font-semibold">Beheer</h2>
-        <ul className="mt-3 grid gap-2 text-sm">
-          <li>
-            <Link
-              href="/instellingen/diensten"
-              className="text-foreground underline underline-offset-4 hover:opacity-80"
-            >
-              Diensten beheren
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/instellingen/openingstijden"
-              className="text-foreground underline underline-offset-4 hover:opacity-80"
-            >
-              Openingstijden
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/instellingen/vrije-dagen"
-              className="text-foreground underline underline-offset-4 hover:opacity-80"
-            >
-              Vrije dagen / blokkades
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/instellingen/agenda"
-              className="text-foreground underline underline-offset-4 hover:opacity-80"
-            >
-              Agenda in je telefoon
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/instellingen/terugkommail"
-              className="text-foreground underline underline-offset-4 hover:opacity-80"
-            >
-              Terugkom-mail
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/instellingen/financien"
-              className="text-foreground underline underline-offset-4 hover:opacity-80"
-            >
-              Financieel &amp; BTW
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/instellingen/e-mails"
-              className="text-foreground underline underline-offset-4 hover:opacity-80"
-            >
-              E-maillog
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/instellingen/portfolio"
-              className="text-foreground underline underline-offset-4 hover:opacity-80"
-            >
-              Portfolio
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/instellingen/reviews"
-              className="text-foreground underline underline-offset-4 hover:opacity-80"
-            >
-              Reviews
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/instellingen/wachtlijst"
-              className="text-foreground underline underline-offset-4 hover:opacity-80"
-            >
-              Wachtlijst
-            </Link>
-          </li>
-        </ul>
-      </Card>
+      {GROUPS.map((group) => (
+        <section key={group.title} className="mt-8">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {group.title}
+          </h2>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {group.items.map((item) => (
+              <HubRow key={item.href} item={item} />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
