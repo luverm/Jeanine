@@ -5,11 +5,11 @@ import { v4 as uuidv4 } from "uuid";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import {
   writeAuditLog,
-  cancelBooking,
   insertBooking,
   isExclusionViolation,
   getBookingDetail,
 } from "@/lib/db/bookings";
+import { cancelBookingAction } from "@/actions/booking";
 import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { dismissNoShowFlag } from "@/lib/db/no-show";
 import { getEmailLogEntry } from "@/lib/db/email-log";
@@ -37,16 +37,18 @@ export async function updateBookingStatusAction(
 ): Promise<{ ok: boolean }> {
   const status = statusSchema.parse(rawStatus);
 
+  // Cancelling has side effects (customer mail + waitlist backfill);
+  // reuse the single source of truth instead of just flipping status.
   if (status === "cancelled") {
-    await cancelBooking(id);
-  } else {
-    const supabase = createSupabaseServiceClient();
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status })
-      .eq("id", id);
-    if (error) throw error;
+    return cancelBookingAction(id);
   }
+
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("bookings")
+    .update({ status })
+    .eq("id", id);
+  if (error) throw error;
 
   await writeAuditLog({
     actor: "admin",
