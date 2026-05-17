@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createAdminBooking } from "@/actions/admin-booking";
+import { searchCustomersAction } from "@/actions/admin-customer";
 import { fetchAvailableSlots } from "@/actions/availability";
 import { zonedDateTimeToUtc, formatTime } from "@/lib/time";
+
+type CustomerOption = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+};
 
 type Svc = {
   id: string;
@@ -44,6 +52,45 @@ export function AdminBookingForm({
   const [notes, setNotes] = useState("");
   const [slots, setSlots] = useState<string[] | null>(null);
   const [loadingSlots, startSlots] = useTransition();
+
+  const [custQuery, setCustQuery] = useState("");
+  const [custResults, setCustResults] = useState<CustomerOption[]>([]);
+  const [picked, setPicked] = useState(false);
+
+  // Debounced customer search.
+  useEffect(() => {
+    if (picked) return;
+    const q = custQuery.trim();
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      if (q.length < 2) {
+        if (!cancelled) setCustResults([]);
+        return;
+      }
+      const results = await searchCustomersAction(q);
+      if (!cancelled) setCustResults(results);
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [custQuery, picked]);
+
+  function pickCustomer(c: CustomerOption) {
+    setFullName(c.full_name);
+    setEmail(c.email);
+    setPhone(c.phone ?? "");
+    setPicked(true);
+    setCustResults([]);
+    setCustQuery("");
+  }
+
+  function clearCustomer() {
+    setPicked(false);
+    setFullName("");
+    setEmail("");
+    setPhone("");
+  }
 
   const service = useMemo(
     () => services.find((s) => s.id === serviceId) ?? null,
@@ -174,6 +221,61 @@ export function AdminBookingForm({
               </button>
             ))}
           </div>
+        )}
+      </div>
+
+      <div className="rounded-lg border bg-muted/30 p-4">
+        <Label htmlFor="cust">Klant</Label>
+        {picked ? (
+          <div className="mt-1.5 flex items-center justify-between gap-3 rounded-md border bg-background px-3 py-2 text-sm">
+            <span>
+              <span className="font-medium">{fullName}</span>
+              {email ? (
+                <span className="text-muted-foreground"> · {email}</span>
+              ) : null}
+            </span>
+            <button
+              type="button"
+              onClick={clearCustomer}
+              className="text-xs underline underline-offset-4"
+            >
+              Wissen
+            </button>
+          </div>
+        ) : (
+          <>
+            <Input
+              id="cust"
+              value={custQuery}
+              onChange={(e) => setCustQuery(e.target.value)}
+              placeholder="Zoek bestaande klant op naam of e-mail…"
+              className="mt-1.5"
+              autoComplete="off"
+            />
+            {custResults.length > 0 && (
+              <ul className="mt-2 divide-y rounded-md border bg-background">
+                {custResults.map((c) => (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      onClick={() => pickCustomer(c)}
+                      className="block w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                    >
+                      <span className="font-medium">{c.full_name}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {c.email}
+                        {c.phone ? ` · ${c.phone}` : ""}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-2 text-xs text-muted-foreground">
+              Bestaande klant? Kies hierboven. Nieuwe klant? Vul de velden
+              hieronder in — die wordt automatisch aangemaakt.
+            </p>
+          </>
         )}
       </div>
 

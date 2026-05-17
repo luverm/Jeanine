@@ -1,8 +1,23 @@
 "use server";
 
 import { z } from "zod";
-import { updateCustomerNotes } from "@/lib/db/admin-customers";
+import {
+  updateCustomerNotes,
+  searchCustomers,
+  type CustomerOption,
+} from "@/lib/db/admin-customers";
 import { writeAuditLog } from "@/lib/db/bookings";
+
+export async function searchCustomersAction(
+  q: string,
+): Promise<CustomerOption[]> {
+  try {
+    return await searchCustomers(q);
+  } catch (err) {
+    console.error("[customer] search failed:", err);
+    return [];
+  }
+}
 
 const notesSchema = z.string().max(2000);
 

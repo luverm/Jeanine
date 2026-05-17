@@ -10,6 +10,31 @@ export type CustomerListItem = {
   bookings_count: number;
 };
 
+export type CustomerOption = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+};
+
+/** Lightweight name/email search for the booking-form customer picker. */
+export async function searchCustomers(
+  q: string,
+): Promise<CustomerOption[]> {
+  // Strip characters that have meaning in a PostgREST or() filter.
+  const term = q.trim().replace(/[,()*%]/g, " ").trim();
+  if (term.length < 2) return [];
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("customers")
+    .select("id, full_name, email, phone")
+    .or(`full_name.ilike.%${term}%,email.ilike.%${term}%`)
+    .order("full_name", { ascending: true })
+    .limit(8);
+  if (error) throw error;
+  return (data ?? []) as CustomerOption[];
+}
+
 export type CustomerBooking = {
   id: string;
   starts_at: string;
