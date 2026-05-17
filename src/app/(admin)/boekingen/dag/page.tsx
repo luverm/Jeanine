@@ -71,6 +71,12 @@ export default async function DaySheetPage({
           >
             ›
           </Link>
+          <Link
+            href={`/boekingen/nieuw?date=${day}`}
+            className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            + Boeking
+          </Link>
           <PrintButton label="Print dagstaat" />
         </div>
       </div>

@@ -39,18 +39,28 @@ export default async function CustomerDetailPage({
         ← Alle klanten
       </Link>
 
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight">
-        {customer.full_name}
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground break-all">
-        <a href={`mailto:${customer.email}`}>{customer.email}</a>
-        {customer.phone && (
-          <>
-            {" · "}
-            <a href={`tel:${customer.phone}`}>{customer.phone}</a>
-          </>
-        )}
-      </p>
+      <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            {customer.full_name}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground break-all">
+            <a href={`mailto:${customer.email}`}>{customer.email}</a>
+            {customer.phone && (
+              <>
+                {" · "}
+                <a href={`tel:${customer.phone}`}>{customer.phone}</a>
+              </>
+            )}
+          </p>
+        </div>
+        <Link
+          href={`/boekingen/nieuw?customer=${customer.id}`}
+          className="inline-flex h-9 shrink-0 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          Nieuwe boeking
+        </Link>
+      </div>
 
       {isFlagged && (
         <div className="mt-6 flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 sm:flex-row sm:items-center sm:justify-between">

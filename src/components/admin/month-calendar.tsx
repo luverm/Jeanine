@@ -162,6 +162,14 @@ export async function MonthCalendar({
                     >
                       {format(day, "d")}
                     </Link>
+                    <Link
+                      href={`/boekingen/nieuw?date=${key}`}
+                      aria-label={`Nieuwe boeking op ${key}`}
+                      title="Nieuwe boeking"
+                      className="inline-flex h-5 w-5 items-center justify-center rounded text-sm leading-none text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      +
+                    </Link>
                   </div>
 
                   <div className="mt-1 flex flex-col gap-0.5">
@@ -269,6 +277,12 @@ function MonthList({
               <span className="text-xs text-muted-foreground">
                 · {items.length}
               </span>
+              <Link
+                href={`/boekingen/nieuw?date=${key}`}
+                className="ml-auto text-xs font-medium text-primary underline-offset-4 hover:underline"
+              >
+                + Boeking
+              </Link>
             </div>
             <ul className="mt-2 divide-y rounded-md border">
               {items.map((b) => (

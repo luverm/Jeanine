@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { listAllServices } from "@/lib/db/admin-services";
 import { getDefaultStaffId } from "@/lib/db/staff";
 import { getLead } from "@/lib/db/leads";
+import { getCustomerDetail } from "@/lib/db/admin-customers";
 import { AdminBookingForm } from "@/components/admin/admin-booking-form";
 
 export const metadata: Metadata = {
@@ -15,9 +16,13 @@ export const dynamic = "force-dynamic";
 export default async function NewBookingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ lead?: string }>;
+  searchParams: Promise<{ lead?: string; customer?: string; date?: string }>;
 }) {
-  const { lead: leadId } = await searchParams;
+  const {
+    lead: leadId,
+    customer: customerId,
+    date: dateParam,
+  } = await searchParams;
   const [services, staffId] = await Promise.all([
     listAllServices(),
     getDefaultStaffId(),
@@ -42,7 +47,19 @@ export default async function NewBookingPage({
       };
       defaultServiceId = services.find((s) => s.kind === "bridal")?.id;
     }
+  } else if (customerId) {
+    const customer = await getCustomerDetail(customerId);
+    if (customer) {
+      defaults = {
+        fullName: customer.full_name,
+        email: customer.email,
+        phone: customer.phone ?? "",
+      };
+    }
   }
+
+  const defaultDate =
+    dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : undefined;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -66,6 +83,7 @@ export default async function NewBookingPage({
           staffId={staffId}
           defaults={defaults}
           defaultServiceId={defaultServiceId}
+          defaultDate={defaultDate}
         />
       </div>
     </div>
