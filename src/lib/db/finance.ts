@@ -1,14 +1,16 @@
 import "server-only";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
-import { formatIsoDate, formatHumanDateTime } from "@/lib/time";
+import { formatIsoDate, formatTime } from "@/lib/time";
 
 type RealisedRow = {
+  id: string;
   starts_at: string;
   status: string;
   service: { name: string; price_cents: number } | null;
   customer: { full_name: string; email: string } | null;
   paid: boolean | null;
   paid_method: string | null;
+  paid_at: string | null;
 };
 
 function splitVat(inclCents: number, vatRate: number) {
@@ -27,7 +29,7 @@ async function fetchRealised(
   const { data, error } = await svc
     .from("bookings")
     .select(
-      `starts_at, status, paid, paid_method,
+      `id, starts_at, status, paid, paid_method, paid_at,
        service:services(name, price_cents),
        customer:customers(full_name, email)`,
     )
@@ -111,9 +113,15 @@ export async function loadFinanceSummary(
   return { vatRate, years };
 }
 
+// With ";" as the separator, only ";", quote and newline need escaping —
+// so comma-decimal amounts (12,50) stay unquoted and import as numbers.
 function csvCell(v: string | number): string {
   const s = String(v);
-  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  return /["\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function eur(cents: number): string {
+  return (cents / 100).toFixed(2).replace(".", ",");
 }
 
 /** Bookkeeping CSV for a date range, with BTW split per row. */
@@ -126,17 +134,42 @@ export async function buildBookingsCsv(
     `${fromDate}T00:00:00Z`,
     `${toDate}T23:59:59Z`,
   );
+
+  // Match each booking line to its invoice number (if invoiced).
+  const invByBooking = new Map<string, string>();
+  if (rows.length > 0) {
+    const svc = createSupabaseServiceClient();
+    const { data } = await svc
+      .from("invoices")
+      .select("booking_id, number")
+      .in(
+        "booking_id",
+        rows.map((r) => r.id),
+      );
+    for (const x of (data ?? []) as Array<{
+      booking_id: string | null;
+      number: string;
+    }>) {
+      if (x.booking_id) invByBooking.set(x.booking_id, x.number);
+    }
+  }
+
   const header = [
     "Datum",
+    "Tijd",
+    "Referentie",
     "Dienst",
     "Klant",
     "E-mail",
     "Status",
-    "Betaald",
-    "Methode",
-    "Bedrag incl",
     "Bedrag excl",
+    "BTW %",
     "BTW",
+    "Bedrag incl",
+    "Betaald",
+    "Betaalmethode",
+    "Betaaldatum",
+    "Factuurnummer",
   ];
   const lines = [header.join(";")];
   for (const r of rows) {
@@ -144,20 +177,26 @@ export async function buildBookingsCsv(
     const { excl, vat } = splitVat(incl, vatRate);
     lines.push(
       [
-        formatHumanDateTime(new Date(r.starts_at)),
+        formatIsoDate(new Date(r.starts_at)),
+        formatTime(new Date(r.starts_at)),
+        r.id.slice(0, 8).toUpperCase(),
         r.service?.name ?? "",
         r.customer?.full_name ?? "",
         r.customer?.email ?? "",
         r.status,
+        eur(excl),
+        String(vatRate),
+        eur(vat),
+        eur(incl),
         r.paid ? "ja" : "nee",
         r.paid_method ?? "",
-        (incl / 100).toFixed(2),
-        (excl / 100).toFixed(2),
-        (vat / 100).toFixed(2),
+        r.paid_at ? formatIsoDate(new Date(r.paid_at)) : "",
+        invByBooking.get(r.id) ?? "",
       ]
         .map(csvCell)
         .join(";"),
     );
   }
-  return lines.join("\r\n");
+  // UTF-8 BOM so Excel (NL) shows €/accented names correctly.
+  return "\uFEFF" + lines.join("\r\n");
 }
