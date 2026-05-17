@@ -10,7 +10,10 @@ import {
   writeAuditLog,
 } from "@/lib/db/bookings";
 import { verifyBookingToken } from "@/lib/booking-token";
-import { notifyWaitlistForFreedBooking } from "@/lib/waitlist-backfill";
+import {
+  notifyWaitlistForFreedBooking,
+  notifyWaitlistForFreedSlot,
+} from "@/lib/waitlist-backfill";
 import { resolveWaitlistForCustomer } from "@/lib/db/waitlist";
 import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
@@ -318,6 +321,15 @@ export async function rescheduleOwnBooking(
         email: booking.customer.email,
         phone: booking.customer.phone ?? "",
       },
+    }),
+  );
+
+  // The old slot just opened up — same backfill as a cancellation.
+  // `booking` still holds the pre-move time/service.
+  await safe(() =>
+    notifyWaitlistForFreedSlot({
+      serviceId: booking.service_id,
+      startsAt: booking.starts_at,
     }),
   );
 

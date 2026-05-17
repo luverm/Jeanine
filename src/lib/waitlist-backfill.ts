@@ -7,31 +7,32 @@ import { waitlistOpeningText } from "@/lib/email/messages";
 import { formatIsoDate } from "@/lib/time";
 
 /**
- * A booking was cancelled — let matching waitlist customers know the
- * slot is free. Whoever books first wins; the bookings exclusion
- * constraint makes the race safe, so the late ones simply see the slot
- * gone. Best-effort: never throws, so it can't block the cancellation.
+ * A future slot freed up (cancellation or reschedule) — let matching
+ * waitlist customers know. Whoever books first wins; the bookings
+ * exclusion constraint makes the race safe, so the late ones simply
+ * see the slot gone. Best-effort: never throws, so it can't block the
+ * action that freed the slot.
  */
-export async function notifyWaitlistForFreedBooking(
-  bookingId: string,
-): Promise<number> {
-  const booking = await getBookingDetail(bookingId);
-  if (!booking) return 0;
-
-  const freedAt = new Date(booking.starts_at);
+export async function notifyWaitlistForFreedSlot(args: {
+  serviceId: string;
+  startsAt: string | Date;
+}): Promise<number> {
+  const freedAt = new Date(args.startsAt);
   // No point nudging anyone toward a slot in the past.
-  if (freedAt.getTime() <= Date.now()) return 0;
+  if (Number.isNaN(freedAt.getTime()) || freedAt.getTime() <= Date.now()) {
+    return 0;
+  }
 
   const svc = createSupabaseServiceClient();
   const { data: service } = await svc
     .from("services")
     .select("slug, name")
-    .eq("id", booking.service_id)
+    .eq("id", args.serviceId)
     .maybeSingle();
   if (!service) return 0;
 
   const matches = await findWaitlistMatches({
-    serviceId: booking.service_id,
+    serviceId: args.serviceId,
     date: formatIsoDate(freedAt),
   });
   if (matches.length === 0) return 0;
@@ -61,4 +62,16 @@ export async function notifyWaitlistForFreedBooking(
     }
   }
   return sent;
+}
+
+/** Cancellation path: derive the freed slot from the booking row. */
+export async function notifyWaitlistForFreedBooking(
+  bookingId: string,
+): Promise<number> {
+  const booking = await getBookingDetail(bookingId);
+  if (!booking) return 0;
+  return notifyWaitlistForFreedSlot({
+    serviceId: booking.service_id,
+    startsAt: booking.starts_at,
+  });
 }

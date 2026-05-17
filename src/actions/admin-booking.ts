@@ -19,6 +19,7 @@ import {
   sendBookingAdminNotice,
   sendBookingRescheduled,
 } from "@/lib/email/booking-emails";
+import { notifyWaitlistForFreedSlot } from "@/lib/waitlist-backfill";
 import { customerInputSchema } from "@/lib/schemas/booking";
 import { uuidString } from "@/lib/schemas/uuid";
 
@@ -255,6 +256,17 @@ export async function rescheduleBooking(
     });
   } catch (err) {
     console.error("[admin-booking] reschedule email failed:", err);
+  }
+
+  // `before` still holds the pre-move time/service — the old slot is
+  // now free, so run the same waitlist backfill as a cancellation.
+  try {
+    await notifyWaitlistForFreedSlot({
+      serviceId: before.service_id,
+      startsAt: before.starts_at,
+    });
+  } catch (err) {
+    console.error("[admin-booking] reschedule backfill failed:", err);
   }
 
   return { ok: true };
