@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
+  Building2,
   Scissors,
   Clock,
   CalendarOff,
@@ -14,9 +15,6 @@ import {
   ChevronRight,
   type LucideIcon,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { getBusiness } from "@/lib/db/business-settings";
-import { BusinessSettingsForm } from "@/components/admin/business-settings-form";
 
 export const metadata: Metadata = {
   title: "Instellingen",
@@ -33,6 +31,17 @@ type HubItem = {
 };
 
 const GROUPS: { title: string; items: HubItem[] }[] = [
+  {
+    title: "Bedrijf",
+    items: [
+      {
+        href: "/instellingen/bedrijfsgegevens",
+        label: "Bedrijfsgegevens",
+        description: "Naam, contact, KvK, BTW en social",
+        icon: Building2,
+      },
+    ],
+  },
   {
     title: "Agenda & boeken",
     items: [
@@ -139,44 +148,12 @@ function HubRow({ item }: { item: HubItem }) {
   );
 }
 
-export default async function InstellingenPage() {
-  const b = await getBusiness();
-
+export default function InstellingenPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <header className="mb-6">
         <h1 className="text-3xl font-semibold tracking-tight">Instellingen</h1>
       </header>
-
-      <Card className="p-6">
-        <h2 className="text-base font-semibold">Bedrijfsgegevens</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Wijzigingen verschijnen direct op de website (kop, footer,
-          contact).
-        </p>
-        <div className="mt-5">
-          <BusinessSettingsForm
-            initial={{
-              name: b.name,
-              ownerName: b.ownerName,
-              tagline: b.tagline,
-              email: b.email,
-              phone: b.phone,
-              street: b.address.street,
-              postcode: b.address.postcode,
-              city: b.address.city,
-              kvk: b.kvk,
-              btw: b.btw,
-              iban: b.iban,
-              vatRate: b.vatRate,
-              invoicePrefix: b.invoicePrefix,
-              instagram: b.socials.instagram,
-              instagramUrl: b.socials.instagramUrl,
-              tiktok: b.socials.tiktok,
-            }}
-          />
-        </div>
-      </Card>
 
       {GROUPS.map((group) => (
         <section key={group.title} className="mt-8">
