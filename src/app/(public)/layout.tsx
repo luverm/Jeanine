@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getBusiness } from "@/lib/db/business-settings";
 import { MobileNav } from "@/components/public/mobile-nav";
 
@@ -21,8 +22,15 @@ export default async function PublicLayout({
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
         <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
-            {business.name}
+          <Link href="/" aria-label={business.name} className="shrink-0">
+            <Image
+              src="/HB-cocoa-transparent.png"
+              alt={business.name}
+              width={1080}
+              height={1080}
+              priority
+              className="h-12 w-auto"
+            />
           </Link>
 
           <ul className="hidden items-center gap-6 text-sm md:flex">
