@@ -1,12 +1,6 @@
 import "server-only";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
-
-// Een knip/kleur-cyclus duurt grofweg zes weken. Spoor aan zodra die
-// voorbij is, stop na ~vier maanden (de klant is dan weg — niet
-// achtervolgen) en mail dezelfde klant hoogstens eens per twee maanden.
-export const REBOOKING_MIN_DAYS = 42;
-export const REBOOKING_MAX_DAYS = 120;
-export const REBOOKING_COOLDOWN_DAYS = 60;
+import { getBusiness } from "@/lib/db/business-settings";
 
 export type RebookingCandidate = {
   customer_id: string;
@@ -17,11 +11,14 @@ export type RebookingCandidate = {
 };
 
 export async function listRebookingDue(): Promise<RebookingCandidate[]> {
+  const { rebooking } = await getBusiness();
+  if (!rebooking.enabled) return [];
+
   const svc = createSupabaseServiceClient();
   const { data, error } = await svc.rpc("rebooking_candidates", {
-    min_days: REBOOKING_MIN_DAYS,
-    max_days: REBOOKING_MAX_DAYS,
-    cooldown_days: REBOOKING_COOLDOWN_DAYS,
+    min_days: rebooking.minDays,
+    max_days: rebooking.maxDays,
+    cooldown_days: rebooking.cooldownDays,
   });
   if (error) throw error;
   return (data ?? []) as unknown as RebookingCandidate[];

@@ -2,6 +2,20 @@ import "server-only";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { business } from "@/content/business";
 
+export const REBOOKING_DEFAULTS = {
+  enabled: true,
+  minDays: 42,
+  maxDays: 120,
+  cooldownDays: 60,
+} as const;
+
+export type RebookingSettings = {
+  enabled: boolean;
+  minDays: number;
+  maxDays: number;
+  cooldownDays: number;
+};
+
 export type BusinessInfo = {
   name: string;
   ownerName: string;
@@ -15,6 +29,7 @@ export type BusinessInfo = {
   vatRate: number;
   invoicePrefix: string;
   socials: { instagram: string; instagramUrl: string; tiktok: string };
+  rebooking: RebookingSettings;
 };
 
 export type BusinessSettingsRow = {
@@ -34,11 +49,38 @@ export type BusinessSettingsRow = {
   instagram: string | null;
   instagram_url: string | null;
   tiktok: string | null;
+  rebooking_enabled: boolean | null;
+  rebooking_min_days: number | null;
+  rebooking_max_days: number | null;
+  rebooking_cooldown_days: number | null;
 };
 
 function pick(dbValue: string | null | undefined, fallback: string): string {
   const v = dbValue?.trim();
   return v ? v : fallback;
+}
+
+function posInt(value: number | null | undefined, fallback: number): number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0
+    ? value
+    : fallback;
+}
+
+function readRebooking(row: BusinessSettingsRow | null): RebookingSettings {
+  const minDays = posInt(row?.rebooking_min_days, REBOOKING_DEFAULTS.minDays);
+  let maxDays = posInt(row?.rebooking_max_days, REBOOKING_DEFAULTS.maxDays);
+  // A nonsensical window (max ≤ min) would mail nobody — fall back so a
+  // bad row never silently disables the feature.
+  if (maxDays <= minDays) maxDays = REBOOKING_DEFAULTS.maxDays;
+  return {
+    enabled: row?.rebooking_enabled ?? REBOOKING_DEFAULTS.enabled,
+    minDays,
+    maxDays,
+    cooldownDays: posInt(
+      row?.rebooking_cooldown_days,
+      REBOOKING_DEFAULTS.cooldownDays,
+    ),
+  };
 }
 
 /** Static defaults merged with any DB overrides. Never throws. */
@@ -80,7 +122,23 @@ export async function getBusiness(): Promise<BusinessInfo> {
       instagramUrl: pick(row?.instagram_url, business.socials.instagramUrl),
       tiktok: pick(row?.tiktok, business.socials.tiktok),
     },
+    rebooking: readRebooking(row),
   };
+}
+
+export async function updateRebookingSettings(
+  input: RebookingSettings,
+): Promise<void> {
+  const svc = createSupabaseServiceClient();
+  const { error } = await svc.from("business_settings").upsert({
+    id: 1,
+    rebooking_enabled: input.enabled,
+    rebooking_min_days: input.minDays,
+    rebooking_max_days: input.maxDays,
+    rebooking_cooldown_days: input.cooldownDays,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
 }
 
 export async function updateBusinessSettings(input: {

@@ -1,7 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { updateBusinessSettings } from "@/lib/db/business-settings";
+import {
+  updateBusinessSettings,
+  updateRebookingSettings,
+} from "@/lib/db/business-settings";
 
 const TEXT_FIELDS = [
   "name",
@@ -55,6 +58,37 @@ export async function updateBusinessSettingsAction(
     await updateBusinessSettings(parsed.data);
   } catch (err) {
     console.error("[settings] update failed:", err);
+    return { ok: false };
+  }
+  return { ok: true };
+}
+
+const rebookingSchema = z
+  .object({
+    enabled: z.boolean(),
+    minDays: z.coerce.number().int().min(7).max(365),
+    maxDays: z.coerce.number().int().min(14).max(730),
+    cooldownDays: z.coerce.number().int().min(7).max(365),
+  })
+  .refine((v) => v.maxDays > v.minDays, {
+    message: "maxDays must be greater than minDays",
+    path: ["maxDays"],
+  });
+
+export async function updateRebookingSettingsAction(
+  formData: FormData,
+): Promise<{ ok: boolean }> {
+  const parsed = rebookingSchema.safeParse({
+    enabled: formData.get("enabled") != null,
+    minDays: String(formData.get("minDays") ?? ""),
+    maxDays: String(formData.get("maxDays") ?? ""),
+    cooldownDays: String(formData.get("cooldownDays") ?? ""),
+  });
+  if (!parsed.success) return { ok: false };
+  try {
+    await updateRebookingSettings(parsed.data);
+  } catch (err) {
+    console.error("[settings] rebooking update failed:", err);
     return { ok: false };
   }
   return { ok: true };
