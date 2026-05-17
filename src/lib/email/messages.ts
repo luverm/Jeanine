@@ -75,6 +75,27 @@ export function bookingReminderText(args: {
     .join("\n");
 }
 
+export function rebookingNudgeText(args: {
+  customerName: string;
+  lastServiceName: string;
+  bookingUrl: string;
+}): string {
+  return [
+    `Hoi ${args.customerName},`,
+    "",
+    `Het is alweer even geleden sinds je laatste afspraak (${args.lastServiceName}) bij ${business.name}. Tijd om weer eens bij te laten werken?`,
+    "",
+    `Een nieuwe afspraak plan je zo in: ${args.bookingUrl}`,
+    "",
+    contactLine(),
+    "",
+    "Tot snel,",
+    business.ownerName,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+}
+
 /** Google Calendar "add event" template link. */
 export function googleCalendarUrl(args: {
   title: string;

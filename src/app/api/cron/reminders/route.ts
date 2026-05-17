@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServerEnv } from "@/lib/env";
 import { listDueReminders, markReminderSent } from "@/lib/db/reminders";
+import { listRebookingDue, markRebookingNudged } from "@/lib/db/rebooking";
 import { sendEmail } from "@/lib/email/client";
-import { bookingReminderText } from "@/lib/email/messages";
+import { bookingReminderText, rebookingNudgeText } from "@/lib/email/messages";
 import { signBooking } from "@/lib/booking-token";
 
 export const runtime = "nodejs";
@@ -64,5 +65,45 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, considered: due.length, sent, failed });
+  // "Tijd voor een nieuwe afspraak"-mail naar klanten die al een tijd
+  // niet zijn geweest en geen toekomstige afspraak hebben. De cooldown
+  // in de query houdt dit idempotent over dagelijkse runs heen.
+  let rebookSent = 0;
+  let rebookFailed = 0;
+  try {
+    const dueRebook = await listRebookingDue();
+    for (const c of dueRebook) {
+      if (!c.email) continue;
+      try {
+        await sendEmail({
+          to: c.email,
+          subject: "Tijd voor een nieuwe afspraak?",
+          context: "rebooking_nudge",
+          text: rebookingNudgeText({
+            customerName: c.full_name,
+            lastServiceName: c.last_service,
+            bookingUrl: `${siteUrl}/boeken`,
+          }),
+        });
+        await markRebookingNudged(c.customer_id);
+        rebookSent += 1;
+      } catch (err) {
+        console.error(
+          `[cron/reminders] rebooking ${c.customer_id} failed:`,
+          err,
+        );
+        rebookFailed += 1;
+      }
+    }
+  } catch (err) {
+    console.error("[cron/reminders] rebooking query failed:", err);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    considered: due.length,
+    sent,
+    failed,
+    rebooking: { sent: rebookSent, failed: rebookFailed },
+  });
 }
