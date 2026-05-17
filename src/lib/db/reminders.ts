@@ -11,14 +11,15 @@ export type DueReminder = {
 
 /**
  * Confirmed bookings starting in the next ~20–28h that haven't had a
- * reminder yet. The window is wide enough that an hourly cron never
- * misses one, and `reminder_sent_at` keeps it idempotent.
+ * reminder yet. A wide window (next ~1–36h) means a single daily cron
+ * still catches every upcoming booking, and `reminder_sent_at` keeps it
+ * idempotent so nobody is mailed twice.
  */
 export async function listDueReminders(): Promise<DueReminder[]> {
   const svc = createSupabaseServiceClient();
   const now = Date.now();
-  const from = new Date(now + 20 * 60 * 60 * 1000).toISOString();
-  const to = new Date(now + 28 * 60 * 60 * 1000).toISOString();
+  const from = new Date(now + 1 * 60 * 60 * 1000).toISOString();
+  const to = new Date(now + 36 * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await svc
     .from("bookings")
