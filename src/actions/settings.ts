@@ -3,6 +3,24 @@
 import { z } from "zod";
 import { updateBusinessSettings } from "@/lib/db/business-settings";
 
+const TEXT_FIELDS = [
+  "name",
+  "ownerName",
+  "tagline",
+  "email",
+  "phone",
+  "street",
+  "postcode",
+  "city",
+  "kvk",
+  "btw",
+  "iban",
+  "invoicePrefix",
+  "instagram",
+  "instagramUrl",
+  "tiktok",
+] as const;
+
 const schema = z.object({
   name: z.string().trim().max(160),
   ownerName: z.string().trim().max(160),
@@ -14,32 +32,24 @@ const schema = z.object({
   city: z.string().trim().max(120),
   kvk: z.string().trim().max(40),
   btw: z.string().trim().max(40),
+  iban: z.string().trim().max(40),
+  invoicePrefix: z.string().trim().max(20),
   instagram: z.string().trim().max(120),
   instagramUrl: z.string().trim().max(300),
   tiktok: z.string().trim().max(120),
+  vatRate: z.coerce.number().int().min(0).max(30),
 });
 
 export async function updateBusinessSettingsAction(
   formData: FormData,
 ): Promise<{ ok: boolean }> {
-  const raw = Object.fromEntries(
-    [
-      "name",
-      "ownerName",
-      "tagline",
-      "email",
-      "phone",
-      "street",
-      "postcode",
-      "city",
-      "kvk",
-      "btw",
-      "instagram",
-      "instagramUrl",
-      "tiktok",
-    ].map((k) => [k, String(formData.get(k) ?? "")]),
+  const raw: Record<string, string> = Object.fromEntries(
+    TEXT_FIELDS.map((k) => [k, String(formData.get(k) ?? "")]),
   );
-  const parsed = schema.safeParse(raw);
+  const parsed = schema.safeParse({
+    ...raw,
+    vatRate: String(formData.get("vatRate") ?? "21"),
+  });
   if (!parsed.success) return { ok: false };
   try {
     await updateBusinessSettings(parsed.data);

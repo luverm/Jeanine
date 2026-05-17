@@ -16,11 +16,34 @@ export type LeadRow = {
   message: string | null;
   notes: string | null;
   attachment_paths: string[] | null;
+  agreed_price_cents: number | null;
+  deposit_cents: number | null;
+  deposit_paid: boolean | null;
   status: LeadStatus;
   assigned_staff: string | null;
   created_at: string;
   updated_at: string;
 };
+
+export async function updateLeadFinance(
+  id: string,
+  input: {
+    agreedPriceCents: number | null;
+    depositCents: number | null;
+    depositPaid: boolean;
+  },
+): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("bridal_leads")
+    .update({
+      agreed_price_cents: input.agreedPriceCents,
+      deposit_cents: input.depositCents,
+      deposit_paid: input.depositPaid,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
 
 export type LeadInsert = {
   fullName: string;

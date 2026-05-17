@@ -11,6 +11,10 @@ export type BookingRow = {
   status: "pending" | "confirmed" | "cancelled" | "no_show" | "completed";
   notes: string | null;
   idempotency_key: string | null;
+  paid: boolean | null;
+  paid_method: string | null;
+  paid_amount_cents: number | null;
+  paid_at: string | null;
   created_at: string;
   updated_at: string;
 };

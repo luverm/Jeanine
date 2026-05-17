@@ -11,6 +11,9 @@ export type BusinessInfo = {
   address: { street: string; postcode: string; city: string };
   kvk: string;
   btw: string;
+  iban: string;
+  vatRate: number;
+  invoicePrefix: string;
   socials: { instagram: string; instagramUrl: string; tiktok: string };
 };
 
@@ -25,6 +28,9 @@ export type BusinessSettingsRow = {
   address_city: string | null;
   kvk: string | null;
   btw: string | null;
+  iban: string | null;
+  vat_rate: number | null;
+  invoice_prefix: string | null;
   instagram: string | null;
   instagram_url: string | null;
   tiktok: string | null;
@@ -63,6 +69,12 @@ export async function getBusiness(): Promise<BusinessInfo> {
     },
     kvk: pick(row?.kvk, business.kvk),
     btw: pick(row?.btw, business.btw),
+    iban: pick(row?.iban, business.iban),
+    vatRate:
+      typeof row?.vat_rate === "number" && row.vat_rate >= 0
+        ? row.vat_rate
+        : 21,
+    invoicePrefix: pick(row?.invoice_prefix, ""),
     socials: {
       instagram: pick(row?.instagram, business.socials.instagram),
       instagramUrl: pick(row?.instagram_url, business.socials.instagramUrl),
@@ -82,6 +94,9 @@ export async function updateBusinessSettings(input: {
   city: string;
   kvk: string;
   btw: string;
+  iban: string;
+  vatRate: number;
+  invoicePrefix: string;
   instagram: string;
   instagramUrl: string;
   tiktok: string;
@@ -99,6 +114,9 @@ export async function updateBusinessSettings(input: {
     address_city: input.city || null,
     kvk: input.kvk || null,
     btw: input.btw || null,
+    iban: input.iban || null,
+    vat_rate: Number.isFinite(input.vatRate) ? input.vatRate : 21,
+    invoice_prefix: input.invoicePrefix || null,
     instagram: input.instagram || null,
     instagram_url: input.instagramUrl || null,
     tiktok: input.tiktok || null,

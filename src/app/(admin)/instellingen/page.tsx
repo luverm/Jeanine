@@ -39,6 +39,9 @@ export default async function InstellingenPage() {
               city: b.address.city,
               kvk: b.kvk,
               btw: b.btw,
+              iban: b.iban,
+              vatRate: b.vatRate,
+              invoicePrefix: b.invoicePrefix,
               instagram: b.socials.instagram,
               instagramUrl: b.socials.instagramUrl,
               tiktok: b.socials.tiktok,
@@ -72,6 +75,14 @@ export default async function InstellingenPage() {
               className="text-foreground underline underline-offset-4 hover:opacity-80"
             >
               Vrije dagen / blokkades
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/instellingen/financien"
+              className="text-foreground underline underline-offset-4 hover:opacity-80"
+            >
+              Financieel &amp; BTW
             </Link>
           </li>
           <li>

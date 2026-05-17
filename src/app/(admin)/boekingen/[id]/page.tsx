@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookingStatusActions } from "@/components/admin/booking-status-actions";
 import { RescheduleBooking } from "@/components/admin/reschedule-booking";
 import { BookingNotesForm } from "@/components/admin/booking-notes-form";
+import { BookingPayment } from "@/components/admin/booking-payment";
 import { NoShowDismiss } from "@/components/admin/no-show-dismiss";
 import { formatHumanDateTime } from "@/lib/time";
 import { formatPrice, formatDuration } from "@/lib/db/services";
@@ -94,6 +95,25 @@ export default async function BookingDetailPage({
               durationMin={booking.service.duration_min}
             />
           )}
+          <Link
+            href={`/boekingen/${booking.id}/factuur`}
+            className="inline-flex h-9 w-fit items-center justify-center rounded-md border bg-background px-4 text-sm font-medium hover:bg-accent"
+          >
+            Factuur maken
+          </Link>
+        </div>
+      </Card>
+
+      <Card className="mt-6 p-6">
+        <h2 className="text-base font-semibold">Betaling</h2>
+        <div className="mt-4">
+          <BookingPayment
+            bookingId={booking.id}
+            initialPaid={booking.paid ?? false}
+            initialMethod={booking.paid_method}
+            initialAmountCents={booking.paid_amount_cents}
+            servicePriceCents={booking.service.price_cents}
+          />
         </div>
       </Card>
 

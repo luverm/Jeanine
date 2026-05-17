@@ -4,6 +4,7 @@ import { addDays, format, parseISO, isValid } from "date-fns";
 import { listBookings } from "@/lib/db/admin-bookings";
 import { PrintButton } from "@/components/admin/print-button";
 import { formatIsoDate, formatTime } from "@/lib/time";
+import { formatPrice } from "@/lib/db/services";
 import { bookingStatusLabel } from "@/lib/status-labels";
 
 export const metadata: Metadata = {
@@ -33,6 +34,16 @@ export default async function DaySheetPage({
   const bookings = (await listBookings({ from: day, to: day }))
     .filter((b) => b.status !== "cancelled")
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+
+  const byMethod = new Map<string, number>();
+  let paidTotal = 0;
+  for (const b of bookings) {
+    if (!b.paid) continue;
+    const amt = b.paid_amount_cents ?? b.service?.price_cents ?? 0;
+    paidTotal += amt;
+    const m = b.paid_method ?? "overig";
+    byMethod.set(m, (byMethod.get(m) ?? 0) + amt);
+  }
 
   const d = parseISO(day);
   const heading = `${Number(format(d, "d"))} ${
@@ -98,7 +109,8 @@ export default async function DaySheetPage({
               <th className="py-2 pr-3">Klant</th>
               <th className="py-2 pr-3">Dienst</th>
               <th className="py-2 pr-3">Telefoon</th>
-              <th className="py-2">Status</th>
+              <th className="py-2 pr-3">Status</th>
+              <th className="py-2">Betaald</th>
             </tr>
           </thead>
           <tbody>
@@ -110,11 +122,36 @@ export default async function DaySheetPage({
                 <td className="py-2.5 pr-3">{b.customer?.full_name ?? "—"}</td>
                 <td className="py-2.5 pr-3">{b.service?.name ?? "—"}</td>
                 <td className="py-2.5 pr-3">{b.customer?.phone ?? "—"}</td>
-                <td className="py-2.5">{bookingStatusLabel(b.status)}</td>
+                <td className="py-2.5 pr-3">{bookingStatusLabel(b.status)}</td>
+                <td className="py-2.5">
+                  {b.paid
+                    ? `${b.paid_method ?? "ja"} · ${formatPrice(
+                        b.paid_amount_cents ?? b.service?.price_cents ?? 0,
+                      )}`
+                    : "—"}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+
+      {bookings.length > 0 && paidTotal > 0 && (
+        <div className="mt-6 rounded-lg border bg-muted/30 p-4 text-sm">
+          <p className="font-medium">Ontvangen vandaag</p>
+          <ul className="mt-2 grid gap-1 sm:grid-cols-2">
+            {[...byMethod.entries()].map(([m, cents]) => (
+              <li key={m} className="flex justify-between gap-4">
+                <span className="capitalize text-muted-foreground">{m}</span>
+                <span>{formatPrice(cents)}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-2 flex justify-between border-t pt-2 font-semibold">
+            <span>Totaal</span>
+            <span>{formatPrice(paidTotal)}</span>
+          </div>
+        </div>
       )}
     </div>
   );

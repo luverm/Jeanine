@@ -6,6 +6,7 @@ import {
   insertLead,
   updateLeadStatus,
   updateLeadNotes,
+  updateLeadFinance,
   type LeadStatus,
 } from "@/lib/db/leads";
 import { writeAuditLog } from "@/lib/db/bookings";
@@ -182,5 +183,36 @@ export async function updateLeadNotesAction(
       payload: { length: trimmed.length },
     }),
   );
+  return { ok: true };
+}
+
+const financeSchema = z.object({
+  agreedPrice: z.number().min(0).max(100000).nullable(),
+  deposit: z.number().min(0).max(100000).nullable(),
+  depositPaid: z.boolean(),
+});
+
+export async function updateLeadFinanceAction(
+  id: string,
+  input: { agreedPrice: number | null; deposit: number | null; depositPaid: boolean },
+): Promise<{ ok: boolean }> {
+  const parsed = financeSchema.safeParse(input);
+  if (!parsed.success) return { ok: false };
+  try {
+    await updateLeadFinance(id, {
+      agreedPriceCents:
+        parsed.data.agreedPrice === null
+          ? null
+          : Math.round(parsed.data.agreedPrice * 100),
+      depositCents:
+        parsed.data.deposit === null
+          ? null
+          : Math.round(parsed.data.deposit * 100),
+      depositPaid: parsed.data.depositPaid,
+    });
+  } catch (err) {
+    console.error("[lead] finance update failed:", err);
+    return { ok: false };
+  }
   return { ok: true };
 }

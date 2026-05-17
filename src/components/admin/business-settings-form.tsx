@@ -20,6 +20,9 @@ type Values = {
   city: string;
   kvk: string;
   btw: string;
+  iban: string;
+  vatRate: number;
+  invoicePrefix: string;
   instagram: string;
   instagramUrl: string;
   tiktok: string;
@@ -95,10 +98,41 @@ export function BusinessSettingsForm({ initial }: { initial: Values }) {
         <Field name="postcode" label="Postcode" value={initial.postcode} />
         <Field name="city" label="Plaats" value={initial.city} />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Field name="kvk" label="KvK" value={initial.kvk} />
-        <Field name="btw" label="BTW" value={initial.btw} />
+        <Field name="btw" label="BTW-nummer" value={initial.btw} />
+        <Field name="iban" label="IBAN" value={initial.iban} />
       </div>
+
+      <div className="rounded-lg border bg-muted/30 p-4">
+        <p className="text-sm font-medium">Facturatie &amp; BTW</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          BTW-tarief in %. Zet op <strong>0</strong> als je de
+          kleineondernemersregeling (KOR) gebruikt / BTW-vrijgesteld bent.
+          Overleg bij twijfel met je boekhouder.
+        </p>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="vatRate">BTW-tarief (%)</Label>
+            <Input
+              id="vatRate"
+              name="vatRate"
+              type="number"
+              min={0}
+              max={30}
+              step={1}
+              defaultValue={String(initial.vatRate)}
+              className="mt-1.5"
+            />
+          </div>
+          <Field
+            name="invoicePrefix"
+            label="Factuurnummer-prefix (optioneel)"
+            value={initial.invoicePrefix}
+          />
+        </div>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-3">
         <Field
           name="instagram"

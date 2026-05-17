@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LeadStatusSelect } from "@/components/admin/lead-status-select";
 import { LeadNotesForm } from "@/components/admin/lead-notes-form";
+import { LeadFinanceForm } from "@/components/admin/lead-finance-form";
 import { signBridalAttachments } from "@/actions/bridal-upload";
 import { leadStatusLabel, leadStatusVariant } from "@/lib/status-labels";
 
@@ -119,6 +120,18 @@ export default async function LeadDetailPage({
           </div>
         </Card>
       )}
+
+      <Card className="mt-6 p-6">
+        <h2 className="text-base font-semibold">Prijs &amp; aanbetaling</h2>
+        <div className="mt-4">
+          <LeadFinanceForm
+            leadId={lead.id}
+            agreedPriceCents={lead.agreed_price_cents}
+            depositCents={lead.deposit_cents}
+            depositPaid={lead.deposit_paid ?? false}
+          />
+        </div>
+      </Card>
 
       <Card className="mt-6 p-6">
         <h2 className="text-base font-semibold">Interne notitie</h2>

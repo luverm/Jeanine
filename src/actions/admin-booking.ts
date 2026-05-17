@@ -259,3 +259,40 @@ export async function rescheduleBooking(
 
   return { ok: true };
 }
+
+const paymentSchema = z.object({
+  id: uuidString(),
+  paid: z.boolean(),
+  method: z.enum(["contant", "pin", "overboeking", "factuur", ""]).optional(),
+  amountCents: z.number().int().min(0).max(10_000_00).optional(),
+});
+
+export async function setBookingPaymentAction(
+  input: unknown,
+): Promise<{ ok: boolean }> {
+  const parsed = paymentSchema.safeParse(input);
+  if (!parsed.success) return { ok: false };
+  const { id, paid, method, amountCents } = parsed.data;
+  const svc = createSupabaseServiceClient();
+  const { error } = await svc
+    .from("bookings")
+    .update({
+      paid,
+      paid_method: paid ? method || null : null,
+      paid_amount_cents: paid ? (amountCents ?? null) : null,
+      paid_at: paid ? new Date().toISOString() : null,
+    })
+    .eq("id", id);
+  if (error) {
+    console.error("[payment] update failed:", error);
+    return { ok: false };
+  }
+  await writeAuditLog({
+    actor: "admin",
+    action: "booking.payment",
+    entity: "booking",
+    entityId: id,
+    payload: { paid, method },
+  }).catch(() => {});
+  return { ok: true };
+}
