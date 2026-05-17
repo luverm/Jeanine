@@ -3,9 +3,13 @@
 import { z } from "zod";
 import {
   createReview,
+  createCustomerReview,
+  hasReviewForBooking,
   setReviewVisible,
   deleteReview,
 } from "@/lib/db/reviews";
+import { verifyBookingToken } from "@/lib/booking-token";
+import { getBookingDetail } from "@/lib/db/bookings";
 
 const schema = z.object({
   author: z.string().trim().min(2).max(120),
@@ -48,6 +52,58 @@ export async function deleteReviewAction(
     await deleteReview(id);
   } catch {
     return { ok: false };
+  }
+  return { ok: true };
+}
+
+const submitSchema = z.object({
+  bookingId: z.string().uuid(),
+  token: z.string().min(1),
+  author: z.string().trim().min(2).max(120),
+  quote: z.string().trim().min(4).max(600),
+  website: z.string().max(0).optional().or(z.literal("")),
+});
+
+export type SubmitReviewResult =
+  | { ok: true }
+  | { ok: false; code: "INVALID" | "NOT_ELIGIBLE" | "ALREADY" | "INPUT" };
+
+export async function submitReviewAction(
+  input: unknown,
+): Promise<SubmitReviewResult> {
+  const parsed = submitSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, code: "INPUT" };
+  const { bookingId, token, author, quote, website } = parsed.data;
+
+  // Honeypot — pretend success so bots don't probe.
+  if (website) return { ok: true };
+
+  if (!verifyBookingToken(bookingId, token)) {
+    return { ok: false, code: "INVALID" };
+  }
+
+  const booking = await getBookingDetail(bookingId);
+  if (!booking) return { ok: false, code: "INVALID" };
+
+  // Only a real, finished visit can be reviewed.
+  const ended = new Date(booking.ends_at).getTime();
+  const visited =
+    (booking.status === "confirmed" || booking.status === "completed") &&
+    ended <= Date.now();
+  if (!visited) return { ok: false, code: "NOT_ELIGIBLE" };
+
+  try {
+    if (await hasReviewForBooking(bookingId)) {
+      return { ok: false, code: "ALREADY" };
+    }
+    await createCustomerReview({ bookingId, author, quote });
+  } catch (err) {
+    // Unique index races (double submit) land here too.
+    if (await hasReviewForBooking(bookingId).catch(() => false)) {
+      return { ok: false, code: "ALREADY" };
+    }
+    console.error("[review] submit failed:", err);
+    return { ok: false, code: "INPUT" };
   }
   return { ok: true };
 }

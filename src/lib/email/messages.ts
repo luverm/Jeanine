@@ -119,6 +119,24 @@ export function waitlistOpeningText(args: {
   ].join("\n");
 }
 
+export function reviewRequestText(args: {
+  customerName: string;
+  serviceName: string;
+  reviewUrl: string;
+}): string {
+  return [
+    `Hoi ${args.customerName},`,
+    "",
+    `Bedankt voor je bezoek aan ${business.name} (${args.serviceName})! Ik hoop dat je er blij mee bent.`,
+    "",
+    "Zou je een korte review willen achterlaten? Het kost een halve minuut en helpt anderen enorm:",
+    args.reviewUrl,
+    "",
+    "Alvast bedankt,",
+    business.ownerName,
+  ].join("\n");
+}
+
 /** Google Calendar "add event" template link. */
 export function googleCalendarUrl(args: {
   title: string;

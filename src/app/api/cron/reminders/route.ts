@@ -2,8 +2,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getServerEnv } from "@/lib/env";
 import { listDueReminders, markReminderSent } from "@/lib/db/reminders";
 import { listRebookingDue, markRebookingNudged } from "@/lib/db/rebooking";
+import {
+  listDueReviewRequests,
+  markReviewRequestSent,
+} from "@/lib/db/review-requests";
 import { sendEmail } from "@/lib/email/client";
-import { bookingReminderText, rebookingNudgeText } from "@/lib/email/messages";
+import {
+  bookingReminderText,
+  rebookingNudgeText,
+  reviewRequestText,
+} from "@/lib/email/messages";
 import { signBooking } from "@/lib/booking-token";
 
 export const runtime = "nodejs";
@@ -99,11 +107,42 @@ export async function GET(request: NextRequest) {
     console.error("[cron/reminders] rebooking query failed:", err);
   }
 
+  // Vraag na het bezoek om een review. Eenmalig per boeking via
+  // review_request_sent_at; de link is met een token beveiligd.
+  let reviewSent = 0;
+  let reviewFailed = 0;
+  try {
+    const dueReviews = await listDueReviewRequests();
+    for (const b of dueReviews) {
+      if (!b.customer?.email) continue;
+      try {
+        await sendEmail({
+          to: b.customer.email,
+          subject: "Hoe was je afspraak?",
+          context: "review_request",
+          text: reviewRequestText({
+            customerName: b.customer.full_name,
+            serviceName: b.service?.name ?? "je afspraak",
+            reviewUrl: `${siteUrl}/review/${b.id}?token=${signBooking(b.id)}`,
+          }),
+        });
+        await markReviewRequestSent(b.id);
+        reviewSent += 1;
+      } catch (err) {
+        console.error(`[cron/reminders] review ${b.id} failed:`, err);
+        reviewFailed += 1;
+      }
+    }
+  } catch (err) {
+    console.error("[cron/reminders] review query failed:", err);
+  }
+
   return NextResponse.json({
     ok: true,
     considered: due.length,
     sent,
     failed,
     rebooking: { sent: rebookSent, failed: rebookFailed },
+    reviews: { sent: reviewSent, failed: reviewFailed },
   });
 }

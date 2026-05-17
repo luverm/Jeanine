@@ -28,8 +28,16 @@ export default async function ReviewsAdminPage() {
       </Link>
       <h1 className="mt-4 text-3xl font-semibold tracking-tight">Reviews</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Zichtbare reviews verschijnen op de homepagina.
+        Zichtbare reviews verschijnen op de homepagina. Door klanten
+        ingestuurde reviews staan eerst verborgen — zet ze op{" "}
+        <em>Toon</em> om ze goed te keuren.
       </p>
+      {reviews && reviews.some((r) => !r.is_visible) && (
+        <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
+          {reviews.filter((r) => !r.is_visible).length} review(s) wachten op
+          goedkeuring.
+        </p>
+      )}
 
       <div className="mt-8">
         {reviews === null ? (
@@ -39,7 +47,9 @@ export default async function ReviewsAdminPage() {
           </p>
         ) : (
           <ReviewsAdmin
-            initial={reviews.map((r) => ({
+            initial={[...reviews]
+              .sort((a, b) => Number(a.is_visible) - Number(b.is_visible))
+              .map((r) => ({
               id: r.id,
               author: r.author,
               quote: r.quote,

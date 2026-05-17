@@ -50,6 +50,35 @@ export async function createReview(input: {
   if (error) throw error;
 }
 
+/** Customer-submitted review: hidden until Jeanine approves it. */
+export async function createCustomerReview(input: {
+  bookingId: string;
+  author: string;
+  quote: string;
+}): Promise<void> {
+  const svc = createSupabaseServiceClient();
+  const { error } = await svc.from("reviews").insert({
+    booking_id: input.bookingId,
+    author: input.author,
+    quote: input.quote,
+    is_visible: false,
+  });
+  if (error) throw error;
+}
+
+export async function hasReviewForBooking(
+  bookingId: string,
+): Promise<boolean> {
+  const svc = createSupabaseServiceClient();
+  const { data, error } = await svc
+    .from("reviews")
+    .select("id")
+    .eq("booking_id", bookingId)
+    .maybeSingle();
+  if (error) throw error;
+  return !!data;
+}
+
 export async function setReviewVisible(
   id: string,
   visible: boolean,
