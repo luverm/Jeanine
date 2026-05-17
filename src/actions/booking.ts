@@ -11,6 +11,7 @@ import {
 } from "@/lib/db/bookings";
 import { verifyBookingToken } from "@/lib/booking-token";
 import { notifyWaitlistForFreedBooking } from "@/lib/waitlist-backfill";
+import { resolveWaitlistForCustomer } from "@/lib/db/waitlist";
 import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
@@ -124,6 +125,14 @@ export async function createBooking(input: unknown): Promise<CreateBookingResult
       notes: data.customer.notes || undefined,
     },
   }));
+
+  // They got a spot — close any open waitlist entry this booking fulfils.
+  await safe(() =>
+    resolveWaitlistForCustomer({
+      email: data.customer.email,
+      serviceId: data.serviceId,
+    }),
+  );
 
   return { ok: true, bookingId: booking.id };
 }

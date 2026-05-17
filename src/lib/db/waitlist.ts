@@ -99,3 +99,34 @@ export async function setWaitlistResolved(
     .eq("id", id);
   if (error) throw error;
 }
+
+/**
+ * The customer just booked, so any open waitlist entry of theirs that
+ * this booking satisfies (same service, or service-flexible) is done.
+ * `email` is citext, so the match is case-insensitive. Returns how
+ * many entries were closed.
+ */
+export async function resolveWaitlistForCustomer(args: {
+  email: string;
+  serviceId: string;
+}): Promise<number> {
+  const svc = createSupabaseServiceClient();
+  const { data, error } = await svc
+    .from("waitlist")
+    .select("id, service_id")
+    .eq("resolved", false)
+    .eq("email", args.email);
+  if (error) throw error;
+
+  const ids = ((data ?? []) as { id: string; service_id: string | null }[])
+    .filter((r) => r.service_id === null || r.service_id === args.serviceId)
+    .map((r) => r.id);
+  if (ids.length === 0) return 0;
+
+  const { error: upErr } = await svc
+    .from("waitlist")
+    .update({ resolved: true })
+    .in("id", ids);
+  if (upErr) throw upErr;
+  return ids.length;
+}
