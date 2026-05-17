@@ -10,6 +10,7 @@ import {
   writeAuditLog,
 } from "@/lib/db/bookings";
 import { verifyBookingToken } from "@/lib/booking-token";
+import { notifyWaitlistForFreedBooking } from "@/lib/waitlist-backfill";
 import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
@@ -160,6 +161,7 @@ async function safe<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 export async function cancelBookingAction(id: string): Promise<{ ok: boolean }> {
+  const before = await safe(() => getBookingDetail(id));
   await dbCancelBooking(id);
   await safe(() =>
     writeAuditLog({
@@ -169,6 +171,10 @@ export async function cancelBookingAction(id: string): Promise<{ ok: boolean }> 
       entityId: id,
     }),
   );
+  // Don't re-notify if this was already a cancelled booking.
+  if (before && before.status !== "cancelled") {
+    await safe(() => notifyWaitlistForFreedBooking(id));
+  }
   return { ok: true };
 }
 
@@ -215,6 +221,8 @@ export async function cancelOwnBooking(
       }),
     );
   }
+
+  await safe(() => notifyWaitlistForFreedBooking(id));
 
   return { ok: true };
 }

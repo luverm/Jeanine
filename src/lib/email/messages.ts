@@ -96,6 +96,29 @@ export function rebookingNudgeText(args: {
     .join("\n");
 }
 
+export function waitlistOpeningText(args: {
+  customerName: string;
+  serviceName: string;
+  freedAt: Date;
+  bookingUrl: string;
+}): string {
+  return [
+    `Hoi ${args.customerName},`,
+    "",
+    `Goed nieuws — er is een plek vrijgekomen bij ${business.name} waar je op de wachtlijst voor staat:`,
+    "",
+    `Dienst: ${args.serviceName}`,
+    `Vrijgekomen moment: ${formatHumanDateTime(args.freedAt)}`,
+    "",
+    `Wie het eerst boekt, krijgt de plek: ${args.bookingUrl}`,
+    "",
+    "Net te laat of niet het juiste moment? Geen zorgen — je blijft gewoon op de wachtlijst staan voor een volgende keer.",
+    "",
+    "Tot snel,",
+    business.ownerName,
+  ].join("\n");
+}
+
 /** Google Calendar "add event" template link. */
 export function googleCalendarUrl(args: {
   title: string;

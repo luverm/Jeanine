@@ -1,0 +1,64 @@
+import "server-only";
+import { getBookingDetail } from "@/lib/db/bookings";
+import { findWaitlistMatches } from "@/lib/db/waitlist";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { sendEmail } from "@/lib/email/client";
+import { waitlistOpeningText } from "@/lib/email/messages";
+import { formatIsoDate } from "@/lib/time";
+
+/**
+ * A booking was cancelled — let matching waitlist customers know the
+ * slot is free. Whoever books first wins; the bookings exclusion
+ * constraint makes the race safe, so the late ones simply see the slot
+ * gone. Best-effort: never throws, so it can't block the cancellation.
+ */
+export async function notifyWaitlistForFreedBooking(
+  bookingId: string,
+): Promise<number> {
+  const booking = await getBookingDetail(bookingId);
+  if (!booking) return 0;
+
+  const freedAt = new Date(booking.starts_at);
+  // No point nudging anyone toward a slot in the past.
+  if (freedAt.getTime() <= Date.now()) return 0;
+
+  const svc = createSupabaseServiceClient();
+  const { data: service } = await svc
+    .from("services")
+    .select("slug, name")
+    .eq("id", booking.service_id)
+    .maybeSingle();
+  if (!service) return 0;
+
+  const matches = await findWaitlistMatches({
+    serviceId: booking.service_id,
+    date: formatIsoDate(freedAt),
+  });
+  if (matches.length === 0) return 0;
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const bookingUrl = `${siteUrl}/boeken?dienst=${encodeURIComponent(
+    service.slug,
+  )}`;
+
+  let sent = 0;
+  for (const m of matches) {
+    try {
+      await sendEmail({
+        to: m.email,
+        subject: "Er is een plek vrijgekomen",
+        context: "waitlist_opening",
+        text: waitlistOpeningText({
+          customerName: m.full_name,
+          serviceName: service.name,
+          freedAt,
+          bookingUrl,
+        }),
+      });
+      sent += 1;
+    } catch (err) {
+      console.error(`[waitlist-backfill] mail to ${m.email} failed:`, err);
+    }
+  }
+  return sent;
+}

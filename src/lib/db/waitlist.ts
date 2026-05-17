@@ -45,6 +45,49 @@ export async function listWaitlist(): Promise<WaitlistRow[]> {
   return (data ?? []) as unknown as WaitlistRow[];
 }
 
+export type WaitlistMatch = { id: string; full_name: string; email: string };
+
+/**
+ * Open waitlist entries that fit a freed slot: the service matches (or
+ * the entry is service-flexible) AND the date matches (or the entry is
+ * date-flexible). A solo salon's open waitlist is tiny, so matching in
+ * memory is simpler and avoids PostgREST or-string quirks.
+ */
+export async function findWaitlistMatches(args: {
+  serviceId: string;
+  date: string;
+}): Promise<WaitlistMatch[]> {
+  const svc = createSupabaseServiceClient();
+  const { data, error } = await svc
+    .from("waitlist")
+    .select("id, full_name, email, service_id, preferred_date")
+    .eq("resolved", false);
+  if (error) throw error;
+
+  const rows = (data ?? []) as {
+    id: string;
+    full_name: string;
+    email: string;
+    service_id: string | null;
+    preferred_date: string | null;
+  }[];
+
+  const seen = new Set<string>();
+  const matches: WaitlistMatch[] = [];
+  for (const r of rows) {
+    const serviceFits =
+      r.service_id === null || r.service_id === args.serviceId;
+    const dateFits =
+      r.preferred_date === null || r.preferred_date === args.date;
+    if (!serviceFits || !dateFits) continue;
+    const key = r.email.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    matches.push({ id: r.id, full_name: r.full_name, email: r.email });
+  }
+  return matches;
+}
+
 export async function setWaitlistResolved(
   id: string,
   resolved: boolean,
