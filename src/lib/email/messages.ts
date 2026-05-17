@@ -21,6 +21,93 @@ function locationLine(): string | null {
   return `Locatie: ${street}, ${business.address.postcode} ${business.address.city}`;
 }
 
+function helpLine(): string {
+  const email = real(business.email);
+  const phone = real(business.phone);
+  if (email && phone) return `Vragen? Mail ${email} of bel ${phone}.`;
+  if (email) return `Vragen? Mail ${email}.`;
+  if (phone) return `Vragen? Bel ${phone}.`;
+  return "Vragen? Laat het ons gerust weten.";
+}
+
+function dutchDate(date: string): string {
+  try {
+    return format(new Date(`${date}T00:00:00`), "EEEE d MMMM yyyy");
+  } catch {
+    return date;
+  }
+}
+
+export function bookingCancelledText(args: {
+  customerName: string;
+  serviceName: string;
+  startsAt: Date;
+}): string {
+  return [
+    `Hoi ${args.customerName},`,
+    "",
+    `Je afspraak bij ${business.name} is geannuleerd:`,
+    "",
+    `Dienst: ${args.serviceName}`,
+    `Was gepland op: ${formatHumanDateTime(args.startsAt)}`,
+    "",
+    "Wil je een nieuwe afspraak? Boek gerust opnieuw online.",
+    "",
+    helpLine(),
+    "",
+    "Tot snel,",
+    business.ownerName,
+  ].join("\n");
+}
+
+export function waitlistConfirmationText(args: {
+  fullName: string;
+  serviceName?: string | null;
+  preferredDate?: string | null;
+}): string {
+  const what = args.serviceName ? ` voor ${args.serviceName}` : "";
+  const when = args.preferredDate
+    ? ` op ${dutchDate(args.preferredDate)}`
+    : "";
+  return [
+    `Hoi ${args.fullName},`,
+    "",
+    `Je staat op de wachtlijst${what}${when} bij ${business.name}.`,
+    "",
+    "Komt er een plek vrij, dan krijg je automatisch een e-mail met een",
+    "boeklink. Wie het eerst boekt, heeft de plek.",
+    "",
+    helpLine(),
+    "",
+    "Tot snel,",
+    business.ownerName,
+  ].join("\n");
+}
+
+export function waitlistAdminText(args: {
+  fullName: string;
+  email: string;
+  phone?: string | null;
+  serviceName?: string | null;
+  preferredDate?: string | null;
+  note?: string | null;
+}): string {
+  return [
+    "Nieuwe wachtlijst-aanmelding",
+    "",
+    `Naam: ${args.fullName}`,
+    `E-mail: ${args.email}`,
+    args.phone ? `Telefoon: ${args.phone}` : null,
+    `Dienst: ${args.serviceName ?? "geen voorkeur"}`,
+    `Voorkeursdag: ${
+      args.preferredDate ? dutchDate(args.preferredDate) : "geen voorkeur"
+    }`,
+    args.note ? `Notitie: ${args.note}` : null,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+}
+
 export function bookingConfirmationText(args: {
   customerName: string;
   serviceName: string;

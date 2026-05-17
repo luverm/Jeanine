@@ -4,6 +4,72 @@ import { z } from "zod";
 import { insertWaitlist, setWaitlistResolved } from "@/lib/db/waitlist";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { sendEmail } from "@/lib/email/client";
+import {
+  waitlistConfirmationText,
+  waitlistAdminText,
+} from "@/lib/email/messages";
+
+async function notifyWaitlist(d: {
+  serviceId?: string;
+  preferredDate?: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  note?: string;
+}): Promise<void> {
+  let serviceName: string | null = null;
+  try {
+    if (d.serviceId) {
+      const svc = createSupabaseServiceClient();
+      const { data } = await svc
+        .from("services")
+        .select("name")
+        .eq("id", d.serviceId)
+        .maybeSingle();
+      serviceName = (data as { name: string } | null)?.name ?? null;
+    }
+  } catch {
+    serviceName = null;
+  }
+
+  try {
+    await sendEmail({
+      to: d.email,
+      subject: "Je staat op de wachtlijst",
+      context: "waitlist_confirmation",
+      text: waitlistConfirmationText({
+        fullName: d.fullName,
+        serviceName,
+        preferredDate: d.preferredDate || null,
+      }),
+    });
+  } catch (err) {
+    console.error("[waitlist] confirmation mail failed:", err);
+  }
+
+  const adminEmail = process.env.ADMIN_NOTIFY_EMAIL;
+  if (adminEmail) {
+    try {
+      await sendEmail({
+        to: adminEmail,
+        subject: "Nieuwe wachtlijst-aanmelding",
+        context: "waitlist_admin",
+        text: waitlistAdminText({
+          fullName: d.fullName,
+          email: d.email,
+          phone: d.phone || null,
+          serviceName,
+          preferredDate: d.preferredDate || null,
+          note: d.note || null,
+        }),
+      });
+    } catch (err) {
+      console.error("[waitlist] admin mail failed:", err);
+    }
+  }
+}
 
 const joinSchema = z.object({
   serviceId: z.string().uuid().optional().or(z.literal("")),
@@ -52,6 +118,17 @@ export async function joinWaitlist(
     console.error("[waitlist] insert failed:", err);
     return { ok: false, code: "INVALID_INPUT" };
   }
+
+  // Best-effort — a mail hiccup must not fail the signup.
+  await notifyWaitlist({
+    serviceId: d.serviceId || undefined,
+    preferredDate: d.preferredDate || undefined,
+    fullName: d.fullName,
+    email: d.email,
+    phone: d.phone || undefined,
+    note: d.note || undefined,
+  });
+
   return { ok: true };
 }
 

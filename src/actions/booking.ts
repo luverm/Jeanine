@@ -18,6 +18,7 @@ import { resolveWaitlistForCustomer } from "@/lib/db/waitlist";
 import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
+import { bookingCancelledText } from "@/lib/email/messages";
 import {
   sendBookingConfirmation,
   sendBookingAdminNotice,
@@ -186,8 +187,22 @@ export async function cancelBookingAction(id: string): Promise<{ ok: boolean }> 
       entityId: id,
     }),
   );
-  // Don't re-notify if this was already a cancelled booking.
+  // Skip the mail/backfill if this was already a cancelled booking.
   if (before && before.status !== "cancelled") {
+    if (before.customer?.email) {
+      await safe(() =>
+        sendEmail({
+          to: before.customer.email,
+          subject: `Afspraak geannuleerd — ${before.service.name}`,
+          context: "booking_cancelled_customer",
+          text: bookingCancelledText({
+            customerName: before.customer.full_name,
+            serviceName: before.service.name,
+            startsAt: new Date(before.starts_at),
+          }),
+        }),
+      );
+    }
     await safe(() => notifyWaitlistForFreedBooking(id));
   }
   return { ok: true };
@@ -218,6 +233,21 @@ export async function cancelOwnBooking(
       entityId: id,
     }),
   );
+
+  if (booking.customer?.email) {
+    await safe(() =>
+      sendEmail({
+        to: booking.customer.email,
+        subject: `Afspraak geannuleerd — ${booking.service.name}`,
+        context: "booking_cancelled_customer",
+        text: bookingCancelledText({
+          customerName: booking.customer.full_name,
+          serviceName: booking.service.name,
+          startsAt: new Date(booking.starts_at),
+        }),
+      }),
+    );
+  }
 
   const adminEmail = process.env.ADMIN_NOTIFY_EMAIL;
   if (adminEmail) {
