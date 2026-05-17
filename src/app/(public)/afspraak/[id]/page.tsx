@@ -3,6 +3,7 @@ import { getBookingDetail } from "@/lib/db/bookings";
 import { verifyBookingToken } from "@/lib/booking-token";
 import { formatHumanDateTime } from "@/lib/time";
 import { CancelBooking } from "@/components/public/cancel-booking";
+import { RescheduleOwnBooking } from "@/components/public/reschedule-own-booking";
 
 export const dynamic = "force-dynamic";
 
@@ -53,12 +54,20 @@ export default async function AfspraakPage({
           </div>
 
           <div className="mt-6">
+            <RescheduleOwnBooking
+              id={id}
+              token={token!}
+              serviceId={booking.service_id}
+              staffId={booking.staff_id}
+            />
+          </div>
+
+          <div className="mt-3">
             <CancelBooking id={id} token={token!} />
           </div>
 
           <p className="mt-4 text-xs text-muted-foreground">
-            Wil je verzetten in plaats van annuleren? Annuleer hier en boek
-            een nieuw moment online — of neem contact met ons op.
+            Kom je er niet uit? Neem gerust contact met ons op.
           </p>
         </div>
       )}

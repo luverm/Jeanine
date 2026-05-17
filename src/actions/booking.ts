@@ -18,7 +18,10 @@ import { sendEmail } from "@/lib/email/client";
 import {
   sendBookingConfirmation,
   sendBookingAdminNotice,
+  sendBookingRescheduled,
 } from "@/lib/email/booking-emails";
+import { getAvailableSlots } from "@/lib/db/availability";
+import { formatIsoDate } from "@/lib/time";
 
 export type CreateBookingResult =
   | { ok: true; bookingId: string }
@@ -232,6 +235,91 @@ export async function cancelOwnBooking(
   }
 
   await safe(() => notifyWaitlistForFreedBooking(id));
+
+  return { ok: true };
+}
+
+export type RescheduleOwnResult =
+  | { ok: true }
+  | {
+      ok: false;
+      code: "INVALID" | "ALREADY" | "NOT_FOUND" | "PAST" | "SLOT_TAKEN";
+    };
+
+export async function rescheduleOwnBooking(
+  id: string,
+  token: string,
+  startsAt: string,
+  endsAt: string,
+): Promise<RescheduleOwnResult> {
+  if (!token || !verifyBookingToken(id, token)) {
+    return { ok: false, code: "INVALID" };
+  }
+  const start = new Date(startsAt);
+  const end = new Date(endsAt);
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime()) ||
+    end <= start
+  ) {
+    return { ok: false, code: "INVALID" };
+  }
+
+  const booking = await getBookingDetail(id);
+  if (!booking) return { ok: false, code: "NOT_FOUND" };
+  if (booking.status === "cancelled") return { ok: false, code: "ALREADY" };
+  if (new Date(booking.starts_at).getTime() <= Date.now()) {
+    return { ok: false, code: "PAST" };
+  }
+
+  // Defence in depth: only allow a slot the canonical availability
+  // algorithm actually offers for this service (opening hours, time_off,
+  // overlaps, lead time) — never trust the times the client posted.
+  const slots = await getAvailableSlots({
+    staffId: booking.staff_id,
+    serviceId: booking.service_id,
+    date: formatIsoDate(start),
+  });
+  const offered = slots.some(
+    (s) =>
+      s.startsAt.toISOString() === start.toISOString() &&
+      s.endsAt.toISOString() === end.toISOString(),
+  );
+  if (!offered) return { ok: false, code: "SLOT_TAKEN" };
+
+  const svc = createSupabaseServiceClient();
+  const { error } = await svc
+    .from("bookings")
+    .update({ starts_at: startsAt, ends_at: endsAt })
+    .eq("id", id);
+  if (error) {
+    if (isExclusionViolation(error)) return { ok: false, code: "SLOT_TAKEN" };
+    throw error;
+  }
+
+  await safe(() =>
+    writeAuditLog({
+      actor: "public",
+      action: "booking.reschedule",
+      entity: "booking",
+      entityId: id,
+      payload: { startsAt, endsAt },
+    }),
+  );
+
+  await safe(() =>
+    sendBookingRescheduled({
+      bookingId: id,
+      startsAt: start,
+      endsAt: end,
+      serviceName: booking.service.name,
+      customer: {
+        fullName: booking.customer.full_name,
+        email: booking.customer.email,
+        phone: booking.customer.phone ?? "",
+      },
+    }),
+  );
 
   return { ok: true };
 }
