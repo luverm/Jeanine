@@ -1,6 +1,7 @@
 import "server-only";
 import nodemailer, { type Transporter } from "nodemailer";
 import { recordEmail } from "@/lib/db/email-log";
+import { wrapHtml } from "@/lib/email/html";
 
 type MailConfig = {
   host: string;
@@ -50,6 +51,8 @@ export type SendArgs = {
   to: string | string[];
   subject: string;
   text: string;
+  /** Optional explicit HTML; otherwise the text is auto-wrapped (branded). */
+  html?: string;
   replyTo?: string;
   attachments?: EmailAttachment[];
   /** Short tag for the email log, e.g. "booking_confirmation". */
@@ -80,6 +83,7 @@ export async function sendEmail(args: SendArgs): Promise<{ id: string | null }> 
       to: args.to,
       subject: args.subject,
       text: args.text,
+      html: args.html ?? wrapHtml(args.text),
       replyTo: args.replyTo,
       attachments: args.attachments,
     });
