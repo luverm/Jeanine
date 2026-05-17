@@ -34,6 +34,23 @@ export async function insertWaitlist(input: {
   if (error) throw error;
 }
 
+export async function getWaitlistContact(id: string): Promise<{
+  fullName: string;
+  email: string;
+  phone: string | null;
+} | null> {
+  const svc = createSupabaseServiceClient();
+  const { data, error } = await svc
+    .from("waitlist")
+    .select("full_name, email, phone")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const row = data as { full_name: string; email: string; phone: string | null };
+  return { fullName: row.full_name, email: row.email, phone: row.phone };
+}
+
 export async function listWaitlist(): Promise<WaitlistRow[]> {
   const svc = createSupabaseServiceClient();
   const { data, error } = await svc

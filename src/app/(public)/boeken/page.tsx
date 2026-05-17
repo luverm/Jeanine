@@ -3,6 +3,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { BookingForm } from "@/components/booking/booking-form";
 import { listActiveServices } from "@/lib/db/services";
 import { getDefaultStaffId } from "@/lib/db/staff";
+import { verifyWaitlistToken } from "@/lib/booking-token";
+import { getWaitlistContact } from "@/lib/db/waitlist";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,13 @@ export const metadata: Metadata = {
 export default async function BoekenPage({
   searchParams,
 }: {
-  searchParams: Promise<{ dienst?: string }>;
+  searchParams: Promise<{
+    dienst?: string;
+    datum?: string;
+    tijd?: string;
+    wl?: string;
+    token?: string;
+  }>;
 }) {
   const [services, staffId, params] = await Promise.all([
     listActiveServices("regular"),
@@ -23,6 +31,42 @@ export default async function BoekenPage({
   ]);
 
   const bookable = services.filter((s) => s.is_online_bookable);
+
+  // Coming from a waitlist "spot opened" mail: the service/date/time are
+  // in the URL; the contact details are resolved server-side from the
+  // signed waitlist id so no personal data travels in the link.
+  let contact: { fullName: string; email: string; phone: string } | null =
+    null;
+  if (params?.wl && params?.token && verifyWaitlistToken(params.wl, params.token)) {
+    try {
+      const c = await getWaitlistContact(params.wl);
+      if (c) {
+        contact = {
+          fullName: c.fullName,
+          email: c.email,
+          phone: c.phone ?? "",
+        };
+      }
+    } catch {
+      contact = null;
+    }
+  }
+
+  const prefill =
+    params?.dienst || contact
+      ? {
+          serviceSlug: params?.dienst,
+          date: /^\d{4}-\d{2}-\d{2}$/.test(params?.datum ?? "")
+            ? params!.datum
+            : undefined,
+          time: /^\d{2}:\d{2}$/.test(params?.tijd ?? "")
+            ? params!.tijd
+            : undefined,
+          fullName: contact?.fullName,
+          email: contact?.email,
+          phone: contact?.phone,
+        }
+      : undefined;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16">
@@ -45,7 +89,7 @@ export default async function BoekenPage({
         <BookingForm
           services={bookable}
           staffId={staffId}
-          initialServiceSlug={params?.dienst}
+          prefill={prefill}
         />
       )}
 

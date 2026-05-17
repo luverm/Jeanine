@@ -4,7 +4,8 @@ import { findWaitlistMatches } from "@/lib/db/waitlist";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
 import { waitlistOpeningText } from "@/lib/email/messages";
-import { formatIsoDate } from "@/lib/time";
+import { formatIsoDate, formatTime } from "@/lib/time";
+import { signWaitlist } from "@/lib/booking-token";
 
 /**
  * A future slot freed up (cancellation or reschedule) — let matching
@@ -38,12 +39,22 @@ export async function notifyWaitlistForFreedSlot(args: {
   if (matches.length === 0) return 0;
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const bookingUrl = `${siteUrl}/boeken?dienst=${encodeURIComponent(
-    service.slug,
-  )}`;
+  // The freed slot's service/date/time (not PII) goes in the link; the
+  // customer's contact details stay behind the signed waitlist id so
+  // the booking form can pre-fill them and offer a one-click confirm.
+  const datum = formatIsoDate(freedAt);
+  const tijd = formatTime(freedAt);
 
   let sent = 0;
   for (const m of matches) {
+    const params = new URLSearchParams({
+      dienst: service.slug,
+      datum,
+      tijd,
+      wl: m.id,
+      token: signWaitlist(m.id),
+    });
+    const bookingUrl = `${siteUrl}/boeken?${params.toString()}`;
     try {
       await sendEmail({
         to: m.email,

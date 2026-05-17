@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,23 +35,34 @@ const TOTAL_STEPS = STEPS.length;
 const todayInTz = new Date(formatIsoDate(new Date()) + "T00:00:00Z");
 const ninetyDaysOut = new Date(todayInTz.getTime() + 90 * 24 * 60 * 60 * 1000);
 
+export type BookingPrefill = {
+  serviceSlug?: string;
+  date?: string;
+  time?: string;
+  fullName?: string;
+  email?: string;
+  phone?: string;
+};
+
 export function BookingForm({
   services,
   staffId,
-  initialServiceSlug,
+  prefill,
 }: {
   services: Service[];
   staffId: string;
-  initialServiceSlug?: string;
+  prefill?: BookingPrefill;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [serviceId, setServiceId] = useState<string | null>(
-    initialServiceSlug
-      ? services.find((s) => s.slug === initialServiceSlug)?.id ?? null
+    prefill?.serviceSlug
+      ? services.find((s) => s.slug === prefill.serviceSlug)?.id ?? null
       : null,
   );
-  const [date, setDate] = useState<Date | undefined>();
+  const [date, setDate] = useState<Date | undefined>(
+    prefill?.date ? new Date(`${prefill.date}T00:00:00Z`) : undefined,
+  );
   const [fetchedSlots, setFetchedSlots] = useState<Slot[]>([]);
   const [fetchedFor, setFetchedFor] = useState<string | null>(null);
   const [selectedStartIso, setSelectedStartIso] = useState<string | null>(null);
@@ -59,11 +70,17 @@ export function BookingForm({
   // Idempotency-key generated once per mount via lazy useState initialiser.
   // Different value on server vs. client is fine — it isn't rendered into HTML.
   const [idempotencyKey] = useState<string>(() => uuidv4());
+  const prefillAppliedRef = useRef(false);
   const [pending, startTransition] = useTransition();
 
   const form = useForm<CustomerInput>({
     resolver: zodResolver(customerInputSchema),
-    defaultValues: { fullName: "", email: "", phone: "", notes: "" },
+    defaultValues: {
+      fullName: prefill?.fullName ?? "",
+      email: prefill?.email ?? "",
+      phone: prefill?.phone ?? "",
+      notes: "",
+    },
     mode: "onBlur",
   });
 
@@ -90,6 +107,30 @@ export function BookingForm({
           })),
         );
         setFetchedFor(requestKey);
+
+        // One-shot: arrived from a waitlist "spot opened" link with a
+        // service, date, time and pre-filled contact. Jump straight to
+        // the confirm step with the desired time selected — or to the
+        // time step if it's gone, with the contact still filled in.
+        if (prefill && !prefillAppliedRef.current) {
+          prefillAppliedRef.current = true;
+          if (prefill.time) {
+            const hit = dtos.find(
+              (s) =>
+                s.available &&
+                formatTime(new Date(s.startsAt)) === prefill.time,
+            );
+            if (hit) {
+              setSelectedStartIso(new Date(hit.startsAt).toISOString());
+              setStep(3);
+            } else {
+              toast.error("Die tijd is net bezet — kies een ander moment.");
+              setStep(2);
+            }
+          } else {
+            setStep(2);
+          }
+        }
       })
       .catch((err) => {
         if (cancelled) return;
@@ -101,7 +142,7 @@ export function BookingForm({
     return () => {
       cancelled = true;
     };
-  }, [staffId, service, dateStr, requestKey]);
+  }, [staffId, service, dateStr, requestKey, prefill]);
 
   const slots: Slot[] =
     service && dateStr && fetchedFor === requestKey ? fetchedSlots : [];
