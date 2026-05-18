@@ -57,7 +57,13 @@ export default async function InvoicePage({
       <div className="mt-6 rounded-lg border bg-white p-8 text-sm text-stone-900 print:border-0 print:p-0">
         <div className="flex items-start justify-between gap-6">
           <div>
-            <p className="text-2xl font-semibold tracking-tight">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/Monogram-Transparant-Cocoa.png"
+              alt={business.name}
+              className="h-16 w-auto"
+            />
+            <p className="mt-3 text-2xl font-semibold tracking-tight">
               {business.name}
             </p>
             <p className="text-xs uppercase tracking-[0.2em] text-stone-500">
