@@ -109,9 +109,11 @@ const sendSchema = z.object({
   website: z.string().max(0).optional().or(z.literal("")),
 });
 
-export async function sendVisitorMessage(
-  input: unknown,
-): Promise<{ ok: boolean; code?: "RATE_LIMITED" | "EMPTY" | "INVALID" }> {
+export async function sendVisitorMessage(input: unknown): Promise<{
+  ok: boolean;
+  code?: "RATE_LIMITED" | "EMPTY" | "INVALID" | "INTERNAL";
+  message?: string;
+}> {
   const parsed = sendSchema.safeParse(input);
   if (!parsed.success) return { ok: false, code: "INVALID" };
   const d = parsed.data;
@@ -137,7 +139,11 @@ export async function sendVisitorMessage(
     return { ok: true };
   } catch (err) {
     console.error("[chat] send failed:", err);
-    return { ok: false };
+    return {
+      ok: false,
+      code: "INTERNAL",
+      message: err instanceof Error ? err.message : String(err),
+    };
   }
 }
 

@@ -65,9 +65,28 @@ export function ChatWidget() {
     if (!open || !token) return;
     let cancelled = false;
 
+    let everOk = false;
     const load = async () => {
       const r = await fetchChat({ token, sinceId: lastIdRef.current });
-      if (cancelled || !r.ok || r.messages.length === 0) return;
+      if (cancelled) return;
+      if (!r.ok) {
+        // A stored token that resolves to nothing (thread gone / DB
+        // reset) — drop it so the fresh start UI (incl. email) returns
+        // instead of a permanently stuck chat.
+        if (!everOk) {
+          try {
+            window.localStorage.removeItem(TOKEN_KEY);
+          } catch {
+            /* ignore */
+          }
+          lastIdRef.current = 0;
+          setMessages([]);
+          setToken(null);
+        }
+        return;
+      }
+      everOk = true;
+      if (r.messages.length === 0) return;
       lastIdRef.current = r.messages[r.messages.length - 1].id;
       setMessages((prev) => [...prev, ...r.messages]);
     };
@@ -98,6 +117,22 @@ export function ChatWidget() {
     return r.path;
   }
 
+  async function freshThread(): Promise<string | null> {
+    const s = await startChat({
+      token: "",
+      name: name.trim(),
+      email: email.trim(),
+    });
+    if (!s.ok) return null;
+    setToken(s.token);
+    try {
+      window.localStorage.setItem(TOKEN_KEY, s.token);
+    } catch {
+      /* private mode — chat still works this session */
+    }
+    return s.token;
+  }
+
   async function send() {
     const body = text.trim();
     const hasImage = !!fileRef.current?.files?.length;
@@ -105,40 +140,49 @@ export function ChatWidget() {
     setBusy(true);
     setError(null);
     try {
-      let activeToken = token;
+      let activeToken = token ?? (await freshThread());
       if (!activeToken) {
-        const s = await startChat({
-          token: "",
-          name: name.trim(),
-          email: email.trim(),
-        });
-        if (!s.ok) {
-          setError("Kon de chat niet starten. Probeer het later opnieuw.");
-          return;
-        }
-        activeToken = s.token;
-        setToken(activeToken);
-        try {
-          window.localStorage.setItem(TOKEN_KEY, activeToken);
-        } catch {
-          /* private mode — chat still works this session */
-        }
+        setError("Kon de chat niet starten. Probeer het later opnieuw.");
+        return;
       }
 
       const imagePath = hasImage ? await uploadImage() : null;
       if (hasImage && !imagePath) return;
 
-      const r = await sendVisitorMessage({
+      let r = await sendVisitorMessage({
         token: activeToken,
         body,
         imagePath: imagePath ?? "",
         website: "",
       });
+
+      // Stale/dead token (thread no longer exists) — start a fresh
+      // conversation and retry once, so the visitor never gets stuck.
+      if (!r.ok && r.code === "INVALID") {
+        try {
+          window.localStorage.removeItem(TOKEN_KEY);
+        } catch {
+          /* ignore */
+        }
+        const newToken = await freshThread();
+        if (newToken) {
+          activeToken = newToken;
+          r = await sendVisitorMessage({
+            token: newToken,
+            body,
+            imagePath: imagePath ?? "",
+            website: "",
+          });
+        }
+      }
+
       if (!r.ok) {
         setError(
           r.code === "RATE_LIMITED"
             ? "Te veel berichten — wacht even."
-            : "Versturen mislukt.",
+            : r.message
+              ? `Versturen mislukt: ${r.message}`
+              : "Versturen mislukt.",
         );
         return;
       }
