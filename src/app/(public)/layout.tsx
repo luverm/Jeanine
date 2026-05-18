@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getBusiness } from "@/lib/db/business-settings";
 import { MobileNav } from "@/components/public/mobile-nav";
+import { ChatWidget } from "@/components/public/chat-widget";
 
 const navLinks = [
   { href: "/diensten", label: "Diensten" },
@@ -133,6 +134,7 @@ export default async function PublicLayout({
           </div>
         </div>
       </footer>
+      <ChatWidget />
     </div>
   );
 }

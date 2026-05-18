@@ -6,6 +6,8 @@ import {
   listDueReviewRequests,
   markReviewRequestSent,
 } from "@/lib/db/review-requests";
+import { purgeOldThreads } from "@/lib/db/chat";
+import { deleteChatImages } from "@/lib/chat-images";
 import { sendEmail } from "@/lib/email/client";
 import {
   bookingReminderText,
@@ -141,6 +143,16 @@ export async function GET(request: NextRequest) {
     console.error("[cron/reminders] review query failed:", err);
   }
 
+  // Chat retention: drop conversations idle > 30 days unless kept.
+  let chatPurged = 0;
+  try {
+    const { threads, imagePaths } = await purgeOldThreads(30);
+    chatPurged = threads;
+    if (imagePaths.length > 0) await deleteChatImages(imagePaths);
+  } catch (err) {
+    console.error("[cron/reminders] chat purge failed:", err);
+  }
+
   return NextResponse.json({
     ok: true,
     considered: due.length,
@@ -148,5 +160,6 @@ export async function GET(request: NextRequest) {
     failed,
     rebooking: { sent: rebookSent, failed: rebookFailed },
     reviews: { sent: reviewSent, failed: reviewFailed },
+    chat: { purged: chatPurged },
   });
 }

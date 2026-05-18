@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Heart,
   UserRound,
+  MessageSquare,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -20,6 +21,7 @@ const NAV_ITEMS: Item[] = [
   { href: "/boekingen", label: "Boekingen", icon: CalendarDays },
   { href: "/leads", label: "Leads", icon: Heart },
   { href: "/klanten", label: "Klanten", icon: UserRound },
+  { href: "/berichten", label: "Berichten", icon: MessageSquare },
   { href: "/instellingen", label: "Instellingen", icon: Settings },
 ];
 
