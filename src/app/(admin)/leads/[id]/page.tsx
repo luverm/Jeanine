@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { LeadStatusSelect } from "@/components/admin/lead-status-select";
 import { LeadNotesForm } from "@/components/admin/lead-notes-form";
 import { LeadFinanceForm } from "@/components/admin/lead-finance-form";
+import { LeadDelete } from "@/components/admin/lead-delete";
 import { signBridalAttachments } from "@/actions/bridal-upload";
 import { leadStatusLabel, leadStatusVariant } from "@/lib/status-labels";
 
@@ -137,6 +138,16 @@ export default async function LeadDetailPage({
         <h2 className="text-base font-semibold">Interne notitie</h2>
         <div className="mt-4">
           <LeadNotesForm leadId={lead.id} initialNotes={lead.notes} />
+        </div>
+      </Card>
+
+      <Card className="mt-6 border-destructive/30 p-6">
+        <h2 className="text-base font-semibold">Lead verwijderen</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Verwijdert de lead en bijbehorende inspiratiebeelden definitief.
+        </p>
+        <div className="mt-4">
+          <LeadDelete leadId={lead.id} />
         </div>
       </Card>
     </div>

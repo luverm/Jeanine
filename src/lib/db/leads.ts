@@ -127,3 +127,18 @@ export async function updateLeadNotes(
     .eq("id", id);
   if (error) throw error;
 }
+
+/** Deletes the lead and returns its attachment paths for cleanup. */
+export async function deleteLead(id: string): Promise<string[]> {
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("bridal_leads")
+    .delete()
+    .eq("id", id)
+    .select("attachment_paths")
+    .maybeSingle();
+  if (error) throw error;
+  const paths = (data as { attachment_paths: string[] | null } | null)
+    ?.attachment_paths;
+  return paths ?? [];
+}

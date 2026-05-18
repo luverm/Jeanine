@@ -76,3 +76,16 @@ export async function signBridalAttachments(
     return [];
   }
 }
+
+/** Best-effort removal of a lead's inspiration images from Storage. */
+export async function deleteBridalAttachments(
+  paths: string[],
+): Promise<void> {
+  if (!paths || paths.length === 0) return;
+  try {
+    const svc = createSupabaseServiceClient();
+    await svc.storage.from(BRIDAL_BUCKET).remove(paths);
+  } catch (err) {
+    console.error("[bridal-upload] attachment cleanup failed:", err);
+  }
+}

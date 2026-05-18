@@ -7,8 +7,10 @@ import {
   updateLeadStatus,
   updateLeadNotes,
   updateLeadFinance,
+  deleteLead,
   type LeadStatus,
 } from "@/lib/db/leads";
+import { deleteBridalAttachments } from "@/actions/bridal-upload";
 import { writeAuditLog } from "@/lib/db/bookings";
 import { sendEmail } from "@/lib/email/client";
 import { leadAdminText, leadCustomerAckText } from "@/lib/email/messages";
@@ -214,5 +216,27 @@ export async function updateLeadFinanceAction(
     console.error("[lead] finance update failed:", err);
     return { ok: false };
   }
+  return { ok: true };
+}
+
+export async function deleteLeadAction(
+  id: string,
+): Promise<{ ok: boolean }> {
+  let paths: string[];
+  try {
+    paths = await deleteLead(id);
+  } catch (err) {
+    console.error("[lead] delete failed:", err);
+    return { ok: false };
+  }
+  await safe(() => deleteBridalAttachments(paths));
+  await safe(() =>
+    writeAuditLog({
+      actor: "admin",
+      action: "lead.delete",
+      entity: "bridal_lead",
+      entityId: id,
+    }),
+  );
   return { ok: true };
 }
