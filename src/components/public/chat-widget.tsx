@@ -7,6 +7,7 @@ import {
   sendVisitorMessage,
   fetchChat,
   uploadVisitorChatImage,
+  requestChatLink,
   type ChatMessageDto,
 } from "@/actions/chat";
 
@@ -28,6 +29,9 @@ export function ChatWidget() {
   });
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [resumeOpen, setResumeOpen] = useState(false);
+  const [resumeEmail, setResumeEmail] = useState("");
+  const [resumeSent, setResumeSent] = useState(false);
   const [text, setText] = useState("");
   const [messages, setMessages] = useState<ChatMessageDto[]>([]);
   const [busy, setBusy] = useState(false);
@@ -235,6 +239,45 @@ export function ChatWidget() {
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             maxLength={254}
           />
+
+          {resumeSent ? (
+            <p className="text-xs text-emerald-700">
+              Als er een gesprek bij dit e-mailadres hoort, sturen we je
+              zo de link.
+            </p>
+          ) : resumeOpen ? (
+            <div className="flex gap-2">
+              <input
+                value={resumeEmail}
+                onChange={(e) => setResumeEmail(e.target.value)}
+                type="email"
+                placeholder="E-mail van je eerdere chat"
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                maxLength={254}
+              />
+              <button
+                type="button"
+                disabled={busy || !resumeEmail.includes("@")}
+                onClick={() => {
+                  setBusy(true);
+                  void requestChatLink({ email: resumeEmail.trim() })
+                    .then(() => setResumeSent(true))
+                    .finally(() => setBusy(false));
+                }}
+                className="shrink-0 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                Stuur link
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setResumeOpen(true)}
+              className="text-left text-xs text-muted-foreground underline underline-offset-4"
+            >
+              Al eerder gechat? Mail me de link naar mijn gesprek
+            </button>
+          )}
         </div>
       )}
 

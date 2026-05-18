@@ -6,11 +6,14 @@ import {
   postMessage,
   getVisitorView,
   resolveThreadIdByToken,
+  getThreadByEmail,
 } from "@/lib/db/chat";
 import {
   uploadChatImage as storeChatImage,
   signChatImages,
 } from "@/lib/chat-images";
+import { sendEmail } from "@/lib/email/client";
+import { chatResumeText } from "@/lib/email/messages";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 
@@ -51,6 +54,52 @@ export async function startChat(
     console.error("[chat] start failed:", err);
     return { ok: false };
   }
+}
+
+const resumeSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+});
+
+/**
+ * "Mail me mijn chat": sends a magic link to the visitor's most
+ * recent thread. Always reports success (no email enumeration); the
+ * link only works because public_token is the unguessable capability.
+ */
+export async function requestChatLink(
+  input: unknown,
+): Promise<{ ok: boolean }> {
+  const parsed = resumeSchema.safeParse(input);
+  if (!parsed.success) return { ok: false };
+
+  const ip = await getClientIp();
+  const limited = await rateLimit({
+    key: `chat-link:${ip}`,
+    max: 5,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!limited.ok) return { ok: true };
+
+  try {
+    const thread = await getThreadByEmail(parsed.data.email);
+    if (thread) {
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+      await sendEmail({
+        to: parsed.data.email,
+        subject: "Je chatgesprek",
+        context: "chat_resume",
+        text: chatResumeText({
+          customerName: thread.name,
+          chatUrl: `${siteUrl.replace(/\/+$/, "")}/?chat=${
+            thread.publicToken
+          }`,
+        }),
+      });
+    }
+  } catch (err) {
+    console.error("[chat] resume link failed:", err);
+  }
+  return { ok: true };
 }
 
 const sendSchema = z.object({

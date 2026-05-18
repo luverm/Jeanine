@@ -50,6 +50,24 @@ export async function getOrCreateThread(
   const name = visitorName?.trim() || null;
   const email = visitorEmail?.trim().toLowerCase() || null;
 
+  // Email is the lightweight identity: if this person already has a
+  // thread under this email, continue it (so switching device /
+  // clearing the browser keeps one conversation). Defensive if the
+  // visitor_email column isn't migrated yet.
+  if (email) {
+    const existing = await svc
+      .from("chat_threads")
+      .select("id, public_token")
+      .eq("visitor_email", email)
+      .order("last_message_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!existing.error && existing.data) {
+      const row = existing.data as { id: string; public_token: string };
+      return { id: row.id, token: row.public_token };
+    }
+  }
+
   let res = await svc
     .from("chat_threads")
     .insert({ visitor_name: name, visitor_email: email })
@@ -67,6 +85,24 @@ export async function getOrCreateThread(
   if (res.error) throw res.error;
   const row = res.data as { id: string; public_token: string };
   return { id: row.id, token: row.public_token };
+}
+
+/** Most recent thread for an email — for the "mail me my chat" link. */
+export async function getThreadByEmail(email: string): Promise<{
+  publicToken: string;
+  name: string | null;
+} | null> {
+  const svc = createSupabaseServiceClient();
+  const { data, error } = await svc
+    .from("chat_threads")
+    .select("public_token, visitor_name")
+    .eq("visitor_email", email.trim().toLowerCase())
+    .order("last_message_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  const row = data as { public_token: string; visitor_name: string | null };
+  return { publicToken: row.public_token, name: row.visitor_name };
 }
 
 /** Contact + the last message's sender, for the reply notification. */

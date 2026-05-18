@@ -224,6 +224,24 @@ export function reviewRequestText(args: {
   ].join("\n");
 }
 
+export function chatResumeText(args: {
+  customerName: string | null;
+  chatUrl: string;
+}): string {
+  return [
+    `Hoi${args.customerName ? ` ${args.customerName}` : ""},`,
+    "",
+    `Hier is de link naar je gesprek met ${business.name}:`,
+    "",
+    args.chatUrl,
+    "",
+    "Open 'm op elk apparaat om je chat verder te lezen of te reageren.",
+    "",
+    "Tot snel,",
+    business.ownerName,
+  ].join("\n");
+}
+
 export function chatReplyText(args: {
   customerName: string | null;
   chatUrl: string;
