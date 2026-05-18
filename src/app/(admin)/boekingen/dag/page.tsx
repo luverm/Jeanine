@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { addDays, format, parseISO, isValid } from "date-fns";
 import { listBookings } from "@/lib/db/admin-bookings";
 import { PrintButton } from "@/components/admin/print-button";
-import { formatIsoDate, formatTime } from "@/lib/time";
+import { DaySheet } from "@/components/admin/day-sheet";
+import { formatIsoDate } from "@/lib/time";
 import { formatPrice } from "@/lib/db/services";
-import { bookingStatusLabel } from "@/lib/status-labels";
 
 export const metadata: Metadata = {
   title: "Dagstaat",
@@ -102,44 +102,20 @@ export default async function DaySheetPage({
           Geen afspraken op deze dag.
         </p>
       ) : (
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
-              <th className="py-2 pr-3">Tijd</th>
-              <th className="py-2 pr-3">Klant</th>
-              <th className="py-2 pr-3">Dienst</th>
-              <th className="py-2 pr-3">Telefoon</th>
-              <th className="py-2 pr-3 text-right">Te rekenen</th>
-              <th className="py-2 pr-3">Status</th>
-              <th className="py-2">Betaald</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bookings.map((b) => (
-              <tr key={b.id} className="border-b align-top">
-                <td className="py-2.5 pr-3 font-mono">
-                  {formatTime(new Date(b.starts_at))}
-                </td>
-                <td className="py-2.5 pr-3">{b.customer?.full_name ?? "—"}</td>
-                <td className="py-2.5 pr-3">{b.service?.name ?? "—"}</td>
-                <td className="py-2.5 pr-3">{b.customer?.phone ?? "—"}</td>
-                <td className="py-2.5 pr-3 text-right font-semibold tabular-nums">
-                  {b.service?.price_cents
-                    ? formatPrice(b.service.price_cents)
-                    : "—"}
-                </td>
-                <td className="py-2.5 pr-3">{bookingStatusLabel(b.status)}</td>
-                <td className="py-2.5">
-                  {b.paid
-                    ? `${b.paid_method ?? "ja"} · ${formatPrice(
-                        b.paid_amount_cents ?? b.service?.price_cents ?? 0,
-                      )}`
-                    : "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DaySheet
+          rows={bookings.map((b) => ({
+            id: b.id,
+            startsAt: b.starts_at,
+            name: b.customer?.full_name ?? "—",
+            phone: b.customer?.phone ?? null,
+            service: b.service?.name ?? "—",
+            priceCents: b.service?.price_cents ?? 0,
+            status: b.status,
+            paid: !!b.paid,
+            paidMethod: b.paid_method ?? null,
+            paidAmountCents: b.paid_amount_cents ?? null,
+          }))}
+        />
       )}
 
       {bookings.length > 0 && paidTotal > 0 && (
