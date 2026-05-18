@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { loadDashboardKpis } from "@/lib/db/admin-bookings";
 import { loadInsights } from "@/lib/db/insights";
 import { listLeads } from "@/lib/db/leads";
+import { listInvoices } from "@/lib/db/invoices";
 import { Card } from "@/components/ui/card";
 import { MonthCalendar } from "@/components/admin/month-calendar";
 import { getDeviceInfo } from "@/lib/device";
@@ -22,11 +23,12 @@ export default async function DashboardPage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const { month } = await searchParams;
-  const [kpis, insights, leads, device] = await Promise.all([
+  const [kpis, insights, leads, device, invoices] = await Promise.all([
     loadDashboardKpis(),
     loadInsights(),
     listLeads("new"),
     getDeviceInfo(),
+    listInvoices(8).catch(() => []),
   ]);
 
   const maxRevenue = Math.max(
@@ -51,6 +53,7 @@ export default async function DashboardPage({
         <QuickAction href="/boekingen/nieuw" label="Nieuwe boeking" />
         <QuickAction href="/boekingen" label="Alle boekingen" />
         <QuickAction href="/boekingen/dag" label="Dagstaat" />
+        <QuickAction href="/facturen" label="Facturen" />
         <QuickAction href="/instellingen/vrije-dagen" label="Vrije dag blokkeren" />
         <QuickAction href="/instellingen/openingstijden" label="Openingstijden" />
         <QuickAction href="/instellingen/diensten" label="Diensten" />
@@ -141,6 +144,45 @@ export default async function DashboardPage({
                     {lead.wedding_date ?? "datum onbekend"}
                     {lead.location ? ` · ${lead.location}` : ""}
                   </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card className="mt-8 p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Recente facturen</h2>
+          <Link
+            href="/facturen"
+            className="text-xs text-muted-foreground underline underline-offset-4"
+          >
+            Alle facturen
+          </Link>
+        </div>
+        {invoices.length === 0 ? (
+          <p className="mt-6 text-sm text-muted-foreground">
+            Nog geen facturen.
+          </p>
+        ) : (
+          <ul className="mt-4 divide-y text-sm">
+            {invoices.map((inv) => (
+              <li key={inv.id}>
+                <Link
+                  href={`/facturen/${inv.id}`}
+                  className="flex items-center justify-between gap-3 py-2 hover:text-foreground/70"
+                >
+                  <span className="font-medium">{inv.number}</span>
+                  <span className="truncate text-muted-foreground">
+                    {inv.customer_name}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {inv.issued_on}
+                  </span>
+                  <span className="shrink-0 tabular-nums">
+                    {formatPrice(inv.total_cents)}
+                  </span>
                 </Link>
               </li>
             ))}

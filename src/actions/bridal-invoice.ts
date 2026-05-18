@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { getBusiness } from "@/lib/db/business-settings";
 import { createBridalInvoice } from "@/lib/db/invoices";
+import { setLeadAgreedPrice } from "@/lib/db/leads";
 import { writeAuditLog } from "@/lib/db/bookings";
 
 const schema = z.object({
@@ -62,6 +63,13 @@ export async function createBridalInvoiceAction(
       prefix: business.invoicePrefix,
       lines: billable,
     });
+    if (d.leadId) {
+      // Mirror the invoice total onto the lead's agreed price so the
+      // lead detail reflects what was actually billed.
+      await setLeadAgreedPrice(d.leadId, invoice.total_cents).catch((e) =>
+        console.error("[bridal-invoice] lead price sync failed:", e),
+      );
+    }
     await writeAuditLog({
       actor: "admin",
       action: "invoice.create.bridal",

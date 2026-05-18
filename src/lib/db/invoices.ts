@@ -191,3 +191,25 @@ export async function getInvoiceWithLines(
     lines: (lines ?? []) as InvoiceLine[],
   };
 }
+
+export type InvoiceListItem = {
+  id: string;
+  number: string;
+  issued_on: string;
+  customer_name: string;
+  total_cents: number;
+  booking_id: string | null;
+};
+
+/** Most recent invoices, newest first — for the dashboard overview. */
+export async function listInvoices(limit = 200): Promise<InvoiceListItem[]> {
+  const svc = createSupabaseServiceClient();
+  const { data, error } = await svc
+    .from("invoices")
+    .select("id, number, issued_on, customer_name, total_cents, booking_id")
+    .order("issued_on", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as InvoiceListItem[];
+}

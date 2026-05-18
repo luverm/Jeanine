@@ -45,6 +45,19 @@ export async function updateLeadFinance(
   if (error) throw error;
 }
 
+/** Sets only the agreed price (preserves deposit fields). */
+export async function setLeadAgreedPrice(
+  id: string,
+  agreedPriceCents: number,
+): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("bridal_leads")
+    .update({ agreed_price_cents: agreedPriceCents })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export type LeadInsert = {
   fullName: string;
   email: string;
