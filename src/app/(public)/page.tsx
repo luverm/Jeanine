@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { listActiveServices } from "@/lib/db/services";
 import { listPortfolioImages } from "@/lib/portfolio";
+import { listHeroImages } from "@/lib/hero";
 import { listVisibleReviews } from "@/lib/db/reviews";
 import { ServiceCard } from "@/components/public/service-card";
 import { HeroCarousel } from "@/components/public/hero-carousel";
@@ -19,16 +20,18 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [services, portfolio, dbReviews] = await Promise.all([
+  const [services, portfolio, heroImages, dbReviews] = await Promise.all([
     listActiveServices(),
     listPortfolioImages(),
+    listHeroImages(),
     listVisibleReviews(),
   ]);
   const regular = services.filter((s) => s.kind === "regular").slice(0, 3);
   const bridalTeaser = services.find((s) => s.kind === "bridal");
   const previewServices = bridalTeaser ? [...regular, bridalTeaser] : regular;
   const portfolioStrip = portfolio.slice(0, 6);
-  const heroSlides = portfolio.slice(0, 5);
+  const heroSlides =
+    heroImages.length > 0 ? heroImages.slice(0, 6) : portfolio.slice(0, 5);
   const reviews =
     dbReviews.length > 0
       ? dbReviews.map((r) => ({ quote: r.quote, author: r.author }))
