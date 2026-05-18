@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Slider } from "@/components/ui/slider";
 
 import {
   BRIDAL_SERVICE_OPTIONS,
@@ -30,14 +29,9 @@ const SERVICE_LABELS: Record<BridalServiceOption, string> = {
   hairextensions: "Hairextensions",
 };
 
-const BUDGET_MIN_EUR = 0;
-const BUDGET_MAX_EUR = 5000;
-const BUDGET_STEP = 250;
-
 export function LeadForm() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [budgetEur, setBudgetEur] = useState<number | null>(null);
   const [files, setFiles] = useState<File[]>([]);
 
   const form = useForm<LeadInput>({
@@ -73,7 +67,7 @@ export function LeadForm() {
       }
       const payload: LeadInput = {
         ...values,
-        budgetCents: budgetEur === null ? null : budgetEur * 100,
+        budgetCents: null,
         attachmentPaths,
       };
       const result = await createLead(payload);
@@ -226,46 +220,6 @@ export function LeadForm() {
           <p className="mt-1 text-xs text-red-600">
             {errors.servicesWanted.message as string}
           </p>
-        )}
-      </div>
-
-      <div>
-        <div className="flex items-baseline justify-between">
-          <Label>Budget (optioneel)</Label>
-          <span className="text-sm font-semibold">
-            {budgetEur === null
-              ? "Geen voorkeur"
-              : `± € ${budgetEur.toLocaleString("nl-NL")}${
-                  budgetEur >= BUDGET_MAX_EUR ? "+" : ""
-                }`}
-          </span>
-        </div>
-        <div className="mt-3 rounded-lg border bg-muted/30 px-4 py-5">
-          <Slider
-            min={BUDGET_MIN_EUR}
-            max={BUDGET_MAX_EUR}
-            step={BUDGET_STEP}
-            value={[budgetEur ?? BUDGET_MIN_EUR]}
-            onValueChange={(values) => {
-              const next = Array.isArray(values) ? values[0] : values;
-              setBudgetEur(next ?? 0);
-            }}
-          />
-          <div className="mt-3 flex justify-between text-xs text-muted-foreground">
-            <span>€ 0</span>
-            <span>
-              € {BUDGET_MAX_EUR.toLocaleString("nl-NL")}+
-            </span>
-          </div>
-        </div>
-        {budgetEur !== null && (
-          <button
-            type="button"
-            onClick={() => setBudgetEur(null)}
-            className="mt-2 text-xs text-muted-foreground underline underline-offset-4"
-          >
-            Geen voorkeur opgeven
-          </button>
         )}
       </div>
 

@@ -1,15 +1,15 @@
 export const landing = {
   hero: {
     eyebrow: "Bruids- & feestkapsels in Zeeland",
-    title: "Jouw mooiste dag, perfect gestyled",
+    title: "Jouw mooiste dag, perfect gestyld",
     subtitle:
-      "Persoonlijke styling voor bruiden, bruidsmeisjes en feestgangers — bij jou op locatie of in de studio in Krabbendijke.",
+      "Persoonlijke haarstyling voor bruiden, daggasten en speciale gelegenheden — bij jou op locatie of in mijn studio in Krabbendijke.",
     primaryCta: { label: "Boek afspraak", href: "/boeken" },
-    secondaryCta: { label: "Bruid? Plan consult", href: "/bruid" },
+    secondaryCta: { label: "Bruid? Vraag je datum aan", href: "/bruid" },
   },
   about: {
     title: "Over Jeanine",
-    body: "Bij Hair and Bridal by Jeanine staan jouw mooiste momenten centraal — van de trouwdag tot een gala-avond of feestelijke gelegenheid. Vanuit de studio in Krabbendijke styled Jeanine kapsels die passen bij jou, je look en je dag. Persoonlijk, rustig en met oog voor detail.\n\nVoor bruidsstyling kom je vooraf op consult zodat we samen de planning, locatie en stijl voor de grote dag uitwerken — en op de dag zelf alles soepel verloopt.",
+    body: "Mijn naam is Jeanine Matthijsse-Murre, ik ben 25 jaar en sinds 20 maart 2025 getrouwd met Ruben. Samen wonen wij in Zeeland, waar ik met veel liefde mijn eigen salon aan huis heb opgebouwd. Sinds september 2024 werk ik vanuit mijn salon, gevestigd boven de garage in Krabbendijke.\n\nIn mijn salon kun je terecht voor knippen, kleuren en feestkapsels. Ik werk met veel aandacht om een look te creëren die past bij jouw stijl en persoonlijkheid, zodat jij met een goed gevoel en stralend de deur uitgaat.\n\nDaarnaast ben ik gespecialiseerd in bruidsstyling aan huis. Op jouw trouwdag kom ik bij je thuis om een kapsel te creëren dat helemaal aansluit bij jouw jurk, wensen en de sfeer van de dag — zodat jij je op je allermooist voelt en vol vertrouwen kunt genieten van je grote dag.",
   },
   // Reviews are intentionally empty in v1 — the landing page falls back to
   // an Instagram CTA when the array is empty. Add real testimonials here
@@ -18,13 +18,13 @@ export const landing = {
   bridal: {
     title: "Bruidsstyling",
     intro:
-      "Jouw trouwdag verdient een styliste die meedenkt, niet alleen meekrult. Plan een vrijblijvend consult — we bespreken jouw look, locatie en planning.",
+      "Jouw trouwdag verdient een styliste die met je meedenkt. Vraag je trouwdatum aan — daarna plannen we samen een uitgebreide proefsessie waarin we jouw droomkapsel helemaal uitwerken.",
     bullets: [
-      "Persoonlijk consult vooraf",
-      "Proefsessie ruim voor de dag",
-      "Op locatie of in de studio",
-      "Bruidsmeisjes, moeder van de bruid en bridal party in één pakket",
+      "Bruidshaarstyling aan huis op jouw trouwdag",
+      "Uitgebreide proefsessie van circa 3 uur in de salon",
+      "Luxe clip-in haarextensions wanneer nodig",
+      "Bruidsmake-up en feestkapsels voor moeder, zussen of vriendinnen mogelijk",
     ],
-    cta: { label: "Plan een consult", href: "/bruid/contact" },
+    cta: { label: "Vraag je trouwdatum aan", href: "/bruid/contact" },
   },
 } as const;

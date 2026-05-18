@@ -49,16 +49,23 @@ on conflict (slug) do update
       is_online_bookable = excluded.is_online_bookable,
       sort_order = excluded.sort_order;
 
--- Opening hours: Mon–Fri 09:00–17:00 (weekday: 0=Sun,1=Mon,...,6=Sat).
--- Saturdays are reserved for bridal styling, scheduled via consult.
+-- Opening hours (weekday: 0=Sun,1=Mon,...,6=Sat).
+-- Thu & Fri 05:00–17:30 (early start so feestkapsels can be booked
+-- early), Sat 08:00–12:00. Production hours are managed in the admin
+-- (/instellingen/openingstijden); this only seeds a fresh/local DB.
 insert into opening_hours (staff_id, weekday, start_time, end_time)
 select
   '00000000-0000-0000-0000-000000000001',
-  d,
-  time '09:00',
-  time '17:00'
-from generate_series(1, 5) as d
+  v.weekday,
+  v.start_time,
+  v.end_time
+from (values
+  (4, time '05:00', time '17:30'),
+  (5, time '05:00', time '17:30'),
+  (6, time '08:00', time '12:00')
+) as v(weekday, start_time, end_time)
 where not exists (
   select 1 from opening_hours
-  where staff_id = '00000000-0000-0000-0000-000000000001' and weekday = d
+  where staff_id = '00000000-0000-0000-0000-000000000001'
+    and weekday = v.weekday
 );

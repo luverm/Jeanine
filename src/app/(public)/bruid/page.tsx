@@ -93,23 +93,25 @@ export default async function BruidPage() {
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
               Hoe het werkt
             </p>
-            <h2 className="mt-4 text-4xl tracking-tight">Van consult tot dag-zelf</h2>
+            <h2 className="mt-4 text-4xl tracking-tight">
+              Van aanvraag tot de grote dag
+            </h2>
             <ol className="mt-8 space-y-6">
               {[
                 {
                   n: "1",
-                  title: "Consult",
-                  body: "Vrijblijvend gesprek — we bespreken jouw stijl, jurk, locatie en planning.",
+                  title: "Vraag je trouwdatum aan",
+                  body: "Laat je trouwdatum en wensen achter. Ik laat je weten of de datum nog vrij is.",
                 },
                 {
                   n: "2",
                   title: "Proefsessie",
-                  body: "Ruim voor de dag werken we de look in detail uit met jouw accessoires.",
+                  body: "Een uitgebreide proefsessie van circa 3 uur in de salon — we bespreken je wensen en werken jouw droomkapsel uit.",
                 },
                 {
                   n: "3",
                   title: "De grote dag",
-                  body: "Op locatie of in de studio — voor jou en eventueel je bridal party.",
+                  body: "Ik kom bij je thuis. Voor een bruidsstyling reken ik ongeveer 2,5 uur, plus een half uur om alles rustig af te ronden.",
                 },
               ].map((step) => (
                 <li key={step.n} className="flex items-start gap-4">
@@ -132,12 +134,38 @@ export default async function BruidPage() {
           <div className="mx-auto max-w-6xl px-4 py-20">
             <h2 className="text-3xl tracking-tight">Bruidsdiensten</h2>
             <p className="mt-2 text-muted-foreground">
-              Geen directe online boeking — we plannen samen na een consult.
+              Geen directe online boeking — je vraagt je trouwdatum aan en we
+              plannen samen de proefsessie en de dag zelf.
             </p>
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {services.map((s) => (
                 <ServiceCard key={s.id} service={s} />
               ))}
+            </div>
+
+            <p className="mt-8 text-sm text-muted-foreground">
+              Losse bruidsmake-up € 75 · feestkapsel voor moeder, zussen of
+              vriendinnen € 50 per persoon · reiskosten € 0,45 per kilometer
+              vanaf Krabbendijke.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a
+                href="/brochure-bruidsstyling.pdf"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium transition hover:bg-accent"
+              >
+                Download bruidsbrochure (PDF)
+              </a>
+              <a
+                href="/proefkapsel-info.pdf"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium transition hover:bg-accent"
+              >
+                Info proefkapsel (PDF)
+              </a>
             </div>
           </div>
         </section>

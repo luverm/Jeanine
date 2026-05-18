@@ -480,9 +480,9 @@ function DateStep({
           disabled={(d) => {
             if (d < todayInTz) return true;
             if (d > ninetyDaysOut) return true;
-            // Sat/Sun closed for regular bookings (Saturdays reserved for bridal).
-            const day = d.getDay();
-            if (day === 0 || day === 6) return true;
+            // Sunday closed; Saturday is open for regular bookings.
+            // Actual availability still comes from opening_hours.
+            if (d.getDay() === 0) return true;
             return false;
           }}
         />
