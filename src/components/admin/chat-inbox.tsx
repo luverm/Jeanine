@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ImagePlus, Send, Trash2 } from "lucide-react";
+import { ImagePlus, Send, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   listChatThreadsAction,
@@ -33,6 +33,7 @@ export function ChatInbox() {
   const [email, setEmail] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [zoom, setZoom] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -75,6 +76,15 @@ export function ChatInbox() {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!zoom) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoom(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoom]);
 
   async function reply() {
     if (!activeId) return;
@@ -138,6 +148,7 @@ export function ChatInbox() {
   }
 
   return (
+    <>
     <div className="grid gap-4 md:grid-cols-[18rem_1fr]">
       <div className="rounded-lg border">
         {threads.length === 0 ? (
@@ -229,36 +240,48 @@ export function ChatInbox() {
             </div>
 
             <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={
-                    "flex " +
-                    (m.sender === "admin" ? "justify-end" : "justify-start")
-                  }
-                >
+              {messages.map((m) => {
+                const img = m.imageUrl;
+                return (
                   <div
+                    key={m.id}
                     className={
-                      "max-w-[75%] rounded-2xl px-3 py-2 text-sm " +
+                      "flex " +
                       (m.sender === "admin"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted")
+                        ? "justify-end"
+                        : "justify-start")
                     }
                   >
-                    {m.imageUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={m.imageUrl}
-                        alt=""
-                        className="mb-1 max-h-56 rounded-lg"
-                      />
-                    )}
-                    {m.body && (
-                      <p className="whitespace-pre-wrap">{m.body}</p>
-                    )}
+                    <div
+                      className={
+                        "max-w-[75%] rounded-2xl px-3 py-2 text-sm " +
+                        (m.sender === "admin"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted")
+                      }
+                    >
+                      {img && (
+                        <button
+                          type="button"
+                          onClick={() => setZoom(img)}
+                          aria-label="Afbeelding vergroten"
+                          className="mb-1 block"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={img}
+                            alt=""
+                            className="max-h-56 cursor-zoom-in rounded-lg transition hover:opacity-90"
+                          />
+                        </button>
+                      )}
+                      {m.body && (
+                        <p className="whitespace-pre-wrap">{m.body}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <div ref={endRef} />
             </div>
 
@@ -304,5 +327,32 @@ export function ChatInbox() {
         )}
       </div>
     </div>
+
+    {zoom && (
+      <div
+        onClick={() => setZoom(null)}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Afbeelding vergroot"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      >
+        <button
+          type="button"
+          onClick={() => setZoom(null)}
+          aria-label="Sluiten"
+          className="absolute right-4 top-4 rounded-md bg-white/10 p-2 text-white transition hover:bg-white/20"
+        >
+          <X className="h-6 w-6" />
+        </button>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={zoom}
+          alt=""
+          onClick={(e) => e.stopPropagation()}
+          className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+        />
+      </div>
+    )}
+    </>
   );
 }
