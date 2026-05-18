@@ -103,6 +103,22 @@ export async function cancelBooking(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Hard-deletes every booking. Irreversible. Returns the count removed. */
+export async function deleteAllBookings(): Promise<number> {
+  const supabase = createSupabaseServiceClient();
+  const { count } = await supabase
+    .from("bookings")
+    .select("id", { count: "exact", head: true });
+  // id is the PK (never null), so this matches all rows while still
+  // satisfying PostgREST's "delete needs a filter" requirement.
+  const { error } = await supabase
+    .from("bookings")
+    .delete()
+    .not("id", "is", null);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function writeAuditLog(input: {
   actor: string;
   action: string;

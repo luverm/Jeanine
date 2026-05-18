@@ -3,11 +3,13 @@
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { revalidatePath } from "next/cache";
 import {
   writeAuditLog,
   insertBooking,
   isExclusionViolation,
   getBookingDetail,
+  deleteAllBookings,
 } from "@/lib/db/bookings";
 import { cancelBookingAction } from "@/actions/booking";
 import { upsertCustomerByEmail } from "@/lib/db/customers";
@@ -317,4 +319,39 @@ export async function setBookingPaymentAction(
     payload: { paid, method },
   }).catch(() => {});
   return { ok: true };
+}
+
+const BULK_DELETE_PHRASE = "VERWIJDER";
+
+/**
+ * Hard-deletes EVERY booking. Irreversible — also empties the finance
+ * overview. Double-guarded: admin only, plus an exact confirmation
+ * phrase checked server-side too.
+ */
+export async function deleteAllBookingsAction(
+  confirm: string,
+): Promise<{ ok: boolean; deleted?: number }> {
+  await requireAdmin();
+  if (confirm !== BULK_DELETE_PHRASE) return { ok: false };
+
+  let deleted: number;
+  try {
+    deleted = await deleteAllBookings();
+  } catch (err) {
+    console.error("[admin-booking] bulk delete failed:", err);
+    return { ok: false };
+  }
+
+  await writeAuditLog({
+    actor: "admin",
+    action: "booking.bulk_delete",
+    entity: "booking",
+    entityId: "00000000-0000-0000-0000-000000000000",
+    payload: { deleted },
+  }).catch(() => {});
+
+  revalidatePath("/boekingen");
+  revalidatePath("/dashboard");
+  revalidatePath("/");
+  return { ok: true, deleted };
 }

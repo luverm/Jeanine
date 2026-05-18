@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { formatHumanDateTime } from "@/lib/time";
 import { formatPrice } from "@/lib/db/services";
 import { getDeviceInfo } from "@/lib/device";
+import { DangerDeleteBookings } from "@/components/admin/danger-delete-bookings";
 import {
   BOOKING_STATUS_LABELS,
   bookingStatusLabel,
@@ -249,6 +250,8 @@ export default async function BoekingenPage({
         </Table>
       </div>
       )}
+
+      <DangerDeleteBookings />
     </div>
   );
 }
