@@ -272,6 +272,7 @@ export async function getAvailableSlotsWithDiagnostics(
     openingBlocks,
     occupied: [...inflated, ...timeOffIntervals],
     durationMin: service.duration_min,
+    stepMin: 30,
   };
   const slots = computeAvailableSlots(computeInput);
   const statuses = computeSlotStatuses(computeInput);
