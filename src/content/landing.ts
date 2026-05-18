@@ -1,7 +1,7 @@
 export const landing = {
   hero: {
     eyebrow: "Bruids- & feestkapsels in Zeeland",
-    title: "Jouw mooiste dag, perfect gestyld",
+    title: "Jouw mooiste dag, perfect gestyled",
     subtitle:
       "Persoonlijke haarstyling voor bruiden, daggasten en speciale gelegenheden — bij jou op locatie of in mijn studio in Krabbendijke.",
     primaryCta: { label: "Boek afspraak", href: "/boeken" },

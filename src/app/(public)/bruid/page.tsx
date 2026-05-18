@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { listActiveServices } from "@/lib/db/services";
 import { listPortfolioImages } from "@/lib/portfolio";
 import { ServiceCard } from "@/components/public/service-card";
+import { RotatingImage } from "@/components/public/rotating-image";
 import { landing } from "@/content/landing";
 
 export const revalidate = 3600;
@@ -19,8 +20,7 @@ export default async function BruidPage() {
     listActiveServices("bridal"),
     listPortfolioImages(),
   ]);
-  const heroImage =
-    portfolio.find((p) => p.src.includes("portret")) ?? portfolio[0];
+  const heroSlides = portfolio.slice(0, 6);
   const stairImage =
     portfolio.find((p) => p.src.includes("trap")) ?? portfolio[1];
 
@@ -60,14 +60,11 @@ export default async function BruidPage() {
               </Link>
             </div>
           </div>
-          {heroImage && (
+          {heroSlides.length > 0 && (
             <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-muted">
-              <Image
-                src={heroImage.src}
-                alt={heroImage.alt}
-                fill
+              <RotatingImage
+                images={heroSlides}
                 sizes="(min-width: 768px) 50vw, 100vw"
-                className="object-cover"
                 priority
               />
             </div>
