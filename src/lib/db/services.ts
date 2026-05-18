@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { compareServices } from "@/lib/services-format";
 import type { Service, ServiceKind } from "@/lib/services-format";
 
 // Re-export for backwards-compat with existing server-side imports.
@@ -22,5 +23,5 @@ export async function listActiveServices(kind?: ServiceKind): Promise<Service[]>
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as Service[];
+  return ((data ?? []) as Service[]).sort(compareServices);
 }

@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { compareServices } from "@/lib/services-format";
 import type { Service } from "@/lib/db/services";
 
 export async function listAllServices(): Promise<Service[]> {
@@ -11,7 +12,7 @@ export async function listAllServices(): Promise<Service[]> {
     )
     .order("sort_order", { ascending: true });
   if (error) throw error;
-  return (data ?? []) as Service[];
+  return ((data ?? []) as Service[]).sort(compareServices);
 }
 
 export type ServiceUpsert = {
