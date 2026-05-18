@@ -34,7 +34,13 @@ export async function listChatThreadsAction(): Promise<ThreadListItem[]> {
 }
 
 export async function fetchChatThreadAction(threadId: string): Promise<
-  | { ok: true; messages: ChatMessageDto[]; keep: boolean; visitorName: string | null }
+  | {
+      ok: true;
+      messages: ChatMessageDto[];
+      keep: boolean;
+      visitorName: string | null;
+      visitorEmail: string | null;
+    }
   | { ok: false }
 > {
   await requireAdmin();
@@ -49,6 +55,7 @@ export async function fetchChatThreadAction(threadId: string): Promise<
       ok: true,
       keep: view.thread.keep,
       visitorName: view.thread.visitor_name,
+      visitorEmail: view.thread.visitor_email ?? null,
       messages: view.messages.map((m) => ({
         id: m.id,
         sender: m.sender,

@@ -17,6 +17,7 @@ import type { ChatMessageDto } from "@/actions/chat";
 type ThreadItem = {
   id: string;
   visitor_name: string | null;
+  email: string | null;
   keep: boolean;
   last_message_at: string;
   unread: boolean;
@@ -29,6 +30,7 @@ export function ChatInbox() {
   const [messages, setMessages] = useState<ChatMessageDto[]>([]);
   const [keep, setKeep] = useState(false);
   const [name, setName] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -45,6 +47,7 @@ export function ChatInbox() {
       setMessages(r.messages);
       setKeep(r.keep);
       setName(r.visitorName);
+      setEmail(r.visitorEmail);
     }
   }, []);
 
@@ -171,6 +174,11 @@ export function ChatInbox() {
                       )}
                     </span>
                   </span>
+                  {t.email && (
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                      {t.email}
+                    </span>
+                  )}
                   <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                     {t.preview || "—"}
                   </span>
@@ -189,7 +197,17 @@ export function ChatInbox() {
         ) : (
           <>
             <div className="flex items-center justify-between gap-2 border-b px-4 py-3">
-              <p className="text-sm font-medium">{name || "Bezoeker"}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{name || "Bezoeker"}</p>
+                {email && (
+                  <a
+                    href={`mailto:${email}`}
+                    className="block truncate text-xs text-muted-foreground underline underline-offset-2"
+                  >
+                    {email}
+                  </a>
+                )}
+              </div>
               <div className="flex gap-2">
                 <Button
                   type="button"

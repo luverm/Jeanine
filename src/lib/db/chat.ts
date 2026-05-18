@@ -13,6 +13,7 @@ export type ChatThread = {
   id: string;
   public_token: string;
   visitor_name: string | null;
+  visitor_email: string | null;
   keep: boolean;
   last_message_at: string;
   last_admin_read_at: string | null;
@@ -22,6 +23,7 @@ export type ChatThread = {
 export type ThreadListItem = {
   id: string;
   visitor_name: string | null;
+  email: string | null;
   keep: boolean;
   last_message_at: string;
   unread: boolean;
@@ -213,15 +215,31 @@ export async function resolveThreadIdByToken(
 
 export async function listThreads(): Promise<ThreadListItem[]> {
   const svc = createSupabaseServiceClient();
-  const { data, error } = await svc
+  const primary = await svc
     .from("chat_threads")
-    .select("id, visitor_name, keep, last_message_at, last_admin_read_at")
+    .select(
+      "id, visitor_name, visitor_email, keep, last_message_at, last_admin_read_at",
+    )
     .order("last_message_at", { ascending: false })
     .limit(200);
+
+  let error: unknown = primary.error;
+  let data: unknown = primary.data;
+  // Degrade if migration 0017 (visitor_email) isn't applied yet.
+  if (primary.error) {
+    const fb = await svc
+      .from("chat_threads")
+      .select("id, visitor_name, keep, last_message_at, last_admin_read_at")
+      .order("last_message_at", { ascending: false })
+      .limit(200);
+    error = fb.error;
+    data = fb.data;
+  }
   if (error) throw error;
   const threads = (data ?? []) as {
     id: string;
     visitor_name: string | null;
+    visitor_email?: string | null;
     keep: boolean;
     last_message_at: string;
     last_admin_read_at: string | null;
@@ -246,6 +264,7 @@ export async function listThreads(): Promise<ThreadListItem[]> {
     out.push({
       id: t.id,
       visitor_name: t.visitor_name,
+      email: t.visitor_email ?? null,
       keep: t.keep,
       last_message_at: t.last_message_at,
       unread,
