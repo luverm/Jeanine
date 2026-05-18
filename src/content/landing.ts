@@ -1,9 +1,9 @@
 export const landing = {
   hero: {
-    eyebrow: "Bruids- & feestkapsels in Zeeland",
-    title: "Jouw mooiste dag, perfect gestyled",
+    eyebrow: "Kapper & bruidsstyliste · Krabbendijke",
+    title: "Van knipbeurt tot bruidskapsel",
     subtitle:
-      "Persoonlijke haarstyling voor bruiden, daggasten en speciale gelegenheden — bij jou op locatie of in mijn studio in Krabbendijke.",
+      "Knippen, kleuren en stylen in mijn salon in Krabbendijke — én bruidsstyling aan huis op jouw grote dag.",
     primaryCta: { label: "Boek afspraak", href: "/boeken" },
     secondaryCta: { label: "Bruid? Vraag je datum aan", href: "/bruid" },
   },
