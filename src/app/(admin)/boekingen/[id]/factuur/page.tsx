@@ -1,5 +1,3 @@
-import fs from "node:fs/promises";
-import path from "node:path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -17,19 +15,8 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const LOGO_FILE = "HB-cocoa-transparent.png";
-
 function clean(v: string): string {
   return v && !v.startsWith("{{") ? v : "";
-}
-
-async function logoExists(): Promise<boolean> {
-  try {
-    await fs.access(path.join(process.cwd(), "public", LOGO_FILE));
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export default async function InvoicePage({
@@ -38,10 +25,9 @@ export default async function InvoicePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [booking, business, hasLogo] = await Promise.all([
+  const [booking, business] = await Promise.all([
     getBookingDetail(id),
     getBusiness(),
-    logoExists(),
   ]);
   if (!booking) notFound();
 
@@ -71,23 +57,12 @@ export default async function InvoicePage({
       <div className="mt-6 rounded-lg border bg-white p-8 text-sm text-stone-900 print:border-0 print:p-0">
         <div className="flex items-start justify-between gap-6">
           <div>
-            {hasLogo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={`/${LOGO_FILE}`}
-                alt={business.name}
-                className="h-24 w-auto"
-              />
-            ) : (
-              <div>
-                <p className="text-2xl font-semibold tracking-tight">
-                  {business.name}
-                </p>
-                <p className="text-xs uppercase tracking-[0.2em] text-stone-500">
-                  Hair and Bridal · By {business.ownerName}
-                </p>
-              </div>
-            )}
+            <p className="text-2xl font-semibold tracking-tight">
+              {business.name}
+            </p>
+            <p className="text-xs uppercase tracking-[0.2em] text-stone-500">
+              Hair and Bridal · By {business.ownerName}
+            </p>
           </div>
           <div className="text-right">
             <h1 className="text-xl font-semibold">Factuur</h1>
