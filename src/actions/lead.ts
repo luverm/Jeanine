@@ -13,6 +13,7 @@ import {
 } from "@/lib/db/leads";
 import { deleteBridalAttachments } from "@/actions/bridal-upload";
 import { writeAuditLog } from "@/lib/db/bookings";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { sendEmail } from "@/lib/email/client";
 import { leadAdminText, leadCustomerAckText } from "@/lib/email/messages";
 import { rateLimit } from "@/lib/rate-limit";
@@ -151,6 +152,7 @@ export async function updateLeadStatusAction(
   id: string,
   status: LeadStatus,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   await updateLeadStatus(id, status);
   await safe(() =>
     writeAuditLog({
@@ -170,6 +172,7 @@ export async function updateLeadNotesAction(
   id: string,
   rawNotes: string,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const trimmed = leadNotesSchema.parse(rawNotes).trim();
   try {
     await updateLeadNotes(id, trimmed);
@@ -199,6 +202,7 @@ export async function updateLeadFinanceAction(
   id: string,
   input: { agreedPrice: number | null; deposit: number | null; depositPaid: boolean },
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const parsed = financeSchema.safeParse(input);
   if (!parsed.success) return { ok: false };
   try {
@@ -223,6 +227,7 @@ export async function updateLeadFinanceAction(
 export async function deleteLeadAction(
   id: string,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   let paths: string[];
   try {
     paths = await deleteLead(id);

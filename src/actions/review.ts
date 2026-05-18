@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/reviews";
 import { verifyBookingToken } from "@/lib/booking-token";
 import { getBookingDetail } from "@/lib/db/bookings";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 const schema = z.object({
   author: z.string().trim().min(2).max(120),
@@ -19,6 +20,7 @@ const schema = z.object({
 export async function createReviewAction(
   formData: FormData,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const parsed = schema.safeParse({
     author: formData.get("author"),
     quote: formData.get("quote"),
@@ -37,6 +39,7 @@ export async function setReviewVisibleAction(
   id: string,
   visible: boolean,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   try {
     await setReviewVisible(id, visible);
   } catch {
@@ -48,6 +51,7 @@ export async function setReviewVisibleAction(
 export async function deleteReviewAction(
   id: string,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   try {
     await deleteReview(id);
   } catch {

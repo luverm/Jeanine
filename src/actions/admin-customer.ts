@@ -7,10 +7,12 @@ import {
   type CustomerOption,
 } from "@/lib/db/admin-customers";
 import { writeAuditLog } from "@/lib/db/bookings";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 export async function searchCustomersAction(
   q: string,
 ): Promise<CustomerOption[]> {
+  await requireAdmin();
   try {
     return await searchCustomers(q);
   } catch (err) {
@@ -25,6 +27,7 @@ export async function updateCustomerNotesAction(
   id: string,
   rawNotes: string,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const trimmed = notesSchema.parse(rawNotes).trim();
   try {
     await updateCustomerNotes(id, trimmed);

@@ -21,6 +21,7 @@ import {
 } from "@/lib/email/booking-emails";
 import { notifyWaitlistForFreedSlot } from "@/lib/waitlist-backfill";
 import { customerInputSchema } from "@/lib/schemas/booking";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { uuidString } from "@/lib/schemas/uuid";
 
 const statusSchema = z.enum([
@@ -35,6 +36,7 @@ export async function updateBookingStatusAction(
   id: string,
   rawStatus: string,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const status = statusSchema.parse(rawStatus);
 
   // Cancelling has side effects (customer mail + waitlist backfill);
@@ -67,6 +69,7 @@ export async function updateBookingNotesAction(
   id: string,
   rawNotes: string,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const trimmed = notesSchema.parse(rawNotes).trim();
   const supabase = createSupabaseServiceClient();
   const { error } = await supabase
@@ -89,6 +92,7 @@ export async function updateBookingNotesAction(
 export async function dismissNoShowFlagAction(
   customerId: string,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   try {
     await dismissNoShowFlag(customerId);
   } catch (err) {
@@ -108,6 +112,7 @@ export async function dismissNoShowFlagAction(
 export async function resendEmailAction(
   id: number,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const entry = await getEmailLogEntry(id);
   if (!entry) return { ok: false };
   try {
@@ -139,6 +144,7 @@ export type CreateAdminBookingResult =
 export async function createAdminBooking(
   input: unknown,
 ): Promise<CreateAdminBookingResult> {
+  await requireAdmin();
   const parsed = adminBookingSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, code: "INVALID_INPUT", message: parsed.error.message };
@@ -216,6 +222,7 @@ export type RescheduleResult =
 export async function rescheduleBooking(
   input: unknown,
 ): Promise<RescheduleResult> {
+  await requireAdmin();
   const parsed = rescheduleSchema.safeParse(input);
   if (!parsed.success) return { ok: false, code: "INVALID_INPUT" };
   const { id, startsAt, endsAt } = parsed.data;
@@ -284,6 +291,7 @@ const paymentSchema = z.object({
 export async function setBookingPaymentAction(
   input: unknown,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const parsed = paymentSchema.safeParse(input);
   if (!parsed.success) return { ok: false };
   const { id, paid, method, amountCents } = parsed.data;

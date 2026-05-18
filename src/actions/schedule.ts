@@ -9,6 +9,7 @@ import {
 } from "@/lib/db/admin-schedule";
 import { writeAuditLog } from "@/lib/db/bookings";
 import { uuidString } from "@/lib/schemas/uuid";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 const openingHoursSchema = z.object({
   staffId: uuidString(),
@@ -24,6 +25,7 @@ const openingHoursSchema = z.object({
 export async function saveOpeningHoursAction(
   input: unknown,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const parsed = openingHoursSchema.parse(input);
   await replaceOpeningHours(parsed.staffId, parsed.rows);
   await writeAuditLog({
@@ -45,6 +47,7 @@ const timeOffSchema = z.object({
 });
 
 export async function addTimeOffAction(input: unknown): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const parsed = timeOffSchema.parse(input);
   await insertTimeOff({
     staffId: parsed.staffId,
@@ -57,6 +60,7 @@ export async function addTimeOffAction(input: unknown): Promise<{ ok: boolean }>
 }
 
 export async function deleteTimeOffAction(id: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
   await deleteTimeOff(id);
   revalidatePath("/instellingen/vrije-dagen");
   return { ok: true };

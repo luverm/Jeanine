@@ -26,6 +26,9 @@ import {
 } from "@/lib/email/booking-emails";
 import { getAvailableSlots } from "@/lib/db/availability";
 import { formatIsoDate } from "@/lib/time";
+import { requireAdmin } from "@/lib/auth/require-admin";
+import { rateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/request-ip";
 
 export type CreateBookingResult =
   | { ok: true; bookingId: string }
@@ -64,6 +67,21 @@ export async function createBooking(input: unknown): Promise<CreateBookingResult
     return { ok: false, code: "INVALID_INPUT" };
   }
 
+  // Rate-limit anonymous booking so the calendar/mailer can't be spammed.
+  const ip = await getClientIp();
+  const limited = await rateLimit({
+    key: `booking:${ip}`,
+    max: 5,
+    windowMs: 60 * 1000,
+  });
+  if (!limited.ok) {
+    return {
+      ok: false,
+      code: "INVALID_INPUT",
+      message: "Te veel verzoeken — probeer het zo opnieuw.",
+    };
+  }
+
   // 1. Idempotency: have we seen this key?
   const existing = await findBookingByIdempotencyKey(data.idempotencyKey);
   if (existing) return { ok: true, bookingId: existing.id };
@@ -79,6 +97,23 @@ export async function createBooking(input: unknown): Promise<CreateBookingResult
   const endMs = new Date(data.endsAt).getTime();
   if (endMs - startMs !== service.duration_min * 60_000) {
     return { ok: false, code: "INVALID_INPUT", message: "Tijd komt niet overeen met dienst" };
+  }
+
+  // 3b. The server is the authority: only allow a slot the canonical
+  // availability algorithm actually offers (opening hours, time_off,
+  // lead time, the past). The GIST constraint only stops overlap.
+  const offered = await getAvailableSlots({
+    staffId: data.staffId,
+    serviceId: data.serviceId,
+    date: formatIsoDate(new Date(data.startsAt)),
+  });
+  const slotOk = offered.some(
+    (s) =>
+      s.startsAt.toISOString() === new Date(data.startsAt).toISOString() &&
+      s.endsAt.toISOString() === new Date(data.endsAt).toISOString(),
+  );
+  if (!slotOk) {
+    return { ok: false, code: "SLOT_TAKEN" };
   }
 
   // 4. Upsert customer.
@@ -177,6 +212,7 @@ async function safe<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 export async function cancelBookingAction(id: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const before = await safe(() => getBookingDetail(id));
   await dbCancelBooking(id);
   await safe(() =>

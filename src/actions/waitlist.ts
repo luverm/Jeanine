@@ -4,6 +4,7 @@ import { z } from "zod";
 import { insertWaitlist, setWaitlistResolved } from "@/lib/db/waitlist";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
 import {
@@ -136,6 +137,7 @@ export async function resolveWaitlistAction(
   id: string,
   resolved: boolean,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   try {
     await setWaitlistResolved(id, resolved);
   } catch {

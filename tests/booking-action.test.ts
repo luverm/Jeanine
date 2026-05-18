@@ -102,11 +102,24 @@ vi.mock("@/lib/email/client", () => ({
   sendEmail: vi.fn(async () => ({ id: "stub-email" })),
 }));
 
+vi.mock("@/lib/request-ip", () => ({
+  getClientIp: async () => "10.0.0.1",
+}));
+
+// The server-side availability re-check offers exactly the test slot.
+vi.mock("@/lib/db/availability", () => ({
+  getAvailableSlots: async () => [
+    { startsAt: new Date(startsAt), endsAt: new Date(endsAt) },
+  ],
+}));
+
 import { createBooking } from "@/actions/booking";
+import { _resetRateLimitStore } from "@/lib/rate-limit";
 
 beforeEach(() => {
   state.bookings.length = 0;
   state.nextInsertThrows = null;
+  _resetRateLimitStore();
   vi.clearAllMocks();
 });
 

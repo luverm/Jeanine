@@ -7,12 +7,14 @@ import {
   deleteService as dbDeleteService,
 } from "@/lib/db/admin-services";
 import { writeAuditLog } from "@/lib/db/bookings";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 export type SaveServiceResult =
   | { ok: true }
   | { ok: false; message: string };
 
 export async function saveServiceAction(input: unknown): Promise<SaveServiceResult> {
+  await requireAdmin();
   const parsed = serviceUpsertSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, message: parsed.error.message };
@@ -35,6 +37,7 @@ export async function saveServiceAction(input: unknown): Promise<SaveServiceResu
 }
 
 export async function deleteServiceAction(id: string): Promise<{ ok: boolean }> {
+  await requireAdmin();
   await dbDeleteService(id);
   await writeAuditLog({
     actor: "admin",

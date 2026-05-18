@@ -2,6 +2,7 @@
 
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { PORTFOLIO_BUCKET } from "@/lib/portfolio";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -20,6 +21,7 @@ function safeName(original: string): string {
 export async function uploadPortfolio(
   formData: FormData,
 ): Promise<{ ok: boolean; uploaded: number; message?: string }> {
+  await requireAdmin();
   const files = formData.getAll("files").filter((f): f is File => f instanceof File);
   if (files.length === 0) return { ok: false, uploaded: 0, message: "Geen bestanden." };
 
@@ -54,6 +56,7 @@ export async function uploadPortfolio(
 export async function deletePortfolio(
   name: string,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   try {
     const svc = createSupabaseServiceClient();
     const { error } = await svc.storage

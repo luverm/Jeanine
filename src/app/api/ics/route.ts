@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { timingSafeEqual } from "crypto";
 import * as ics from "ics";
 import { getServerEnv } from "@/lib/env";
 import { listUpcomingBookings } from "@/lib/db/admin-bookings";
@@ -18,10 +19,16 @@ function dateToArray(iso: string): [number, number, number, number, number] {
   ];
 }
 
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ab.length === bb.length && timingSafeEqual(ab, bb);
+}
+
 export async function GET(request: NextRequest) {
   const { ADMIN_ICS_TOKEN } = getServerEnv();
   const token = request.nextUrl.searchParams.get("token");
-  if (!token || token !== ADMIN_ICS_TOKEN) {
+  if (!token || !safeEqual(token, ADMIN_ICS_TOKEN)) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 

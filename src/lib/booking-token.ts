@@ -1,9 +1,16 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "crypto";
 
-// Server-only secret; never exposed to the client.
+// Server-only secret; never exposed to the client. Fails closed: a
+// guessable default would make every cancel/reschedule/waitlist link
+// forgeable, so we refuse to sign rather than fall back in production.
 function secret(): string {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY ?? "dev-insecure-secret";
+  const s = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (s) return s;
+  if (process.env.NODE_ENV !== "production") return "dev-insecure-secret";
+  throw new Error(
+    "SUPABASE_SERVICE_ROLE_KEY is missing — refusing to sign tokens insecurely",
+  );
 }
 
 /** Stateless token that authorises a public action on one booking. */

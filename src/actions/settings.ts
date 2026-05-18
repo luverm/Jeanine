@@ -5,6 +5,7 @@ import {
   updateBusinessSettings,
   updateRebookingSettings,
 } from "@/lib/db/business-settings";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 const TEXT_FIELDS = [
   "name",
@@ -46,6 +47,7 @@ const schema = z.object({
 export async function updateBusinessSettingsAction(
   formData: FormData,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const raw: Record<string, string> = Object.fromEntries(
     TEXT_FIELDS.map((k) => [k, String(formData.get(k) ?? "")]),
   );
@@ -78,6 +80,7 @@ const rebookingSchema = z
 export async function updateRebookingSettingsAction(
   formData: FormData,
 ): Promise<{ ok: boolean }> {
+  await requireAdmin();
   const parsed = rebookingSchema.safeParse({
     enabled: formData.get("enabled") != null,
     minDays: String(formData.get("minDays") ?? ""),

@@ -3,6 +3,7 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 const BRIDAL_BUCKET = "bridal-moodboards";
 
@@ -62,6 +63,7 @@ export async function uploadBridalAttachments(
 export async function signBridalAttachments(
   paths: string[],
 ): Promise<string[]> {
+  await requireAdmin();
   if (!paths || paths.length === 0) return [];
   try {
     const svc = createSupabaseServiceClient();
@@ -81,6 +83,7 @@ export async function signBridalAttachments(
 export async function deleteBridalAttachments(
   paths: string[],
 ): Promise<void> {
+  await requireAdmin();
   if (!paths || paths.length === 0) return;
   try {
     const svc = createSupabaseServiceClient();

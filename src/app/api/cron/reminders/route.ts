@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getServerEnv } from "@/lib/env";
+import { timingSafeEqual } from "crypto";
 import { listDueReminders, markReminderSent } from "@/lib/db/reminders";
 import { listRebookingDue, markRebookingNudged } from "@/lib/db/rebooking";
 import {
@@ -17,18 +17,22 @@ import { signBooking } from "@/lib/booking-token";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ab.length === bb.length && timingSafeEqual(ab, bb);
+}
+
 function authorized(request: NextRequest): boolean {
-  // Vercel Cron sends "Authorization: Bearer <CRON_SECRET>".
+  // Vercel Cron sends "Authorization: Bearer <CRON_SECRET>". A dedicated
+  // secret only — no fallback to the ICS token, which travels in the
+  // calendar-subscription URL and must not be able to trigger mail.
   const cronSecret = process.env.CRON_SECRET;
-  const auth = request.headers.get("authorization");
-  if (cronSecret && auth === `Bearer ${cronSecret}`) return true;
-  // Manual trigger fallback: ?token=<ADMIN_ICS_TOKEN>.
-  try {
-    const { ADMIN_ICS_TOKEN } = getServerEnv();
-    return request.nextUrl.searchParams.get("token") === ADMIN_ICS_TOKEN;
-  } catch {
-    return false;
-  }
+  if (!cronSecret) return false;
+  const auth = request.headers.get("authorization") ?? "";
+  const prefix = "Bearer ";
+  if (!auth.startsWith(prefix)) return false;
+  return safeEqual(auth.slice(prefix.length), cronSecret);
 }
 
 export async function GET(request: NextRequest) {
