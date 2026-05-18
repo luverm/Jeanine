@@ -109,6 +109,7 @@ export default async function DaySheetPage({
               <th className="py-2 pr-3">Klant</th>
               <th className="py-2 pr-3">Dienst</th>
               <th className="py-2 pr-3">Telefoon</th>
+              <th className="py-2 pr-3 text-right">Te rekenen</th>
               <th className="py-2 pr-3">Status</th>
               <th className="py-2">Betaald</th>
             </tr>
@@ -122,6 +123,11 @@ export default async function DaySheetPage({
                 <td className="py-2.5 pr-3">{b.customer?.full_name ?? "—"}</td>
                 <td className="py-2.5 pr-3">{b.service?.name ?? "—"}</td>
                 <td className="py-2.5 pr-3">{b.customer?.phone ?? "—"}</td>
+                <td className="py-2.5 pr-3 text-right font-semibold tabular-nums">
+                  {b.service?.price_cents
+                    ? formatPrice(b.service.price_cents)
+                    : "—"}
+                </td>
                 <td className="py-2.5 pr-3">{bookingStatusLabel(b.status)}</td>
                 <td className="py-2.5">
                   {b.paid
