@@ -1,18 +1,35 @@
 import type { Metadata } from "next";
 import { listActiveServices } from "@/lib/db/services";
+import type { Service } from "@/lib/services-format";
 import { ServiceCard } from "@/components/public/service-card";
+import { SERVICE_CATEGORIES, categoryForSlug } from "@/content/services";
 
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Diensten",
-  description: "Overzicht van alle reguliere en bruidsdiensten.",
+  description: "Overzicht van alle diensten: knippen, kleuren, feestkapsels en bruid.",
 };
 
 export default async function DienstenPage() {
   const services = await listActiveServices();
-  const regular = services.filter((s) => s.kind === "regular");
-  const bridal = services.filter((s) => s.kind === "bridal");
+
+  const buckets = new Map<string, Service[]>();
+  for (const s of services) {
+    const key = categoryForSlug(s.slug)?.key ?? "overig";
+    const list = buckets.get(key);
+    if (list) list.push(s);
+    else buckets.set(key, [s]);
+  }
+
+  const groups = [
+    ...SERVICE_CATEGORIES.map((c) => ({
+      key: c.key,
+      label: c.label,
+      items: buckets.get(c.key) ?? [],
+    })),
+    { key: "overig", label: "Overig", items: buckets.get("overig") ?? [] },
+  ].filter((g) => g.items.length > 0);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16">
@@ -22,43 +39,27 @@ export default async function DienstenPage() {
         </p>
         <h1 className="mt-4 text-5xl tracking-tight">Diensten</h1>
         <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-          Reguliere diensten boek je direct online. Bruidsstyling plan je via
-          een vrijblijvend consult — zo kunnen we je look, locatie en planning
-          rustig doornemen.
+          Knippen, kleuren en feestkapsels boek je direct online.
+          Bruidsstyling plan je via een vrijblijvend consult — zo kunnen
+          we je look, locatie en planning rustig doornemen.
         </p>
       </header>
 
-      {regular.length > 0 && (
-        <section className="mt-16">
+      {groups.map((g) => (
+        <section key={g.key} className="mt-16">
           <div className="flex items-baseline justify-between gap-4 border-b border-border pb-4">
-            <h2 className="text-3xl tracking-tight">Reguliere diensten</h2>
+            <h2 className="text-3xl tracking-tight">{g.label}</h2>
             <span className="text-xs uppercase tracking-wider text-muted-foreground">
-              Direct online boekbaar
+              {g.key === "bruid" ? "Op aanvraag" : "Direct online boekbaar"}
             </span>
           </div>
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {regular.map((s) => (
+            {g.items.map((s) => (
               <ServiceCard key={s.id} service={s} />
             ))}
           </div>
         </section>
-      )}
-
-      {bridal.length > 0 && (
-        <section className="mt-20">
-          <div className="flex items-baseline justify-between gap-4 border-b border-border pb-4">
-            <h2 className="text-3xl tracking-tight">Bruidsstyling</h2>
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">
-              Op aanvraag
-            </span>
-          </div>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {bridal.map((s) => (
-              <ServiceCard key={s.id} service={s} />
-            ))}
-          </div>
-        </section>
-      )}
+      ))}
     </div>
   );
 }

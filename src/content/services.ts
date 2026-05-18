@@ -241,7 +241,8 @@ export type Category = {
 export const SERVICE_CATEGORIES: readonly Category[] = [
   { key: "knippen", label: "Knippen", slugPrefix: "knippen-" },
   { key: "kleuren", label: "Kleuren", slugPrefix: "kleur-" },
-  { key: "feest", label: "Party hair & make-up", slugPrefix: "feestkapsel" },
+  { key: "feest", label: "Feestkapsels", slugPrefix: "feestkapsel" },
+  { key: "bruid", label: "Bruid", slugPrefix: "bruid-" },
 ];
 
 export function categoryForSlug(slug: string): Category | null {
