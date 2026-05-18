@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { leadInputSchema } from "@/lib/schemas/lead";
 import {
   insertLead,
@@ -238,5 +239,6 @@ export async function deleteLeadAction(
       entityId: id,
     }),
   );
+  revalidatePath("/leads");
   return { ok: true };
 }

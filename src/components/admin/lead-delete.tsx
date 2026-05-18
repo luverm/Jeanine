@@ -16,8 +16,10 @@ export function LeadDelete({ leadId }: { leadId: string }) {
       const r = await deleteLeadAction(leadId);
       if (r.ok) {
         toast.success("Lead verwijderd");
-        router.push("/leads");
-        router.refresh();
+        // replace, not push: the deleted lead's detail page must not
+        // stay in history (it would 404). /leads is force-dynamic so
+        // it loads fresh — no refresh of the now-dead page needed.
+        router.replace("/leads");
       } else {
         toast.error("Verwijderen mislukt.");
       }
