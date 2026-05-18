@@ -6,12 +6,12 @@ export const runtime = "nodejs";
 export const size = { width: 64, height: 64 };
 export const contentType = "image/png";
 
-// A higher-contrast favicon variant: the cocoa monogram sits big on a
-// cream disc inside a dark cocoa tile, so it stays legible and stands
-// out in a browser tab strip instead of washing out on a light bg.
+// A higher-contrast favicon variant: the terracotta monogram sits big
+// on a cream disc inside a dark cocoa tile, so it stays legible and
+// stands out in a browser tab strip instead of washing out on a light bg.
 export default async function Icon() {
   const buf = await readFile(
-    join(process.cwd(), "public", "Monogram-Transparant-Cocoa.png"),
+    join(process.cwd(), "public", "Monogram-Transparant-Terracotta.png"),
   );
   const src = `data:image/png;base64,${buf.toString("base64")}`;
 
