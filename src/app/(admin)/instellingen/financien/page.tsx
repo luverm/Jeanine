@@ -30,9 +30,17 @@ export default async function FinancePage() {
       >
         ← Instellingen
       </Link>
-      <h1 className="mt-4 text-3xl font-semibold tracking-tight">
-        Financieel overzicht
-      </h1>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Financieel overzicht
+        </h1>
+        <Link
+          href="/facturen/bruid"
+          className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          Bruidsfactuur maken
+        </Link>
+      </div>
       <p className="mt-1 text-sm text-muted-foreground">
         Gerealiseerde omzet (afgeronde + verstreken bevestigde afspraken).
         BTW-tarief: <strong>{vatRate}%</strong>
