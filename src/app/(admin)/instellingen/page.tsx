@@ -10,7 +10,6 @@ import {
   Mail,
   ListChecks,
   Image as ImageIcon,
-  GalleryHorizontalEnd,
   Star,
   Wallet,
   ChevronRight,
@@ -98,12 +97,6 @@ const GROUPS: { title: string; items: HubItem[] }[] = [
   {
     title: "Website & content",
     items: [
-      {
-        href: "/instellingen/hero",
-        label: "Hero-afbeeldingen",
-        description: "Slideshow bovenaan de homepagina",
-        icon: GalleryHorizontalEnd,
-      },
       {
         href: "/instellingen/portfolio",
         label: "Portfolio",
