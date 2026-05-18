@@ -36,6 +36,7 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<ChatMessageDto[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const lastIdRef = useRef(0);
@@ -103,13 +104,29 @@ export function ChatWidget() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, open]);
 
+  // Free the object URL when the preview changes or the widget unmounts.
+  useEffect(() => {
+    if (!imagePreview) return;
+    return () => URL.revokeObjectURL(imagePreview);
+  }, [imagePreview]);
+
+  function onPickFile() {
+    setError(null);
+    const file = fileRef.current?.files?.[0] ?? null;
+    setImagePreview(file ? URL.createObjectURL(file) : null);
+  }
+
+  function clearImage() {
+    if (fileRef.current) fileRef.current.value = "";
+    setImagePreview(null);
+  }
+
   async function uploadImage(): Promise<string | null> {
     const file = fileRef.current?.files?.[0];
     if (!file) return null;
     const fd = new FormData();
     fd.set("file", file);
     const r = await uploadVisitorChatImage(fd);
-    if (fileRef.current) fileRef.current.value = "";
     if (!r.ok || !r.path) {
       setError("Afbeelding uploaden mislukt.");
       return null;
@@ -187,6 +204,7 @@ export function ChatWidget() {
         return;
       }
       setText("");
+      clearImage();
     } finally {
       setBusy(false);
     }
@@ -325,44 +343,69 @@ export function ChatWidget() {
         </div>
       )}
 
-      <div className="flex items-end gap-2 border-t px-3 py-3">
+      <div className="border-t px-3 py-3">
         <input
           ref={fileRef}
           type="file"
           accept="image/jpeg,image/png,image/webp,image/avif"
           className="hidden"
-          onChange={() => setError(null)}
+          onChange={onPickFile}
         />
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          aria-label="Foto toevoegen"
-          className="shrink-0 rounded-md p-2 text-muted-foreground hover:bg-muted"
-        >
-          <ImagePlus className="h-5 w-5" />
-        </button>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              void send();
-            }
-          }}
-          rows={1}
-          placeholder="Typ een bericht…"
-          className="max-h-24 flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm"
-        />
-        <button
-          type="button"
-          onClick={() => void send()}
-          disabled={busy}
-          aria-label="Versturen"
-          className="shrink-0 rounded-md bg-primary p-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          <Send className="h-5 w-5" />
-        </button>
+        {imagePreview && (
+          <div className="mb-2 flex items-center gap-2">
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imagePreview}
+                alt="Geselecteerde afbeelding"
+                className="h-16 w-16 rounded-md border object-cover"
+              />
+              <button
+                type="button"
+                onClick={clearImage}
+                aria-label="Afbeelding verwijderen"
+                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background shadow ring-2 ring-background hover:bg-foreground/90"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              Foto toegevoegd — verstuur om te delen
+            </span>
+          </div>
+        )}
+        <div className="flex items-end gap-2">
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            aria-label="Foto toevoegen"
+            className="shrink-0 rounded-md p-2 text-muted-foreground hover:bg-muted"
+          >
+            <ImagePlus className="h-5 w-5" />
+          </button>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+            rows={1}
+            placeholder="Typ een bericht…"
+            className="max-h-24 flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => void send()}
+            disabled={busy}
+            aria-label="Versturen"
+            className="shrink-0 rounded-md bg-primary p-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Send className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     </div>
   );
