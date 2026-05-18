@@ -31,6 +31,7 @@ export type ThreadListItem = {
 export async function getOrCreateThread(
   token: string | null | undefined,
   visitorName?: string | null,
+  visitorEmail?: string | null,
 ): Promise<{ id: string; token: string }> {
   const svc = createSupabaseServiceClient();
 
@@ -46,14 +47,69 @@ export async function getOrCreateThread(
     }
   }
 
-  const { data, error } = await svc
+  const name = visitorName?.trim() || null;
+  const email = visitorEmail?.trim().toLowerCase() || null;
+
+  let res = await svc
     .from("chat_threads")
-    .insert({ visitor_name: visitorName?.trim() || null })
+    .insert({ visitor_name: name, visitor_email: email })
     .select("id, public_token")
     .single();
-  if (error) throw error;
-  const row = data as { id: string; public_token: string };
+  // Degrade if migration 0017 (visitor_email) isn't applied yet —
+  // chat must keep working; notifications simply start once it is.
+  if (res.error) {
+    res = await svc
+      .from("chat_threads")
+      .insert({ visitor_name: name })
+      .select("id, public_token")
+      .single();
+  }
+  if (res.error) throw res.error;
+  const row = res.data as { id: string; public_token: string };
   return { id: row.id, token: row.public_token };
+}
+
+/** Contact + the last message's sender, for the reply notification. */
+export async function getThreadNotifyInfo(threadId: string): Promise<{
+  publicToken: string;
+  email: string | null;
+  name: string | null;
+  lastSender: "visitor" | "admin" | null;
+} | null> {
+  const svc = createSupabaseServiceClient();
+  let tRes = await svc
+    .from("chat_threads")
+    .select("public_token, visitor_email, visitor_name")
+    .eq("id", threadId)
+    .maybeSingle();
+  if (tRes.error) {
+    // visitor_email column not migrated yet — no notification possible.
+    tRes = await svc
+      .from("chat_threads")
+      .select("public_token, visitor_name")
+      .eq("id", threadId)
+      .maybeSingle();
+  }
+  if (!tRes.data) return null;
+  const thread = tRes.data as {
+    public_token: string;
+    visitor_email?: string | null;
+    visitor_name: string | null;
+  };
+  const { data: last } = await svc
+    .from("chat_messages")
+    .select("sender")
+    .eq("thread_id", threadId)
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return {
+    publicToken: thread.public_token,
+    email: thread.visitor_email ?? null,
+    name: thread.visitor_name,
+    lastSender:
+      (last as { sender: "visitor" | "admin" } | null)?.sender ?? null,
+  };
 }
 
 async function threadByToken(token: string): Promise<ChatThread | null> {

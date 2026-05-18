@@ -224,6 +224,22 @@ export function reviewRequestText(args: {
   ].join("\n");
 }
 
+export function chatReplyText(args: {
+  customerName: string | null;
+  chatUrl: string;
+}): string {
+  return [
+    `Hoi${args.customerName ? ` ${args.customerName}` : ""},`,
+    "",
+    `${business.ownerName} heeft gereageerd op je bericht in de chat.`,
+    "",
+    `Bekijk en reageer hier: ${args.chatUrl}`,
+    "",
+    "Tot snel,",
+    business.ownerName,
+  ].join("\n");
+}
+
 /** Google Calendar "add event" template link. */
 export function googleCalendarUrl(args: {
   title: string;

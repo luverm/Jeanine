@@ -17,12 +17,17 @@ export function ChatWidget() {
   const [token, setToken] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     try {
+      const fromUrl = new URLSearchParams(window.location.search).get(
+        "chat",
+      );
+      if (fromUrl) return fromUrl;
       return window.localStorage.getItem(TOKEN_KEY);
     } catch {
       return null;
     }
   });
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [text, setText] = useState("");
   const [messages, setMessages] = useState<ChatMessageDto[]>([]);
   const [busy, setBusy] = useState(false);
@@ -30,6 +35,26 @@ export function ChatWidget() {
   const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const lastIdRef = useRef(0);
+
+  // Deep link from the "Jeanine reageerde"-mail: ?chat=<token> opens
+  // the conversation. Deferred setState to stay SSR/lint-safe.
+  useEffect(() => {
+    const hasParam =
+      new URLSearchParams(window.location.search).get("chat") !== null;
+    if (!hasParam) return;
+    const t = window.setTimeout(() => setOpen(true), 0);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  // Persist the active token so the conversation survives navigation.
+  useEffect(() => {
+    if (!token) return;
+    try {
+      window.localStorage.setItem(TOKEN_KEY, token);
+    } catch {
+      /* private mode */
+    }
+  }, [token]);
 
   // Poll for new messages while open and a thread exists.
   useEffect(() => {
@@ -78,7 +103,11 @@ export function ChatWidget() {
     try {
       let activeToken = token;
       if (!activeToken) {
-        const s = await startChat({ token: "", name: name.trim() });
+        const s = await startChat({
+          token: "",
+          name: name.trim(),
+          email: email.trim(),
+        });
         if (!s.ok) {
           setError("Kon de chat niet starten. Probeer het later opnieuw.");
           return;
@@ -190,13 +219,21 @@ export function ChatWidget() {
       )}
 
       {messages.length === 0 && !token && (
-        <div className="px-4 pb-2">
+        <div className="grid gap-2 px-4 pb-2">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Je naam (optioneel)"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             maxLength={80}
+          />
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            type="email"
+            placeholder="Je e-mail (optioneel — voor een seintje bij antwoord)"
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            maxLength={254}
           />
         </div>
       )}

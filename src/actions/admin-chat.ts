@@ -9,6 +9,7 @@ import {
   postMessage,
   setThreadKeep,
   deleteThread,
+  getThreadNotifyInfo,
   type ThreadListItem,
 } from "@/lib/db/chat";
 import {
@@ -18,6 +19,8 @@ import {
 } from "@/lib/chat-images";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { writeAuditLog } from "@/lib/db/bookings";
+import { sendEmail } from "@/lib/email/client";
+import { chatReplyText } from "@/lib/email/messages";
 import type { ChatMessageDto } from "@/actions/chat";
 
 export async function listChatThreadsAction(): Promise<ThreadListItem[]> {
@@ -75,6 +78,13 @@ export async function sendAdminMessageAction(
   const body = (parsed.data.body ?? "").trim();
   const imagePath = parsed.data.imagePath || null;
   if (!body && !imagePath) return { ok: false };
+
+  // Capture state before posting: only mail the customer when this is
+  // a genuine reply to their last message (not a follow-up burst).
+  const info = await getThreadNotifyInfo(parsed.data.threadId).catch(
+    () => null,
+  );
+
   try {
     await postMessage({
       threadId: parsed.data.threadId,
@@ -83,11 +93,30 @@ export async function sendAdminMessageAction(
       imagePath,
     });
     revalidatePath("/berichten");
-    return { ok: true };
   } catch (err) {
     console.error("[chat] admin send failed:", err);
     return { ok: false };
   }
+
+  if (info && info.email && info.lastSender === "visitor") {
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    try {
+      await sendEmail({
+        to: info.email,
+        subject: "Reactie op je chatbericht",
+        context: "chat_reply",
+        text: chatReplyText({
+          customerName: info.name,
+          chatUrl: `${siteUrl.replace(/\/+$/, "")}/?chat=${info.publicToken}`,
+        }),
+      });
+    } catch (err) {
+      console.error("[chat] reply notification failed:", err);
+    }
+  }
+
+  return { ok: true };
 }
 
 export async function setChatKeepAction(

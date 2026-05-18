@@ -25,6 +25,14 @@ export type ChatMessageDto = {
 const startSchema = z.object({
   token: z.string().uuid().optional().or(z.literal("")),
   name: z.string().trim().max(80).optional().or(z.literal("")),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email()
+    .max(254)
+    .optional()
+    .or(z.literal("")),
 });
 
 export async function startChat(
@@ -36,6 +44,7 @@ export async function startChat(
     const { token } = await getOrCreateThread(
       parsed.data.token || null,
       parsed.data.name || null,
+      parsed.data.email || null,
     );
     return { ok: true, token };
   } catch (err) {
