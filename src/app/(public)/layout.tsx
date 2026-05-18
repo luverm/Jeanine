@@ -25,7 +25,7 @@ export default async function PublicLayout({
         <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Link href="/" aria-label={business.name} className="shrink-0">
             <Image
-              src="/HB-cocoa-transparent.png"
+              src="/Monogram-Transparant-Cocoa.png"
               alt={business.name}
               width={1080}
               height={1080}
