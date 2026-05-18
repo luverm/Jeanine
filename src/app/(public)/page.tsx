@@ -5,6 +5,8 @@ import { listActiveServices } from "@/lib/db/services";
 import { listPortfolioImages } from "@/lib/portfolio";
 import { listVisibleReviews } from "@/lib/db/reviews";
 import { ServiceCard } from "@/components/public/service-card";
+import { HeroCarousel } from "@/components/public/hero-carousel";
+import { IntroOverlay } from "@/components/public/intro-overlay";
 import { JsonLd } from "@/components/seo/json-ld";
 import { business } from "@/content/business";
 import { landing } from "@/content/landing";
@@ -26,15 +28,23 @@ export default async function HomePage() {
   const bridalTeaser = services.find((s) => s.kind === "bridal");
   const previewServices = bridalTeaser ? [...regular, bridalTeaser] : regular;
   const portfolioStrip = portfolio.slice(0, 6);
+  const heroSlides = portfolio.slice(0, 5);
   const reviews =
     dbReviews.length > 0
       ? dbReviews.map((r) => ({ quote: r.quote, author: r.author }))
       : landing.reviews;
 
   const filled = (v: string) => (v && !v.startsWith("{{") ? v : undefined);
+  const brandName = filled(business.name) ?? "Hair & Bridal by Jeanine";
 
   return (
     <>
+      <IntroOverlay
+        brandName={brandName}
+        logoSrc="/HB-cocoa-transparent.png"
+        preload={heroSlides.map((s) => s.src)}
+      />
+
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -55,9 +65,9 @@ export default async function HomePage() {
       />
 
       {/* Hero */}
-      <section className="relative overflow-hidden border-b bg-gradient-to-br from-accent/40 via-background to-muted/40">
-        <div className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-accent/50 blur-3xl" />
-        <div className="relative mx-auto max-w-6xl px-4 py-24 md:py-32">
+      <section className="relative isolate overflow-hidden border-b bg-gradient-to-br from-accent/40 via-background to-muted/40">
+        <HeroCarousel slides={heroSlides} />
+        <div className="relative mx-auto max-w-6xl px-4 py-28 md:py-40">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
             {landing.hero.eyebrow}
           </p>
