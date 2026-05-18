@@ -38,8 +38,8 @@ export function IntroOverlay({
 
     const reduce =
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    const MIN = reduce ? 0 : 2000;
-    const MAX = reduce ? 500 : 4000;
+    const MIN = reduce ? 0 : 4000;
+    const MAX = reduce ? 500 : 6000;
     const start = Date.now();
     let finished = false;
 
