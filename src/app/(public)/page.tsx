@@ -7,6 +7,7 @@ import { listVisibleReviews } from "@/lib/db/reviews";
 import { ServiceCard } from "@/components/public/service-card";
 import { HeroCarousel } from "@/components/public/hero-carousel";
 import { IntroOverlay } from "@/components/public/intro-overlay";
+import { FaqSection } from "@/components/public/faq-section";
 import { JsonLd } from "@/components/seo/json-ld";
 import { business } from "@/content/business";
 import { landing } from "@/content/landing";
@@ -234,6 +235,8 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      <FaqSection />
     </>
   );
 }
