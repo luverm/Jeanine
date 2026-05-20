@@ -213,3 +213,20 @@ export async function listInvoices(limit = 200): Promise<InvoiceListItem[]> {
   if (error) throw error;
   return (data ?? []) as InvoiceListItem[];
 }
+
+/**
+ * Hard-deletes EVERY invoice. The on-delete-cascade on invoice_lines
+ * cleans up the line items automatically. Irreversible.
+ */
+export async function deleteAllInvoices(): Promise<number> {
+  const svc = createSupabaseServiceClient();
+  const { count } = await svc
+    .from("invoices")
+    .select("id", { count: "exact", head: true });
+  const { error } = await svc
+    .from("invoices")
+    .delete()
+    .not("id", "is", null);
+  if (error) throw error;
+  return count ?? 0;
+}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { listInvoices } from "@/lib/db/invoices";
 import { formatPrice } from "@/lib/db/services";
+import { DangerDeleteInvoices } from "@/components/admin/danger-delete-invoices";
 
 export const metadata: Metadata = {
   title: "Facturen",
@@ -88,6 +89,8 @@ export default async function InvoicesListPage() {
           </table>
         </div>
       )}
+
+      <DangerDeleteInvoices />
     </div>
   );
 }
