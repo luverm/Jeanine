@@ -122,7 +122,15 @@ export function AgendaTimeGrid({
       endHour = Math.max(endHour, Math.ceil(minutesOfDay(b.ends_at) / 60));
     }
   }
-  startHour = Math.max(6, startHour);
+  // Widen the window so Jeanine's opening hours are fully in view, even
+  // when they start early or run late.
+  const visibleWeekdays = new Set(days.map((d) => d.getDay()));
+  for (const o of openingHours) {
+    if (!visibleWeekdays.has(o.weekday)) continue;
+    startHour = Math.min(startHour, Math.floor(hhmmToMin(o.start) / 60));
+    endHour = Math.max(endHour, Math.ceil(hhmmToMin(o.end) / 60));
+  }
+  startHour = Math.max(5, startHour);
   endHour = Math.min(23, endHour);
 
   const hours: number[] = [];

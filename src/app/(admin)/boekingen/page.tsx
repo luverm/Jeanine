@@ -20,6 +20,7 @@ import { formatHumanDateTime } from "@/lib/time";
 import { formatPrice } from "@/lib/db/services";
 import { getDeviceInfo } from "@/lib/device";
 import { DangerDeleteBookings } from "@/components/admin/danger-delete-bookings";
+import { DeleteBookingButton } from "@/components/admin/delete-booking-button";
 import {
   BOOKING_STATUS_LABELS,
   bookingStatusLabel,
@@ -159,42 +160,49 @@ export default async function BoekingenPage({
       ) : device.isMobile ? (
         <div className="mt-6 grid gap-3">
           {bookings.map((b) => (
-            <Link
-              key={b.id}
-              href={`/boekingen/${b.id}`}
-              className="block rounded-lg border p-4 hover:bg-accent"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <span className="text-sm font-medium">
-                  {formatHumanDateTime(new Date(b.starts_at))}
-                </span>
-                <Badge variant={bookingStatusVariant(b.status)}>
-                  {bookingStatusLabel(b.status)}
-                </Badge>
-              </div>
-              <p className="mt-2 flex items-center gap-1.5 text-sm font-medium">
-                {flagged.has(b.customer_id) && (
-                  <AlertTriangle
-                    className="h-4 w-4 shrink-0 text-amber-600"
-                    aria-label={`Let op: ${flagged.get(
-                      b.customer_id,
-                    )} no-shows`}
-                  />
-                )}
-                {b.customer?.full_name ?? "—"}
-              </p>
-              {b.customer?.email && (
-                <p className="text-xs text-muted-foreground break-all">
-                  {b.customer.email}
+            <div key={b.id} className="rounded-lg border">
+              <Link
+                href={`/boekingen/${b.id}`}
+                className="block p-4 hover:bg-accent"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-sm font-medium">
+                    {formatHumanDateTime(new Date(b.starts_at))}
+                  </span>
+                  <Badge variant={bookingStatusVariant(b.status)}>
+                    {bookingStatusLabel(b.status)}
+                  </Badge>
+                </div>
+                <p className="mt-2 flex items-center gap-1.5 text-sm font-medium">
+                  {flagged.has(b.customer_id) && (
+                    <AlertTriangle
+                      className="h-4 w-4 shrink-0 text-amber-600"
+                      aria-label={`Let op: ${flagged.get(
+                        b.customer_id,
+                      )} no-shows`}
+                    />
+                  )}
+                  {b.customer?.full_name ?? "—"}
                 </p>
-              )}
-              <div className="mt-2 flex items-center justify-between text-sm">
-                <span>{b.service?.name ?? "—"}</span>
-                <span className="font-medium">
-                  {b.service ? formatPrice(b.service.price_cents) : "—"}
-                </span>
+                {b.customer?.email && (
+                  <p className="text-xs text-muted-foreground break-all">
+                    {b.customer.email}
+                  </p>
+                )}
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <span>{b.service?.name ?? "—"}</span>
+                  <span className="font-medium">
+                    {b.service ? formatPrice(b.service.price_cents) : "—"}
+                  </span>
+                </div>
+              </Link>
+              <div className="flex justify-end border-t px-4 py-2">
+                <DeleteBookingButton
+                  bookingId={b.id}
+                  customerName={b.customer?.full_name ?? "klant"}
+                />
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       ) : (
@@ -207,6 +215,9 @@ export default async function BoekingenPage({
               <TableHead>Dienst</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Prijs</TableHead>
+              <TableHead className="w-10">
+                <span className="sr-only">Acties</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -243,6 +254,12 @@ export default async function BoekingenPage({
                 </TableCell>
                 <TableCell className="text-right">
                   {b.service ? formatPrice(b.service.price_cents) : "—"}
+                </TableCell>
+                <TableCell className="text-right">
+                  <DeleteBookingButton
+                    bookingId={b.id}
+                    customerName={b.customer?.full_name ?? "klant"}
+                  />
                 </TableCell>
               </TableRow>
             ))}

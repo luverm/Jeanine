@@ -12,7 +12,7 @@ import { RescheduleBooking } from "@/components/admin/reschedule-booking";
 import { BookingNotesForm } from "@/components/admin/booking-notes-form";
 import { BookingPayment } from "@/components/admin/booking-payment";
 import { NoShowDismiss } from "@/components/admin/no-show-dismiss";
-import { formatHumanDateTime } from "@/lib/time";
+import { formatHumanDateTime, formatIsoDate } from "@/lib/time";
 import { formatPrice, formatDuration } from "@/lib/db/services";
 import { bookingStatusLabel, bookingStatusVariant } from "@/lib/status-labels";
 
@@ -91,12 +91,22 @@ export default async function BookingDetailPage({
               durationMin={booking.service.duration_min}
             />
           )}
-          <Link
-            href={`/boekingen/${booking.id}/factuur`}
-            className="inline-flex h-9 w-fit items-center justify-center rounded-md border bg-background px-4 text-sm font-medium hover:bg-accent"
-          >
-            Factuur maken
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/boekingen/${booking.id}/factuur`}
+              className="inline-flex h-9 w-fit items-center justify-center rounded-md border bg-background px-4 text-sm font-medium hover:bg-accent"
+            >
+              Factuur maken
+            </Link>
+            <Link
+              href={`/agenda?view=dag&date=${formatIsoDate(
+                new Date(booking.starts_at),
+              )}`}
+              className="inline-flex h-9 w-fit items-center justify-center rounded-md border bg-background px-4 text-sm font-medium hover:bg-accent"
+            >
+              Toon in agenda
+            </Link>
+          </div>
         </div>
       </Card>
 

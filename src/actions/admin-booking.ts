@@ -9,6 +9,7 @@ import {
   insertBooking,
   isExclusionViolation,
   getBookingDetail,
+  deleteBooking,
   deleteAllBookings,
 } from "@/lib/db/bookings";
 import { cancelBookingAction } from "@/actions/booking";
@@ -62,6 +63,34 @@ export async function updateBookingStatusAction(
     payload: { status },
   }).catch(() => {});
 
+  return { ok: true };
+}
+
+export async function deleteBookingAction(
+  id: string,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  const parsed = uuidString().safeParse(id);
+  if (!parsed.success) return { ok: false };
+
+  try {
+    await deleteBooking(parsed.data);
+  } catch (err) {
+    console.error("[admin-booking] delete failed:", err);
+    return { ok: false };
+  }
+
+  await writeAuditLog({
+    actor: "admin",
+    action: "booking.delete",
+    entity: "booking",
+    entityId: parsed.data,
+    payload: {},
+  }).catch(() => {});
+
+  revalidatePath("/boekingen");
+  revalidatePath("/agenda");
+  revalidatePath("/dashboard");
   return { ok: true };
 }
 

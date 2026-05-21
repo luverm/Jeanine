@@ -119,6 +119,13 @@ export async function deleteAllBookings(): Promise<number> {
   return count ?? 0;
 }
 
+/** Hard-deletes a single booking. Irreversible. */
+export async function deleteBooking(id: string): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase.from("bookings").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function writeAuditLog(input: {
   actor: string;
   action: string;
