@@ -1,14 +1,24 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { loadDashboardKpis } from "@/lib/db/admin-bookings";
+import { loadDashboardKpis, listBookings } from "@/lib/db/admin-bookings";
 import { loadInsights } from "@/lib/db/insights";
 import { listLeads } from "@/lib/db/leads";
 import { listInvoices } from "@/lib/db/invoices";
+import { listOpenWaitlistInRange } from "@/lib/db/waitlist";
 import { Card } from "@/components/ui/card";
-import { MonthCalendar } from "@/components/admin/month-calendar";
-import { getDeviceInfo } from "@/lib/device";
+import {
+  AgendaTimeGrid,
+  groupByDay,
+} from "@/components/admin/agenda-time-grid";
+import { formatIsoDate } from "@/lib/time";
 import { formatPrice } from "@/lib/db/services";
-import { format, parseISO } from "date-fns";
+import {
+  addDays,
+  eachDayOfInterval,
+  format,
+  parseISO,
+  startOfWeek,
+} from "date-fns";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -17,19 +27,33 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ month?: string }>;
-}) {
-  const { month } = await searchParams;
-  const [kpis, insights, leads, device, invoices] = await Promise.all([
-    loadDashboardKpis(),
-    loadInsights(),
-    listLeads("new"),
-    getDeviceInfo(),
-    listInvoices(8).catch(() => []),
-  ]);
+export default async function DashboardPage() {
+  const todayKey = formatIsoDate(new Date());
+  const weekStart = startOfWeek(parseISO(todayKey), { weekStartsOn: 1 });
+  const weekDays = eachDayOfInterval({
+    start: weekStart,
+    end: addDays(weekStart, 6),
+  });
+  const weekFrom = format(weekStart, "yyyy-MM-dd");
+  const weekTo = format(addDays(weekStart, 6), "yyyy-MM-dd");
+
+  const [kpis, insights, leads, invoices, weekBookings, weekWaitlist] =
+    await Promise.all([
+      loadDashboardKpis(),
+      loadInsights(),
+      listLeads("new"),
+      listInvoices(8).catch(() => []),
+      listBookings({ from: weekFrom, to: weekTo }),
+      listOpenWaitlistInRange(weekFrom, weekTo),
+    ]);
+
+  const byDay = groupByDay(weekBookings);
+  const waitlistByDay = new Map<string, string[]>();
+  for (const w of weekWaitlist) {
+    const arr = waitlistByDay.get(w.preferred_date);
+    if (arr) arr.push(w.full_name);
+    else waitlistByDay.set(w.preferred_date, [w.full_name]);
+  }
 
   const maxRevenue = Math.max(
     1,
@@ -116,7 +140,7 @@ export default async function DashboardPage({
 
       <div className="mt-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Agenda</h2>
+          <h2 className="text-lg font-semibold">Agenda — deze week</h2>
           <Link
             href="/agenda"
             className="text-xs text-muted-foreground underline underline-offset-4"
@@ -124,9 +148,11 @@ export default async function DashboardPage({
             Volledige agenda (maand/week/dag)
           </Link>
         </div>
-        <MonthCalendar
-          month={month}
-          layout={device.isMobile ? "list" : "grid"}
+        <AgendaTimeGrid
+          days={weekDays}
+          byDay={byDay}
+          waitlistByDay={waitlistByDay}
+          todayKey={todayKey}
         />
       </div>
 
