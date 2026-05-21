@@ -13,6 +13,7 @@ import {
   startOfWeek,
 } from "date-fns";
 import { listBookings, type BookingListItem } from "@/lib/db/admin-bookings";
+import { listOpenWaitlistInRange } from "@/lib/db/waitlist";
 import { formatIsoDate, formatTime } from "@/lib/time";
 
 export const metadata: Metadata = {
@@ -119,11 +120,25 @@ export default async function AgendaPage({
     rangeEnd = anchor;
   }
 
-  const bookings = await listBookings({
-    from: format(rangeStart, "yyyy-MM-dd"),
-    to: format(rangeEnd, "yyyy-MM-dd"),
-  });
+  const [bookings, waitlist] = await Promise.all([
+    listBookings({
+      from: format(rangeStart, "yyyy-MM-dd"),
+      to: format(rangeEnd, "yyyy-MM-dd"),
+    }),
+    listOpenWaitlistInRange(
+      format(rangeStart, "yyyy-MM-dd"),
+      format(rangeEnd, "yyyy-MM-dd"),
+    ),
+  ]);
   const byDay = groupByDay(bookings);
+
+  // Waitlist names per day (preferred_date), for the agenda indicators.
+  const waitlistByDay = new Map<string, string[]>();
+  for (const w of waitlist) {
+    const arr = waitlistByDay.get(w.preferred_date);
+    if (arr) arr.push(w.full_name);
+    else waitlistByDay.set(w.preferred_date, [w.full_name]);
+  }
 
   // Time-grid hour range: 08–19 by default, widened to fit any booking.
   let startHour = 8;
@@ -215,11 +230,17 @@ export default async function AgendaPage({
 
       <div className="mt-4">
         {view === "maand" ? (
-          <MonthView anchor={anchor} byDay={byDay} todayKey={todayKey} />
+          <MonthView
+            anchor={anchor}
+            byDay={byDay}
+            waitlistByDay={waitlistByDay}
+            todayKey={todayKey}
+          />
         ) : (
           <TimeGrid
             days={gridDays}
             byDay={byDay}
+            waitlistByDay={waitlistByDay}
             todayKey={todayKey}
             startHour={startHour}
             endHour={endHour}
@@ -233,12 +254,14 @@ export default async function AgendaPage({
 function TimeGrid({
   days,
   byDay,
+  waitlistByDay,
   todayKey,
   startHour,
   endHour,
 }: {
   days: Date[];
   byDay: Map<string, BookingListItem[]>;
+  waitlistByDay: Map<string, string[]>;
   todayKey: string;
   startHour: number;
   endHour: number;
@@ -257,33 +280,42 @@ function TimeGrid({
           {days.map((day, i) => {
             const key = format(day, "yyyy-MM-dd");
             const isToday = key === todayKey;
+            const waiting = waitlistByDay.get(key) ?? [];
             return (
-              <div
-                key={key}
-                className="flex flex-1 items-center justify-between gap-1 border-l px-2 py-2"
-              >
-                <span className="text-sm font-medium capitalize">
-                  {single
-                    ? WEEKDAYS_LONG[Number(format(day, "i")) - 1]
-                    : WEEKDAYS[i % 7]}{" "}
-                  <span
-                    className={
-                      isToday
-                        ? "rounded bg-foreground px-1 text-background"
-                        : ""
-                    }
-                  >
-                    {format(day, "d")}
+              <div key={key} className="flex-1 border-l px-2 py-2">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-sm font-medium capitalize">
+                    {single
+                      ? WEEKDAYS_LONG[Number(format(day, "i")) - 1]
+                      : WEEKDAYS[i % 7]}{" "}
+                    <span
+                      className={
+                        isToday
+                          ? "rounded bg-foreground px-1 text-background"
+                          : ""
+                      }
+                    >
+                      {format(day, "d")}
+                    </span>
                   </span>
-                </span>
-                <Link
-                  href={`/boekingen/nieuw?date=${key}`}
-                  aria-label={`Nieuwe boeking op ${key}`}
-                  title="Nieuwe boeking"
-                  className="inline-flex h-5 w-5 items-center justify-center rounded text-sm leading-none text-muted-foreground hover:bg-accent hover:text-foreground"
-                >
-                  +
-                </Link>
+                  <Link
+                    href={`/boekingen/nieuw?date=${key}`}
+                    aria-label={`Nieuwe boeking op ${key}`}
+                    title="Nieuwe boeking"
+                    className="inline-flex h-5 w-5 items-center justify-center rounded text-sm leading-none text-muted-foreground hover:bg-accent hover:text-foreground"
+                  >
+                    +
+                  </Link>
+                </div>
+                {waiting.length > 0 && (
+                  <Link
+                    href="/instellingen/wachtlijst"
+                    title={`Wachtlijst (${waiting.length}): ${waiting.join(", ")}`}
+                    className="mt-1 block truncate rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-900 hover:bg-amber-200"
+                  >
+                    Wachtlijst ({waiting.length}): {waiting.join(", ")}
+                  </Link>
+                )}
               </div>
             );
           })}
@@ -390,10 +422,12 @@ function BookingChip({ b }: { b: BookingListItem }) {
 function MonthView({
   anchor,
   byDay,
+  waitlistByDay,
   todayKey,
 }: {
   anchor: Date;
   byDay: Map<string, BookingListItem[]>;
+  waitlistByDay: Map<string, string[]>;
   todayKey: string;
 }) {
   const gridStart = startOfWeek(startOfMonth(anchor), { weekStartsOn: 1 });
@@ -419,6 +453,7 @@ function MonthView({
             const items = byDay.get(key) ?? [];
             const shown = items.slice(0, 3);
             const extra = items.length - shown.length;
+            const waiting = waitlistByDay.get(key) ?? [];
             return (
               <div
                 key={key}
@@ -458,6 +493,15 @@ function MonthView({
                       className="px-1 text-[11px] text-muted-foreground hover:underline"
                     >
                       +{extra} meer
+                    </Link>
+                  )}
+                  {waiting.length > 0 && (
+                    <Link
+                      href="/instellingen/wachtlijst"
+                      title={`Wachtlijst (${waiting.length}): ${waiting.join(", ")}`}
+                      className="truncate rounded bg-amber-100 px-1 text-[10px] text-amber-900 hover:bg-amber-200"
+                    >
+                      Wachtlijst {waiting.length}
                     </Link>
                   )}
                 </div>

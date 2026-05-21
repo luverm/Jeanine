@@ -62,6 +62,34 @@ export async function listWaitlist(): Promise<WaitlistRow[]> {
   return (data ?? []) as unknown as WaitlistRow[];
 }
 
+export type WaitlistDayEntry = {
+  id: string;
+  full_name: string;
+  preferred_date: string;
+};
+
+/** Open (unresolved) waitlist entries with a preferred date in the range. */
+export async function listOpenWaitlistInRange(
+  from: string,
+  to: string,
+): Promise<WaitlistDayEntry[]> {
+  try {
+    const svc = createSupabaseServiceClient();
+    const { data, error } = await svc
+      .from("waitlist")
+      .select("id, full_name, preferred_date")
+      .eq("resolved", false)
+      .not("preferred_date", "is", null)
+      .gte("preferred_date", from)
+      .lte("preferred_date", to)
+      .order("created_at", { ascending: true });
+    if (error) return [];
+    return (data ?? []) as WaitlistDayEntry[];
+  } catch {
+    return [];
+  }
+}
+
 export type WaitlistMatch = { id: string; full_name: string; email: string };
 
 /**
