@@ -37,8 +37,8 @@ values
   -- Bridal — request only, not online bookable
   ('bruid-locatie-haar',            'Aanvraag: bruidshaarstyling op locatie incl. proefsessie',              NULL,                                                                                              'bridal',  240, 30, 24000, false, 410),
   ('bruid-locatie-haar-makeup',     'Aanvraag: bruidshaarstyling en make-up op locatie incl. proefsessie',   NULL,                                                                                              'bridal',  240, 30, 31500, false, 420),
-  ('bruid-proefsessie-haar',        'Proefsessie bruidshaarstyling',                                         NULL,                                                                                              'bridal',  180, 30, 0,     false, 430),
-  ('bruid-proefsessie-haar-makeup', 'Proefsessie bruidshaarstyling en make-up',                              NULL,                                                                                              'bridal',  210, 30, 0,     false, 440)
+  ('bruid-proefsessie-haar',        'Proefsessie bruidshaarstyling',                                         NULL,                                                                                              'bridal',  180, 30, 0,     true,  430),
+  ('bruid-proefsessie-haar-makeup', 'Proefsessie bruidshaarstyling en make-up',                              NULL,                                                                                              'bridal',  210, 30, 0,     true,  440)
 on conflict (slug) do update
   set name = excluded.name,
       description = excluded.description,

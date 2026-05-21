@@ -49,7 +49,7 @@ async function loadService(serviceId: string): Promise<ServiceLookup | null> {
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  if (!data.is_active || !data.is_online_bookable || data.kind !== "regular") {
+  if (!data.is_active || !data.is_online_bookable) {
     return null;
   }
   return { id: data.id, name: data.name, duration_min: data.duration_min };

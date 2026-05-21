@@ -204,10 +204,6 @@ export async function getAvailableSlotsWithDiagnostics(
     diag.earlyExit = "service_inactive_or_not_bookable";
     return { slots: [], statuses: [], diag };
   }
-  if (service.kind !== "regular") {
-    diag.earlyExit = "service_not_regular";
-    return { slots: [], statuses: [], diag };
-  }
 
   const dayStart = startOfDayInTz(date);
   const dayEnd = endOfDayInTz(date);

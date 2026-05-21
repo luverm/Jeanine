@@ -25,7 +25,7 @@ export default async function BoekenPage({
   }>;
 }) {
   const [services, staffId, params] = await Promise.all([
-    listActiveServices("regular"),
+    listActiveServices(),
     getDefaultStaffId(),
     searchParams,
   ]);

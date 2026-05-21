@@ -215,7 +215,7 @@ export const SEED_SERVICES: readonly SeededService[] = [
     duration_min: 180,
     buffer_min: 30,
     price_cents: 0,
-    is_online_bookable: false,
+    is_online_bookable: true,
     sort_order: 430,
   },
   {
@@ -226,7 +226,7 @@ export const SEED_SERVICES: readonly SeededService[] = [
     duration_min: 210,
     buffer_min: 30,
     price_cents: 0,
-    is_online_bookable: false,
+    is_online_bookable: true,
     sort_order: 440,
   },
 ];

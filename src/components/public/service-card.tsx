@@ -8,7 +8,7 @@ import {
 } from "@/lib/services-format";
 
 export function ServiceCard({ service }: { service: Service }) {
-  const bookable = service.kind === "regular" && service.is_online_bookable;
+  const bookable = service.is_online_bookable;
   return (
     <Card className="group flex h-full flex-col p-6 transition hover:border-primary/40 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">

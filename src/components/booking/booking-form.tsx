@@ -54,11 +54,14 @@ export function BookingForm({
   prefill?: BookingPrefill;
 }) {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const prefilledServiceId = prefill?.serviceSlug
+    ? (services.find((s) => s.slug === prefill.serviceSlug)?.id ?? null)
+    : null;
+  // A pre-chosen service (e.g. a proefsessie booked from the bridal
+  // page) skips the service-picker and starts at the date step.
+  const [step, setStep] = useState(prefilledServiceId ? 1 : 0);
   const [serviceId, setServiceId] = useState<string | null>(
-    prefill?.serviceSlug
-      ? services.find((s) => s.slug === prefill.serviceSlug)?.id ?? null
-      : null,
+    prefilledServiceId,
   );
   const [date, setDate] = useState<Date | undefined>(
     prefill?.date ? new Date(`${prefill.date}T00:00:00Z`) : undefined,
@@ -359,6 +362,9 @@ function ServiceStep({
   const groups: Array<{ key: string; label: string; items: Service[] }> = [];
   const buckets = new Map<string, Service[]>();
   for (const s of services) {
+    // Bridal services (e.g. proefsessies) are booked via the bridal
+    // page, not from this walk-in picker.
+    if (s.kind !== "regular") continue;
     const cat = categoryForSlug(s.slug);
     const key = cat?.key ?? "overig";
     if (!buckets.has(key)) buckets.set(key, []);
