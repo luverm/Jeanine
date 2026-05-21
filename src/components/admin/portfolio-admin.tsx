@@ -4,7 +4,22 @@ import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { GripVertical } from "lucide-react";
+import {
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  rectSortingStrategy,
+  arrayMove,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import {
   uploadPortfolio,
@@ -13,12 +28,18 @@ import {
 } from "@/actions/portfolio";
 
 type Img = { src: string; alt: string; name?: string };
+type Photo = { src: string; alt: string; name: string };
 
 export function PortfolioAdmin({ images }: { images: Img[] }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
-  const [items, setItems] = useState<Img[]>(images);
+  const [items, setItems] = useState<Photo[]>(
+    images.filter((i): i is Photo => typeof i.name === "string"),
+  );
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
 
   function upload(formData: FormData) {
     startTransition(async () => {
@@ -33,8 +54,7 @@ export function PortfolioAdmin({ images }: { images: Img[] }) {
     });
   }
 
-  function remove(name?: string) {
-    if (!name) return;
+  function remove(name: string) {
     startTransition(async () => {
       const r = await deletePortfolio(name);
       if (r.ok) {
@@ -46,16 +66,16 @@ export function PortfolioAdmin({ images }: { images: Img[] }) {
     });
   }
 
-  function move(index: number, delta: number) {
-    const target = index + delta;
-    if (target < 0 || target >= items.length) return;
-    const next = [...items];
-    [next[index], next[target]] = [next[target], next[index]];
+  function onDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = items.findIndex((i) => i.name === active.id);
+    const newIndex = items.findIndex((i) => i.name === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const next = arrayMove(items, oldIndex, newIndex);
     setItems(next);
     startTransition(async () => {
-      const r = await reorderPortfolio(
-        next.map((i) => i.name).filter((n): n is string => !!n),
-      );
+      const r = await reorderPortfolio(next.map((i) => i.name));
       if (!r.ok) {
         toast.error("Volgorde opslaan mislukt.");
         router.refresh();
@@ -95,65 +115,96 @@ export function PortfolioAdmin({ images }: { images: Img[] }) {
       ) : (
         <div>
           <p className="mb-3 text-sm text-muted-foreground">
-            Met de pijltjes pas je de volgorde aan — die volgorde wordt
-            ook op de website gebruikt.
+            Sleep de foto&apos;s om de volgorde aan te passen — die volgorde
+            wordt ook op de website gebruikt.
           </p>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {items.map((img, i) => (
-              <div key={img.name ?? img.src} className="group relative">
-                <div className="relative aspect-square overflow-hidden rounded-lg border">
-                  <Image
-                    src={img.src}
-                    alt={img.alt}
-                    fill
-                    sizes="(max-width:768px) 50vw, 25vw"
-                    className="object-cover"
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={onDragEnd}
+          >
+            <SortableContext
+              items={items.map((i) => i.name)}
+              strategy={rectSortingStrategy}
+            >
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                {items.map((img, i) => (
+                  <SortablePhoto
+                    key={img.name}
+                    img={img}
+                    index={i}
+                    pending={pending}
+                    onRemove={remove}
                   />
-                  <span className="absolute left-1.5 top-1.5 rounded bg-foreground/80 px-1.5 py-0.5 text-[11px] font-medium text-background">
-                    {i + 1}
-                  </span>
-                </div>
-                <div className="mt-2 flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    aria-label="Naar voren"
-                    onClick={() => move(i, -1)}
-                    disabled={pending || i === 0}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    aria-label="Naar achteren"
-                    onClick={() => move(i, 1)}
-                    disabled={pending || i === items.length - 1}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                {img.name && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="mt-1 w-full"
-                    onClick={() => remove(img.name)}
-                    disabled={pending}
-                  >
-                    Verwijder
-                  </Button>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         </div>
       )}
+    </div>
+  );
+}
+
+function SortablePhoto({
+  img,
+  index,
+  pending,
+  onRemove,
+}: {
+  img: Photo;
+  index: number;
+  pending: boolean;
+  onRemove: (name: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: img.name });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 20 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      <div
+        {...attributes}
+        {...listeners}
+        className="relative aspect-square cursor-grab touch-none select-none overflow-hidden rounded-lg border bg-muted active:cursor-grabbing"
+      >
+        <Image
+          src={img.src}
+          alt={img.alt}
+          fill
+          draggable={false}
+          sizes="(max-width:768px) 50vw, 25vw"
+          className="object-cover"
+        />
+        <span className="absolute left-1.5 top-1.5 rounded bg-foreground/80 px-1.5 py-0.5 text-[11px] font-medium text-background">
+          {index + 1}
+        </span>
+        <span className="absolute right-1.5 top-1.5 rounded bg-background/80 p-1 text-muted-foreground">
+          <GripVertical className="h-4 w-4" />
+        </span>
+      </div>
+      <Button
+        type="button"
+        variant="destructive"
+        size="sm"
+        className="mt-2 w-full"
+        onClick={() => onRemove(img.name)}
+        disabled={pending}
+      >
+        Verwijder
+      </Button>
     </div>
   );
 }
