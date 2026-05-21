@@ -52,7 +52,7 @@ function minutesOfDay(iso: string): number {
 }
 
 /** The part of each time-off block that falls on a given day, in minutes. */
-function timeOffSegmentsForDay(
+export function timeOffSegmentsForDay(
   dayKey: string,
   timeOff: TimeOffRow[],
 ): Array<{ id: string; startMin: number; endMin: number; reason: string }> {

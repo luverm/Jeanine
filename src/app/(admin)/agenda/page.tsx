@@ -14,10 +14,14 @@ import {
 } from "date-fns";
 import { listBookings, type BookingListItem } from "@/lib/db/admin-bookings";
 import { listOpenWaitlistInRange } from "@/lib/db/waitlist";
-import { listTimeOffInRange } from "@/lib/db/admin-schedule";
+import { listTimeOffInRange, type TimeOffRow } from "@/lib/db/admin-schedule";
 import { getDefaultStaffId } from "@/lib/db/staff";
 import { formatIsoDate, formatTime } from "@/lib/time";
-import { AgendaTimeGrid, groupByDay } from "@/components/admin/agenda-time-grid";
+import {
+  AgendaTimeGrid,
+  groupByDay,
+  timeOffSegmentsForDay,
+} from "@/components/admin/agenda-time-grid";
 
 export const metadata: Metadata = {
   title: "Agenda",
@@ -193,6 +197,7 @@ export default async function AgendaPage({
             anchor={anchor}
             byDay={byDay}
             waitlistByDay={waitlistByDay}
+            timeOff={timeOff}
             todayKey={todayKey}
           />
         ) : (
@@ -235,11 +240,13 @@ function MonthView({
   anchor,
   byDay,
   waitlistByDay,
+  timeOff,
   todayKey,
 }: {
   anchor: Date;
   byDay: Map<string, BookingListItem[]>;
   waitlistByDay: Map<string, string[]>;
+  timeOff: TimeOffRow[];
   todayKey: string;
 }) {
   const gridStart = startOfWeek(startOfMonth(anchor), { weekStartsOn: 1 });
@@ -266,6 +273,7 @@ function MonthView({
             const shown = items.slice(0, 3);
             const extra = items.length - shown.length;
             const waiting = waitlistByDay.get(key) ?? [];
+            const off = timeOffSegmentsForDay(key, timeOff);
             return (
               <div
                 key={key}
@@ -296,6 +304,17 @@ function MonthView({
                   </Link>
                 </div>
                 <div className="mt-1 flex flex-col gap-0.5">
+                  {off.length > 0 && (
+                    <Link
+                      href="/instellingen/vrije-dagen"
+                      title={off
+                        .map((s) => s.reason || "Afwezig")
+                        .join(", ")}
+                      className="truncate rounded bg-stone-200 px-1 text-[10px] font-medium text-stone-700 hover:bg-stone-300"
+                    >
+                      Afwezig
+                    </Link>
+                  )}
                   {shown.map((b) => (
                     <BookingChip key={b.id} b={b} />
                   ))}
