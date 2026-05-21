@@ -126,6 +126,18 @@ export async function deleteBooking(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Hard-deletes the given bookings. Irreversible. Returns the count removed. */
+export async function deleteBookings(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const supabase = createSupabaseServiceClient();
+  const { error, count } = await supabase
+    .from("bookings")
+    .delete({ count: "exact" })
+    .in("id", ids);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function writeAuditLog(input: {
   actor: string;
   action: string;

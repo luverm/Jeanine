@@ -1,31 +1,15 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { AlertTriangle } from "lucide-react";
 import { listBookings } from "@/lib/db/admin-bookings";
 import { listAllServices } from "@/lib/db/admin-services";
 import { getNoShowFlags } from "@/lib/db/no-show";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { formatHumanDateTime } from "@/lib/time";
-import { formatPrice } from "@/lib/db/services";
 import { getDeviceInfo } from "@/lib/device";
 import { DangerDeleteBookings } from "@/components/admin/danger-delete-bookings";
-import { DeleteBookingButton } from "@/components/admin/delete-booking-button";
-import {
-  BOOKING_STATUS_LABELS,
-  bookingStatusLabel,
-  bookingStatusVariant,
-} from "@/lib/status-labels";
+import { BookingsList } from "@/components/admin/bookings-list";
+import { BOOKING_STATUS_LABELS } from "@/lib/status-labels";
 
 export const metadata: Metadata = {
   title: "Boekingen",
@@ -157,115 +141,12 @@ export default async function BoekingenPage({
         <p className="mt-6 rounded-lg border p-8 text-center text-sm text-muted-foreground">
           Geen boekingen gevonden.
         </p>
-      ) : device.isMobile ? (
-        <div className="mt-6 grid gap-3">
-          {bookings.map((b) => (
-            <div key={b.id} className="rounded-lg border">
-              <Link
-                href={`/boekingen/${b.id}`}
-                className="block p-4 hover:bg-accent"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-sm font-medium">
-                    {formatHumanDateTime(new Date(b.starts_at))}
-                  </span>
-                  <Badge variant={bookingStatusVariant(b.status)}>
-                    {bookingStatusLabel(b.status)}
-                  </Badge>
-                </div>
-                <p className="mt-2 flex items-center gap-1.5 text-sm font-medium">
-                  {flagged.has(b.customer_id) && (
-                    <AlertTriangle
-                      className="h-4 w-4 shrink-0 text-amber-600"
-                      aria-label={`Let op: ${flagged.get(
-                        b.customer_id,
-                      )} no-shows`}
-                    />
-                  )}
-                  {b.customer?.full_name ?? "—"}
-                </p>
-                {b.customer?.email && (
-                  <p className="text-xs text-muted-foreground break-all">
-                    {b.customer.email}
-                  </p>
-                )}
-                <div className="mt-2 flex items-center justify-between text-sm">
-                  <span>{b.service?.name ?? "—"}</span>
-                  <span className="font-medium">
-                    {b.service ? formatPrice(b.service.price_cents) : "—"}
-                  </span>
-                </div>
-              </Link>
-              <div className="flex justify-end border-t px-4 py-2">
-                <DeleteBookingButton
-                  bookingId={b.id}
-                  customerName={b.customer?.full_name ?? "klant"}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
       ) : (
-      <div className="mt-6 overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Wanneer</TableHead>
-              <TableHead>Klant</TableHead>
-              <TableHead>Dienst</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Prijs</TableHead>
-              <TableHead className="w-10">
-                <span className="sr-only">Acties</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bookings.map((b) => (
-              <TableRow key={b.id} className="cursor-pointer">
-                <TableCell>
-                  <Link href={`/boekingen/${b.id}`} className="block">
-                    {formatHumanDateTime(new Date(b.starts_at))}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <Link href={`/boekingen/${b.id}`} className="block">
-                    <span className="inline-flex items-center gap-1.5 font-medium">
-                      {flagged.has(b.customer_id) && (
-                        <AlertTriangle
-                          className="h-4 w-4 shrink-0 text-amber-600"
-                          aria-label={`Let op: ${flagged.get(
-                            b.customer_id,
-                          )} no-shows`}
-                        />
-                      )}
-                      {b.customer?.full_name ?? "—"}
-                    </span>
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {b.customer?.email}
-                    </span>
-                  </Link>
-                </TableCell>
-                <TableCell>{b.service?.name ?? "—"}</TableCell>
-                <TableCell>
-                  <Badge variant={bookingStatusVariant(b.status)}>
-                    {bookingStatusLabel(b.status)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  {b.service ? formatPrice(b.service.price_cents) : "—"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DeleteBookingButton
-                    bookingId={b.id}
-                    customerName={b.customer?.full_name ?? "klant"}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+        <BookingsList
+          bookings={bookings}
+          flaggedEntries={[...flagged]}
+          isMobile={device.isMobile}
+        />
       )}
 
       <DangerDeleteBookings />

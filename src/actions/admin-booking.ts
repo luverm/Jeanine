@@ -10,6 +10,7 @@ import {
   isExclusionViolation,
   getBookingDetail,
   deleteBooking,
+  deleteBookings,
   deleteAllBookings,
 } from "@/lib/db/bookings";
 import { cancelBookingAction } from "@/actions/booking";
@@ -92,6 +93,35 @@ export async function deleteBookingAction(
   revalidatePath("/agenda");
   revalidatePath("/dashboard");
   return { ok: true };
+}
+
+export async function deleteBookingsAction(
+  ids: unknown,
+): Promise<{ ok: boolean; deleted?: number }> {
+  await requireAdmin();
+  const parsed = z.array(uuidString()).min(1).max(500).safeParse(ids);
+  if (!parsed.success) return { ok: false };
+
+  let deleted: number;
+  try {
+    deleted = await deleteBookings(parsed.data);
+  } catch (err) {
+    console.error("[admin-booking] delete selected failed:", err);
+    return { ok: false };
+  }
+
+  await writeAuditLog({
+    actor: "admin",
+    action: "booking.delete_selected",
+    entity: "booking",
+    entityId: "00000000-0000-0000-0000-000000000000",
+    payload: { count: deleted },
+  }).catch(() => {});
+
+  revalidatePath("/boekingen");
+  revalidatePath("/agenda");
+  revalidatePath("/dashboard");
+  return { ok: true, deleted };
 }
 
 const notesSchema = z.string().max(2000);
