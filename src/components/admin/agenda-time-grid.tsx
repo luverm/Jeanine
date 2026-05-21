@@ -82,24 +82,38 @@ export function timeOffSegmentsForDay(
  * Salonized-style time grid: an hour axis with appointments positioned by
  * start time. Absences show as a hatched bar in an all-day row on top.
  */
+export type OpeningBlock = { weekday: number; start: string; end: string };
+
 export function AgendaTimeGrid({
   days,
   byDay,
   waitlistByDay,
   todayKey,
   timeOff = [],
-  openWeekdays = [],
+  openingHours = [],
 }: {
   days: Date[];
   byDay: Map<string, BookingListItem[]>;
   waitlistByDay: Map<string, string[]>;
   todayKey: string;
   timeOff?: TimeOffRow[];
-  /** Weekdays (0 = Sunday) Jeanine works; others are shown as closed. */
-  openWeekdays?: number[];
+  /** Opening blocks per weekday (0 = Sunday); hours outside are greyed. */
+  openingHours?: OpeningBlock[];
 }) {
+  const hhmmToMin = (s: string) => {
+    const [h, m] = s.split(":").map(Number);
+    return h * 60 + m;
+  };
+  /** Opening windows (minutes from midnight) for a given day, sorted. */
+  const dayWindows = (day: Date) =>
+    openingHours
+      .filter((o) => o.weekday === day.getDay())
+      .map((o) => ({ start: hhmmToMin(o.start), end: hhmmToMin(o.end) }))
+      .sort((a, b) => a.start - b.start);
+  const hasOpeningHours = openingHours.length > 0;
   const isClosed = (day: Date) =>
-    openWeekdays.length > 0 && !openWeekdays.includes(day.getDay());
+    hasOpeningHours && dayWindows(day).length === 0;
+
   let startHour = 8;
   let endHour = 19;
   for (const day of days) {
@@ -115,9 +129,24 @@ export function AgendaTimeGrid({
   for (let h = startHour; h <= endHour; h++) hours.push(h);
   const gridHeight = (endHour - startHour) * HOUR_PX;
   const gridStartMin = startHour * 60;
+  const gridEndMin = endHour * 60;
   const perMin = HOUR_PX / 60;
   const single = days.length === 1;
   const colClass = single ? "flex-1" : "w-44 shrink-0";
+
+  /** Non-working intervals within the visible grid for a working day. */
+  const closedIntervals = (day: Date): Array<{ from: number; to: number }> => {
+    const windows = dayWindows(day);
+    if (windows.length === 0) return [];
+    const out: Array<{ from: number; to: number }> = [];
+    let cursor = gridStartMin;
+    for (const w of windows) {
+      if (w.start > cursor) out.push({ from: cursor, to: w.start });
+      cursor = Math.max(cursor, w.end);
+    }
+    if (cursor < gridEndMin) out.push({ from: cursor, to: gridEndMin });
+    return out.filter((iv) => iv.to > iv.from);
+  };
 
   // All-day absence info per day; the label shows once at the start of a run.
   const allDay = days.map((day) => {
@@ -241,6 +270,21 @@ export function AgendaTimeGrid({
                     : {}),
                 }}
               >
+                {/* Hours outside opening times — greyed. */}
+                {!isClosed(day) &&
+                  closedIntervals(day).map((iv, idx) => (
+                    <div
+                      key={`closed-${idx}`}
+                      aria-hidden
+                      style={{
+                        top: (iv.from - gridStartMin) * perMin,
+                        height: (iv.to - iv.from) * perMin,
+                        backgroundImage: CLOSED_HATCH,
+                      }}
+                      className="pointer-events-none absolute inset-x-0 bg-muted/20"
+                    />
+                  ))}
+
                 {/* Clickable 30-min slots — open the new-booking form. */}
                 {Array.from({
                   length: (endHour - startHour) * 2,

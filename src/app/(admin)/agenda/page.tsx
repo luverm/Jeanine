@@ -113,7 +113,11 @@ export default async function AgendaPage({
     `${toKey}T23:59:59Z`,
   ).catch(() => []);
   const openingHours = await listOpeningHours(staffId).catch(() => []);
-  const openWeekdays = [...new Set(openingHours.map((h) => h.weekday))];
+  const openingBlocks = openingHours.map((h) => ({
+    weekday: h.weekday,
+    start: h.start_time.slice(0, 5),
+    end: h.end_time.slice(0, 5),
+  }));
   const byDay = groupByDay(bookings);
 
   const waitlistByDay = new Map<string, string[]>();
@@ -213,7 +217,7 @@ export default async function AgendaPage({
             waitlistByDay={waitlistByDay}
             todayKey={todayKey}
             timeOff={timeOff}
-            openWeekdays={openWeekdays}
+            openingHours={openingBlocks}
           />
         )}
       </div>
