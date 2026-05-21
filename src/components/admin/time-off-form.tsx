@@ -90,6 +90,10 @@ export function TimeOffManager({
                 onChange={(e) => setEnd({ ...end, time: e.target.value })}
               />
             </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              De einddag telt volledig mee als afwezig. Kies de laatste dag
+              dat je weg bent — je eerste werkdag is de dag erna.
+            </p>
           </div>
         </div>
         <div className="mt-3">
