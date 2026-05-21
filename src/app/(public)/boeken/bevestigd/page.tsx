@@ -40,6 +40,10 @@ export default async function BevestigdPage({
         Je afspraak staat in de agenda. Een bevestiging met agenda-bijlage is
         onderweg naar je e-mail.
       </p>
+      <p className="mt-3 max-w-lg rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        Geen bevestiging in je inbox? Kijk dan even in je spam- of
+        ongewenste-mailmap.
+      </p>
 
       {booking && (
         <div className="mt-10 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
