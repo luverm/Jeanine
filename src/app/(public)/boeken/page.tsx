@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { BookingForm } from "@/components/booking/booking-form";
 import { listActiveServices } from "@/lib/db/services";
 import { getDefaultStaffId } from "@/lib/db/staff";
-import { listTimeOffInRange } from "@/lib/db/admin-schedule";
+import { listTimeOffInRange, listOpeningHours } from "@/lib/db/admin-schedule";
 import { verifyWaitlistToken } from "@/lib/booking-token";
 import { getWaitlistContact } from "@/lib/db/waitlist";
 import { formatIsoDate, startOfDayInTz, endOfDayInTz } from "@/lib/time";
@@ -79,6 +79,10 @@ export default async function BoekenPage({
     );
     if (fullyOff) blockedDates.push(dayKey);
   }
+
+  // Weekdays Jeanine is open (0 = Sunday) — days outside this are closed.
+  const openingHours = await listOpeningHours(staffId).catch(() => []);
+  const openWeekdays = [...new Set(openingHours.map((h) => h.weekday))];
 
   // Coming from a waitlist "spot opened" mail: the service/date/time are
   // in the URL; the contact details are resolved server-side from the
@@ -165,6 +169,7 @@ export default async function BoekenPage({
           prefill={prefill}
           blockedDates={blockedDates}
           horizonDays={horizonDays}
+          openWeekdays={openWeekdays}
         />
       )}
 

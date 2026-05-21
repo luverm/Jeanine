@@ -49,12 +49,14 @@ export function BookingForm({
   prefill,
   blockedDates = [],
   horizonDays = 90,
+  openWeekdays = [],
 }: {
   services: Service[];
   staffId: string;
   prefill?: BookingPrefill;
   blockedDates?: string[];
   horizonDays?: number;
+  openWeekdays?: number[];
 }) {
   const router = useRouter();
   const prefilledServiceId = prefill?.serviceSlug
@@ -245,6 +247,7 @@ export function BookingForm({
               date={date}
               blockedDates={blockedDates}
               horizonDays={horizonDays}
+              openWeekdays={openWeekdays}
               onSelect={handleSelectDate}
             />
           )}
@@ -469,11 +472,13 @@ function DateStep({
   date,
   blockedDates,
   horizonDays,
+  openWeekdays,
   onSelect,
 }: {
   date: Date | undefined;
   blockedDates: string[];
   horizonDays: number;
+  openWeekdays: number[];
   onSelect: (d: Date | undefined) => void;
 }) {
   const maxDate = new Date(todayInTz.getTime() + horizonDays * 86_400_000);
@@ -495,9 +500,14 @@ function DateStep({
           disabled={(d) => {
             if (d < todayInTz) return true;
             if (d > maxDate) return true;
-            // Sunday closed; Saturday is open for regular bookings.
-            // Actual availability still comes from opening_hours.
-            if (d.getDay() === 0) return true;
+            // Weekdays without opening hours are closed. Fall back to
+            // "Sunday closed" only when no opening hours are configured.
+            if (
+              openWeekdays.length > 0
+                ? !openWeekdays.includes(d.getDay())
+                : d.getDay() === 0
+            )
+              return true;
             // Whole days Jeanine blocked off (afwezig / vrij).
             if (blockedDates.includes(formatIsoDate(d))) return true;
             return false;
