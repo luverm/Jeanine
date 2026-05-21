@@ -239,10 +239,14 @@ export type Category = {
 };
 
 export const SERVICE_CATEGORIES: readonly Category[] = [
-  { key: "knippen", label: "Knippen", slugPrefix: "knippen-" },
-  { key: "kleuren", label: "Kleuren", slugPrefix: "kleur-" },
-  { key: "feest", label: "Feestkapsels", slugPrefix: "feestkapsel" },
-  { key: "bruid", label: "Bruid", slugPrefix: "bruid-" },
+  { key: "knippen", label: "Dames knippen & stylen", slugPrefix: "knippen-" },
+  {
+    key: "kleuren",
+    label: "High en/of lowlights full head",
+    slugPrefix: "kleur-",
+  },
+  { key: "feest", label: "Feestkapsel", slugPrefix: "feestkapsel" },
+  { key: "bruid", label: "Proefsessie", slugPrefix: "bruid-" },
 ];
 
 export function categoryForSlug(slug: string): Category | null {
