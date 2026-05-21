@@ -14,7 +14,11 @@ import {
 } from "date-fns";
 import { listBookings, type BookingListItem } from "@/lib/db/admin-bookings";
 import { listOpenWaitlistInRange } from "@/lib/db/waitlist";
-import { listTimeOffInRange, type TimeOffRow } from "@/lib/db/admin-schedule";
+import {
+  listTimeOffInRange,
+  listOpeningHours,
+  type TimeOffRow,
+} from "@/lib/db/admin-schedule";
 import { getDefaultStaffId } from "@/lib/db/staff";
 import { formatIsoDate, formatTime } from "@/lib/time";
 import {
@@ -108,6 +112,8 @@ export default async function AgendaPage({
     `${fromKey}T00:00:00Z`,
     `${toKey}T23:59:59Z`,
   ).catch(() => []);
+  const openingHours = await listOpeningHours(staffId).catch(() => []);
+  const openWeekdays = [...new Set(openingHours.map((h) => h.weekday))];
   const byDay = groupByDay(bookings);
 
   const waitlistByDay = new Map<string, string[]>();
@@ -207,6 +213,7 @@ export default async function AgendaPage({
             waitlistByDay={waitlistByDay}
             todayKey={todayKey}
             timeOff={timeOff}
+            openWeekdays={openWeekdays}
           />
         )}
       </div>

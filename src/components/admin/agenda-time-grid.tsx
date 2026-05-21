@@ -26,6 +26,9 @@ const HOUR_PX = 64;
 // Diagonal hatch for time-off (absence) bars.
 const HATCH =
   "repeating-linear-gradient(45deg, rgba(120,113,108,0.22) 0 8px, transparent 8px 16px)";
+// Subtler hatch for weekdays Jeanine doesn't work (no opening hours).
+const CLOSED_HATCH =
+  "repeating-linear-gradient(45deg, rgba(120,113,108,0.09) 0 6px, transparent 6px 12px)";
 
 /** Groups bookings by their start day (Europe/Amsterdam), skipping cancelled. */
 export function groupByDay(
@@ -84,13 +87,18 @@ export function AgendaTimeGrid({
   waitlistByDay,
   todayKey,
   timeOff = [],
+  openWeekdays = [],
 }: {
   days: Date[];
   byDay: Map<string, BookingListItem[]>;
   waitlistByDay: Map<string, string[]>;
   todayKey: string;
   timeOff?: TimeOffRow[];
+  /** Weekdays (0 = Sunday) Jeanine works; others are shown as closed. */
+  openWeekdays?: number[];
 }) {
+  const isClosed = (day: Date) =>
+    openWeekdays.length > 0 && !openWeekdays.includes(day.getDay());
   let startHour = 8;
   let endHour = 19;
   for (const day of days) {
@@ -127,7 +135,14 @@ export function AgendaTimeGrid({
             const isToday = key === todayKey;
             const waiting = waitlistByDay.get(key) ?? [];
             return (
-              <div key={key} className={colClass + " border-l px-2 py-2"}>
+              <div
+                key={key}
+                className={
+                  colClass +
+                  " border-l px-2 py-2 " +
+                  (isClosed(day) ? "bg-muted/50 text-muted-foreground" : "")
+                }
+              >
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-sm font-medium capitalize">
                     {single
@@ -214,7 +229,12 @@ export function AgendaTimeGrid({
               <div
                 key={key}
                 className={colClass + " relative border-l"}
-                style={{ height: gridHeight }}
+                style={{
+                  height: gridHeight,
+                  ...(isClosed(day)
+                    ? { backgroundImage: CLOSED_HATCH }
+                    : {}),
+                }}
               >
                 {hours.map((h, i) => (
                   <div

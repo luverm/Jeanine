@@ -5,7 +5,10 @@ import { loadInsights } from "@/lib/db/insights";
 import { listLeads } from "@/lib/db/leads";
 import { listInvoices } from "@/lib/db/invoices";
 import { listOpenWaitlistInRange } from "@/lib/db/waitlist";
-import { listTimeOffInRange } from "@/lib/db/admin-schedule";
+import {
+  listTimeOffInRange,
+  listOpeningHours,
+} from "@/lib/db/admin-schedule";
 import { getDefaultStaffId } from "@/lib/db/staff";
 import { Card } from "@/components/ui/card";
 import {
@@ -61,6 +64,8 @@ export default async function DashboardPage() {
     `${weekFrom}T00:00:00Z`,
     `${weekTo}T23:59:59Z`,
   ).catch(() => []);
+  const openingHours = await listOpeningHours(staffId).catch(() => []);
+  const openWeekdays = [...new Set(openingHours.map((h) => h.weekday))];
 
   const byDay = groupByDay(weekBookings);
   const waitlistByDay = new Map<string, string[]>();
@@ -169,6 +174,7 @@ export default async function DashboardPage() {
           waitlistByDay={waitlistByDay}
           todayKey={todayKey}
           timeOff={weekTimeOff}
+          openWeekdays={openWeekdays}
         />
       </div>
 
