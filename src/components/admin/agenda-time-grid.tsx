@@ -254,12 +254,16 @@ export function AgendaTimeGrid({
                       aria-label={`Nieuwe afspraak om ${hh}:${mm}`}
                       style={{ top: i * SLOT_PX, height: SLOT_PX }}
                       className={
-                        "absolute inset-x-0 border-b transition hover:bg-accent/50 " +
+                        "group absolute inset-x-0 flex items-center justify-center border-b transition hover:bg-accent/60 " +
                         (mm === "00"
                           ? "border-border/70"
                           : "border-border/35")
                       }
-                    />
+                    >
+                      <span className="text-[10px] font-medium text-primary opacity-0 transition group-hover:opacity-100">
+                        + afspraak {hh}:{mm}
+                      </span>
+                    </Link>
                   );
                 })}
 
