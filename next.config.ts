@@ -9,6 +9,11 @@ const supabaseHost = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  // The invoice PDF route reads the logo from public/ at runtime; make
+  // sure it's bundled into that serverless function.
+  outputFileTracingIncludes: {
+    "/api/invoices/[id]/pdf": ["./public/Monogram-Transparant-Cocoa.png"],
+  },
   images: {
     remotePatterns: [
       ...(supabaseHost

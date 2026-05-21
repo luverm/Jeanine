@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getInvoiceWithLines } from "@/lib/db/invoices";
 import { getBusiness } from "@/lib/db/business-settings";
-import { PrintButton } from "@/components/admin/print-button";
+import { InvoiceActions } from "@/components/admin/invoice-actions";
 import { formatPrice } from "@/lib/db/services";
 
 export const metadata: Metadata = {
@@ -60,7 +60,7 @@ export default async function InvoicePage({
         >
           ← Financieel
         </Link>
-        <PrintButton label="Print / opslaan als PDF" />
+        <InvoiceActions invoiceId={invoice.id} />
       </div>
 
       <div className="mt-6 rounded-lg border bg-white p-8 text-sm text-stone-900 print:border-0 print:p-0">

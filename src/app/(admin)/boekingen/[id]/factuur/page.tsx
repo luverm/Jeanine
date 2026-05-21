@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { getBookingDetail } from "@/lib/db/bookings";
 import { getBusiness } from "@/lib/db/business-settings";
 import { ensureInvoiceForBooking } from "@/lib/db/invoices";
-import { PrintButton } from "@/components/admin/print-button";
+import { InvoiceActions } from "@/components/admin/invoice-actions";
 import { formatPrice } from "@/lib/db/services";
 import { formatIsoDate } from "@/lib/time";
 
@@ -46,7 +46,7 @@ export default async function InvoicePage({
     <div className="mx-auto max-w-2xl px-4 py-8">
       <div className="flex items-center justify-between gap-3 print:hidden">
         <BackLink fallback={`/boekingen/${booking.id}`} />
-        <PrintButton label="Print / opslaan als PDF" />
+        <InvoiceActions invoiceId={invoice.id} />
       </div>
 
       <div className="mt-6 rounded-lg border bg-white p-8 text-sm text-stone-900 print:border-0 print:p-0">
