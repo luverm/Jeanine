@@ -2,8 +2,21 @@ import Link from "next/link";
 import Image from "next/image";
 import { getBusiness } from "@/lib/db/business-settings";
 import { getResolvedContent } from "@/lib/db/site-content";
+import { listOpeningHours } from "@/lib/db/admin-schedule";
+import { getDefaultStaffId } from "@/lib/db/staff";
 import { MobileNav } from "@/components/public/mobile-nav";
 import { ChatWidget } from "@/components/public/chat-widget";
+
+// Weekday order Monday-first; DB weekday: 0 = zondag … 6 = zaterdag.
+const OPENING_DAYS: Array<{ weekday: number; label: string }> = [
+  { weekday: 1, label: "Maandag" },
+  { weekday: 2, label: "Dinsdag" },
+  { weekday: 3, label: "Woensdag" },
+  { weekday: 4, label: "Donderdag" },
+  { weekday: 5, label: "Vrijdag" },
+  { weekday: 6, label: "Zaterdag" },
+  { weekday: 0, label: "Zondag" },
+];
 
 const navLinks = [
   { href: "/diensten", label: "Diensten" },
@@ -22,6 +35,22 @@ export default async function PublicLayout({
     getBusiness(),
     getResolvedContent(),
   ]);
+
+  // Opening hours from settings, grouped per weekday.
+  const openingByDay = new Map<number, string[]>();
+  try {
+    const rows = await listOpeningHours(await getDefaultStaffId());
+    for (const r of rows) {
+      const range = `${r.start_time.slice(0, 5)} – ${r.end_time.slice(0, 5)}`;
+      const arr = openingByDay.get(r.weekday);
+      if (arr) arr.push(range);
+      else openingByDay.set(r.weekday, [range]);
+    }
+  } catch {
+    /* opening hours not configured — column is hidden */
+  }
+  const hasOpeningHours = openingByDay.size > 0;
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
@@ -65,7 +94,7 @@ export default async function PublicLayout({
 
       <footer className="mt-16 border-t bg-muted/30">
         <div className="mx-auto max-w-6xl px-4 py-12">
-          <div className="grid gap-8 md:grid-cols-4">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
             <div>
               <p className="text-base font-semibold">{business.name}</p>
               <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
@@ -101,6 +130,25 @@ export default async function PublicLayout({
                 </li>
               </ul>
             </div>
+
+            {hasOpeningHours && (
+              <div>
+                <p className="text-sm font-medium">Openingstijden</p>
+                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                  {OPENING_DAYS.map((d) => {
+                    const ranges = openingByDay.get(d.weekday) ?? [];
+                    return (
+                      <li key={d.weekday} className="flex justify-between gap-3">
+                        <span>{d.label}</span>
+                        <span>
+                          {ranges.length > 0 ? ranges.join(", ") : "Gesloten"}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
 
             <div>
               <p className="text-sm font-medium">Volg</p>
