@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getBusiness } from "@/lib/db/business-settings";
+import { getResolvedContent } from "@/lib/db/site-content";
 import { MobileNav } from "@/components/public/mobile-nav";
 import { ChatWidget } from "@/components/public/chat-widget";
 
@@ -17,7 +18,10 @@ export default async function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const business = await getBusiness();
+  const [business, content] = await Promise.all([
+    getBusiness(),
+    getResolvedContent(),
+  ]);
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
@@ -64,8 +68,8 @@ export default async function PublicLayout({
           <div className="grid gap-8 md:grid-cols-4">
             <div>
               <p className="text-base font-semibold">{business.name}</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {business.tagline}
+              <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+                {content["site.tagline"]}
               </p>
             </div>
 

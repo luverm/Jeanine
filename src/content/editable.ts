@@ -5,6 +5,7 @@
 
 import { landing } from "@/content/landing";
 import { faq } from "@/content/faq";
+import { business } from "@/content/business";
 
 export type EditableBlock = {
   key: string;
@@ -70,6 +71,29 @@ export const CONTENT_GROUPS: EditableGroup[] = [
         key: "bruid.intro",
         label: "Bruidsstyling — tekst",
         defaultValue: landing.bridal.intro,
+        multiline: true,
+      },
+    ],
+  },
+  {
+    title: "Portfolio",
+    blocks: [
+      {
+        key: "portfolio.intro",
+        label: "Portfolio — introtekst",
+        defaultValue:
+          "Een selectie van bruidsstyling, feestkapsels en haarstyling.",
+        multiline: true,
+      },
+    ],
+  },
+  {
+    title: "Footer",
+    blocks: [
+      {
+        key: "site.tagline",
+        label: "Footer — korte omschrijving (boven het adres)",
+        defaultValue: business.tagline,
         multiline: true,
       },
     ],

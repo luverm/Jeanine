@@ -10,7 +10,6 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 const TEXT_FIELDS = [
   "name",
   "ownerName",
-  "tagline",
   "email",
   "phone",
   "street",
@@ -28,7 +27,6 @@ const TEXT_FIELDS = [
 const schema = z.object({
   name: z.string().trim().max(160),
   ownerName: z.string().trim().max(160),
-  tagline: z.string().trim().max(400),
   email: z.string().trim().max(254),
   phone: z.string().trim().max(40),
   street: z.string().trim().max(160),

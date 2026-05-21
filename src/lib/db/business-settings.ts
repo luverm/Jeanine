@@ -144,7 +144,6 @@ export async function updateRebookingSettings(
 export async function updateBusinessSettings(input: {
   name: string;
   ownerName: string;
-  tagline: string;
   email: string;
   phone: string;
   street: string;
@@ -164,7 +163,6 @@ export async function updateBusinessSettings(input: {
     id: 1,
     name: input.name || null,
     owner_name: input.ownerName || null,
-    tagline: input.tagline || null,
     email: input.email || null,
     phone: input.phone || null,
     address_street: input.street || null,

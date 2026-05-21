@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { Metadata } from "next";
 import { listPortfolioImages } from "@/lib/portfolio";
+import { getResolvedContent } from "@/lib/db/site-content";
 
 export const revalidate = 3600;
 
@@ -10,7 +11,10 @@ export const metadata: Metadata = {
 };
 
 export default async function PortfolioPage() {
-  const images = await listPortfolioImages();
+  const [images, content] = await Promise.all([
+    listPortfolioImages(),
+    getResolvedContent(),
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-16">
@@ -19,8 +23,8 @@ export default async function PortfolioPage() {
           Werk
         </p>
         <h1 className="mt-4 text-5xl tracking-tight">Portfolio</h1>
-        <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-          Een selectie van bruidsstyling, feestkapsels en haarstyling.
+        <p className="mt-6 whitespace-pre-line text-lg leading-relaxed text-muted-foreground">
+          {content["portfolio.intro"]}
         </p>
       </header>
 

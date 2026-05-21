@@ -34,7 +34,6 @@ export default async function BedrijfsgegevensPage() {
           initial={{
             name: b.name,
             ownerName: b.ownerName,
-            tagline: b.tagline,
             email: b.email,
             phone: b.phone,
             street: b.address.street,

@@ -6,13 +6,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { updateBusinessSettingsAction } from "@/actions/settings";
 
 type Values = {
   name: string;
   ownerName: string;
-  tagline: string;
   email: string;
   phone: string;
   street: string;
@@ -78,16 +76,6 @@ export function BusinessSettingsForm({ initial }: { initial: Values }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <Field name="name" label="Bedrijfsnaam" value={initial.name} />
         <Field name="ownerName" label="Eigenaar" value={initial.ownerName} />
-      </div>
-      <div>
-        <Label htmlFor="tagline">Tagline</Label>
-        <Textarea
-          id="tagline"
-          name="tagline"
-          rows={2}
-          defaultValue={clean(initial.tagline)}
-          className="mt-1.5"
-        />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field name="email" label="E-mail" value={initial.email} type="email" />
