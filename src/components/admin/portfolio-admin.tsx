@@ -25,18 +25,26 @@ import {
   uploadPortfolio,
   deletePortfolio,
   reorderPortfolio,
+  setAboutImage,
 } from "@/actions/portfolio";
 
 type Img = { src: string; alt: string; name?: string };
 type Photo = { src: string; alt: string; name: string };
 
-export function PortfolioAdmin({ images }: { images: Img[] }) {
+export function PortfolioAdmin({
+  images,
+  aboutImage,
+}: {
+  images: Img[];
+  aboutImage: string;
+}) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
   const [items, setItems] = useState<Photo[]>(
     images.filter((i): i is Photo => typeof i.name === "string"),
   );
+  const [aboutSel, setAboutSel] = useState(aboutImage);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
@@ -62,6 +70,20 @@ export function PortfolioAdmin({ images }: { images: Img[] }) {
         router.refresh();
       } else {
         toast.error("Verwijderen mislukt.");
+      }
+    });
+  }
+
+  function pickAbout(name: string) {
+    const prev = aboutSel;
+    setAboutSel(name);
+    startTransition(async () => {
+      const r = await setAboutImage(name);
+      if (r.ok) {
+        toast.success("Foto bij ‘Over Jeanine’ ingesteld");
+      } else {
+        setAboutSel(prev);
+        toast.error("Instellen mislukt.");
       }
     });
   }
@@ -116,7 +138,8 @@ export function PortfolioAdmin({ images }: { images: Img[] }) {
         <div>
           <p className="mb-3 text-sm text-muted-foreground">
             Sleep de foto&apos;s om de volgorde aan te passen — die volgorde
-            wordt ook op de website gebruikt.
+            wordt ook op de website gebruikt. Met ‘Over Jeanine’ kies je
+            welke foto bij dat blok op de homepage komt te staan.
           </p>
           <DndContext
             sensors={sensors}
@@ -134,7 +157,9 @@ export function PortfolioAdmin({ images }: { images: Img[] }) {
                     img={img}
                     index={i}
                     pending={pending}
+                    isAbout={img.name === aboutSel}
                     onRemove={remove}
+                    onPickAbout={pickAbout}
                   />
                 ))}
               </div>
@@ -150,12 +175,16 @@ function SortablePhoto({
   img,
   index,
   pending,
+  isAbout,
   onRemove,
+  onPickAbout,
 }: {
   img: Photo;
   index: number;
   pending: boolean;
+  isAbout: boolean;
   onRemove: (name: string) => void;
+  onPickAbout: (name: string) => void;
 }) {
   const {
     attributes,
@@ -178,7 +207,10 @@ function SortablePhoto({
       <div
         {...attributes}
         {...listeners}
-        className="relative aspect-square cursor-grab touch-none select-none overflow-hidden rounded-lg border bg-muted active:cursor-grabbing"
+        className={
+          "relative aspect-square cursor-grab touch-none select-none overflow-hidden rounded-lg border bg-muted active:cursor-grabbing " +
+          (isAbout ? "ring-2 ring-primary ring-offset-2" : "")
+        }
       >
         <Image
           src={img.src}
@@ -194,12 +226,27 @@ function SortablePhoto({
         <span className="absolute right-1.5 top-1.5 rounded bg-background/80 p-1 text-muted-foreground">
           <GripVertical className="h-4 w-4" />
         </span>
+        {isAbout && (
+          <span className="absolute bottom-1.5 left-1.5 rounded bg-primary px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground">
+            Over Jeanine
+          </span>
+        )}
       </div>
+      <Button
+        type="button"
+        variant={isAbout ? "default" : "outline"}
+        size="sm"
+        className="mt-2 w-full"
+        onClick={() => onPickAbout(img.name)}
+        disabled={pending || isAbout}
+      >
+        {isAbout ? "★ Over Jeanine" : "Toon bij Over Jeanine"}
+      </Button>
       <Button
         type="button"
         variant="destructive"
         size="sm"
-        className="mt-2 w-full"
+        className="mt-1 w-full"
         onClick={() => onRemove(img.name)}
         disabled={pending}
       >

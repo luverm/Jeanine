@@ -2,14 +2,18 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { listActiveServices } from "@/lib/db/services";
-import { listPortfolioImages } from "@/lib/portfolio";
+import {
+  listPortfolioImages,
+  ABOUT_IMAGE_KEY,
+  ABOUT_IMAGE_FALLBACK,
+} from "@/lib/portfolio";
 import { listVisibleReviews } from "@/lib/db/reviews";
 import { ServiceCard } from "@/components/public/service-card";
 import { HeroCarousel } from "@/components/public/hero-carousel";
 import { IntroOverlay } from "@/components/public/intro-overlay";
 import { FaqSection } from "@/components/public/faq-section";
 import { JsonLd } from "@/components/seo/json-ld";
-import { getResolvedContent } from "@/lib/db/site-content";
+import { getResolvedContent, getSiteValue } from "@/lib/db/site-content";
 import { business } from "@/content/business";
 import { landing } from "@/content/landing";
 
@@ -21,12 +25,17 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [services, portfolio, dbReviews, content] = await Promise.all([
-    listActiveServices(),
-    listPortfolioImages(),
-    listVisibleReviews(),
-    getResolvedContent(),
-  ]);
+  const [services, portfolio, dbReviews, content, aboutImageName] =
+    await Promise.all([
+      listActiveServices(),
+      listPortfolioImages(),
+      listVisibleReviews(),
+      getResolvedContent(),
+      getSiteValue(ABOUT_IMAGE_KEY),
+    ]);
+  const aboutImage =
+    portfolio.find((p) => p.name && p.name === aboutImageName)?.src ??
+    ABOUT_IMAGE_FALLBACK;
   const regular = services.filter((s) => s.kind === "regular").slice(0, 3);
   const bridalTeaser = services.find((s) => s.kind === "bridal");
   const previewServices = bridalTeaser ? [...regular, bridalTeaser] : regular;
@@ -163,7 +172,7 @@ export default async function HomePage() {
         <div className="grid gap-12 md:grid-cols-2 md:items-center">
           <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-muted md:order-last">
             <Image
-              src="/images/portfolio/bruid-make-up.jpg"
+              src={aboutImage}
               alt="Jeanine aan het werk bij een bruid"
               fill
               sizes="(min-width: 768px) 50vw, 100vw"

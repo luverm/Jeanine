@@ -7,6 +7,12 @@ const PORTFOLIO_DIR = path.join(process.cwd(), "public", "images", "portfolio");
 const ALLOWED_EXT = [".jpg", ".jpeg", ".png", ".webp", ".avif"];
 export const PORTFOLIO_BUCKET = "portfolio";
 
+/** site_content key for the photo shown in the homepage "Over Jeanine" block. */
+export const ABOUT_IMAGE_KEY = "home.about.image";
+
+/** Fallback "Over Jeanine" photo when none is picked. */
+export const ABOUT_IMAGE_FALLBACK = "/images/portfolio/bruid-make-up.jpg";
+
 export type PortfolioImage = {
   src: string;
   alt: string;

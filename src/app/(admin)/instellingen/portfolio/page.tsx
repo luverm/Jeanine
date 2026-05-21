@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { listStoragePortfolio } from "@/lib/portfolio";
+import { listStoragePortfolio, ABOUT_IMAGE_KEY } from "@/lib/portfolio";
+import { getSiteValue } from "@/lib/db/site-content";
 import { PortfolioAdmin } from "@/components/admin/portfolio-admin";
 
 export const metadata: Metadata = {
@@ -11,7 +12,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function PortfolioAdminPage() {
-  const images = await listStoragePortfolio();
+  const [images, aboutImage] = await Promise.all([
+    listStoragePortfolio(),
+    getSiteValue(ABOUT_IMAGE_KEY),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -31,6 +35,7 @@ export default async function PortfolioAdminPage() {
         <PortfolioAdmin
           key={images.map((i) => i.name).join("|")}
           images={images}
+          aboutImage={aboutImage ?? ""}
         />
       </div>
     </div>

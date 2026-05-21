@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
-import { PORTFOLIO_BUCKET, savePortfolioOrder } from "@/lib/portfolio";
+import {
+  PORTFOLIO_BUCKET,
+  ABOUT_IMAGE_KEY,
+  savePortfolioOrder,
+} from "@/lib/portfolio";
+import { setSiteValue } from "@/lib/db/site-content";
 import { requireAdmin } from "@/lib/auth/require-admin";
 
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
@@ -75,6 +80,23 @@ export async function reorderPortfolio(
   revalidatePath("/");
   revalidatePath("/portfolio");
   revalidatePath("/bruid");
+  revalidatePath("/instellingen/portfolio");
+  return { ok: true };
+}
+
+/** Picks which portfolio photo is shown in the homepage "Over Jeanine" block. */
+export async function setAboutImage(
+  name: string,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof name !== "string" || name.length > 300) return { ok: false };
+  try {
+    await setSiteValue(ABOUT_IMAGE_KEY, name);
+  } catch (err) {
+    console.error("[portfolio] set about image failed:", err);
+    return { ok: false };
+  }
+  revalidatePath("/");
   revalidatePath("/instellingen/portfolio");
   return { ok: true };
 }
