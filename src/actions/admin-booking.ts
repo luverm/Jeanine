@@ -156,10 +156,16 @@ export async function createAdminBooking(
     return { ok: false, code: "INVALID_INPUT", message: "Eindtijd ligt voor de starttijd" };
   }
 
+  // Contact details are optional — fall back to a placeholder e-mail.
+  const idem = uuidv4();
+  const adminEmail = (data.customer.email ?? "").trim();
+  const hasEmail = adminEmail.length > 0;
+  const customerName =
+    (data.customer.fullName ?? "").trim() || "Onbekende klant";
   const customer = await upsertCustomerByEmail({
-    email: data.customer.email,
-    full_name: data.customer.fullName,
-    phone: data.customer.phone,
+    email: hasEmail ? adminEmail : `${idem}@geen-email.invalid`,
+    full_name: customerName,
+    phone: data.customer.phone || undefined,
   });
 
   let booking;
@@ -171,7 +177,7 @@ export async function createAdminBooking(
       startsAt: data.startsAt,
       endsAt: data.endsAt,
       notes: data.customer.notes || undefined,
-      idempotencyKey: uuidv4(),
+      idempotencyKey: idem,
     });
   } catch (err) {
     if (isExclusionViolation(err)) return { ok: false, code: "SLOT_TAKEN" };
@@ -199,10 +205,15 @@ export async function createAdminBooking(
     startsAt: new Date(booking.starts_at),
     endsAt: new Date(booking.ends_at),
     serviceName,
-    customer: data.customer,
+    customer: {
+      fullName: customerName,
+      email: hasEmail ? adminEmail : "",
+      phone: data.customer.phone ?? "",
+      notes: data.customer.notes || undefined,
+    },
   };
   try {
-    await sendBookingConfirmation(mail);
+    if (hasEmail) await sendBookingConfirmation(mail);
     await sendBookingAdminNotice(mail);
   } catch (err) {
     console.error("[admin-booking] email failed:", err);

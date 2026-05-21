@@ -599,7 +599,8 @@ function DetailsStep({
     <section>
       <h2 className="text-2xl tracking-tight">Jouw gegevens</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Bevestiging volgt direct per e-mail, met agenda-bijlage.
+        Alle velden zijn optioneel. Vul je e-mail in voor een bevestiging
+        met agenda-bijlage.
       </p>
 
       <div className="mt-6 rounded-lg border border-border bg-accent/20 p-5 text-sm">
@@ -632,7 +633,7 @@ function DetailsStep({
         />
 
         <div>
-          <Label htmlFor="fullName">Naam</Label>
+          <Label htmlFor="fullName">Naam (optioneel)</Label>
           <Input
             id="fullName"
             {...form.register("fullName")}
@@ -648,7 +649,7 @@ function DetailsStep({
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <Label htmlFor="email">E-mail</Label>
+            <Label htmlFor="email">E-mail (optioneel)</Label>
             <Input
               id="email"
               type="email"
@@ -663,7 +664,7 @@ function DetailsStep({
             )}
           </div>
           <div>
-            <Label htmlFor="phone">Telefoon</Label>
+            <Label htmlFor="phone">Telefoon (optioneel)</Label>
             <Input
               id="phone"
               type="tel"

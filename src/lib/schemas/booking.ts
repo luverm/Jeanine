@@ -3,14 +3,24 @@ import { uuidString } from "@/lib/schemas/uuid";
 
 const phoneRegex = /^[+0-9()\s-]{6,20}$/;
 
+// Contact details are all optional — a customer may book without them.
 export const customerInputSchema = z.object({
-  fullName: z.string().trim().min(2, "Naam is te kort").max(120),
-  email: z.string().trim().toLowerCase().email("Ongeldig e-mailadres").max(254),
+  fullName: z.string().trim().max(120).optional().or(z.literal("")),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Ongeldig e-mailadres")
+    .max(254)
+    .optional()
+    .or(z.literal("")),
   phone: z
     .string()
     .trim()
     .regex(phoneRegex, "Ongeldig telefoonnummer")
-    .max(20),
+    .max(20)
+    .optional()
+    .or(z.literal("")),
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 

@@ -116,11 +116,18 @@ export async function createBooking(input: unknown): Promise<CreateBookingResult
     return { ok: false, code: "SLOT_TAKEN" };
   }
 
-  // 4. Upsert customer.
+  // 4. Upsert customer. Contact details are optional — without an
+  // e-mail we create a standalone record with a non-deliverable address.
+  const customerEmail = (data.customer.email ?? "").trim();
+  const hasEmail = customerEmail.length > 0;
+  const customerName =
+    (data.customer.fullName ?? "").trim() || "Onbekende klant";
   const customer = await upsertCustomerByEmail({
-    email: data.customer.email,
-    full_name: data.customer.fullName,
-    phone: data.customer.phone,
+    email: hasEmail
+      ? customerEmail
+      : `${data.idempotencyKey}@geen-email.invalid`,
+    full_name: customerName,
+    phone: data.customer.phone || undefined,
   });
 
   // 5. Insert booking; rely on the GIST exclusion constraint to detect a race.
@@ -161,20 +168,22 @@ export async function createBooking(input: unknown): Promise<CreateBookingResult
     booking,
     service,
     customer: {
-      fullName: data.customer.fullName,
-      email: data.customer.email,
-      phone: data.customer.phone,
+      fullName: customerName,
+      email: hasEmail ? customerEmail : "",
+      phone: data.customer.phone ?? "",
       notes: data.customer.notes || undefined,
     },
   }));
 
   // They got a spot — close any open waitlist entry this booking fulfils.
-  await safe(() =>
-    resolveWaitlistForCustomer({
-      email: data.customer.email,
-      serviceId: data.serviceId,
-    }),
-  );
+  if (hasEmail) {
+    await safe(() =>
+      resolveWaitlistForCustomer({
+        email: customerEmail,
+        serviceId: data.serviceId,
+      }),
+    );
+  }
 
   return { ok: true, bookingId: booking.id };
 }
@@ -196,10 +205,11 @@ async function sendBookingEmails(args: {
     serviceName: args.service.name,
     customer: args.customer,
   };
-  await Promise.all([
-    sendBookingConfirmation(mail),
-    sendBookingAdminNotice(mail),
-  ]);
+  // The customer confirmation needs a real e-mail; the admin notice
+  // always goes out.
+  const tasks: Array<Promise<void>> = [sendBookingAdminNotice(mail)];
+  if (args.customer.email) tasks.push(sendBookingConfirmation(mail));
+  await Promise.all(tasks);
 }
 
 async function safe<T>(fn: () => Promise<T>): Promise<T | null> {
