@@ -23,9 +23,9 @@ const EVENT_STYLE: Record<string, string> = {
 };
 
 const HOUR_PX = 64;
-// Diagonal hatch for time-off (absence) blocks.
+// Diagonal hatch for time-off (absence) bars.
 const HATCH =
-  "repeating-linear-gradient(45deg, rgba(120,113,108,0.18) 0 8px, transparent 8px 16px)";
+  "repeating-linear-gradient(45deg, rgba(120,113,108,0.22) 0 8px, transparent 8px 16px)";
 
 /** Groups bookings by their start day (Europe/Amsterdam), skipping cancelled. */
 export function groupByDay(
@@ -76,7 +76,7 @@ export function timeOffSegmentsForDay(
 
 /**
  * Salonized-style time grid: an hour axis with appointments positioned by
- * start time. Time-off blocks show as hatched "afwezig" areas.
+ * start time. Absences show as a hatched bar in an all-day row on top.
  */
 export function AgendaTimeGrid({
   days,
@@ -94,14 +94,9 @@ export function AgendaTimeGrid({
   let startHour = 8;
   let endHour = 19;
   for (const day of days) {
-    const key = format(day, "yyyy-MM-dd");
-    for (const b of byDay.get(key) ?? []) {
+    for (const b of byDay.get(format(day, "yyyy-MM-dd")) ?? []) {
       startHour = Math.min(startHour, Math.floor(minutesOfDay(b.starts_at) / 60));
       endHour = Math.max(endHour, Math.ceil(minutesOfDay(b.ends_at) / 60));
-    }
-    for (const seg of timeOffSegmentsForDay(key, timeOff)) {
-      startHour = Math.min(startHour, Math.floor(seg.startMin / 60));
-      endHour = Math.max(endHour, Math.ceil(seg.endMin / 60));
     }
   }
   startHour = Math.max(6, startHour);
@@ -111,10 +106,16 @@ export function AgendaTimeGrid({
   for (let h = startHour; h <= endHour; h++) hours.push(h);
   const gridHeight = (endHour - startHour) * HOUR_PX;
   const gridStartMin = startHour * 60;
-  const gridEndMin = endHour * 60;
   const perMin = HOUR_PX / 60;
   const single = days.length === 1;
   const colClass = single ? "flex-1" : "w-44 shrink-0";
+
+  // All-day absence info per day; the label shows once at the start of a run.
+  const allDay = days.map((day) => {
+    const segs = timeOffSegmentsForDay(format(day, "yyyy-MM-dd"), timeOff);
+    return { off: segs.length > 0, reason: segs[0]?.reason ?? "" };
+  });
+  const hasAbsence = allDay.some((d) => d.off);
 
   return (
     <div className="overflow-x-auto rounded-lg border">
@@ -164,6 +165,33 @@ export function AgendaTimeGrid({
           })}
         </div>
 
+        {hasAbsence && (
+          <div className="flex border-b bg-muted/20">
+            <div className="flex w-14 shrink-0 items-center justify-end pr-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+              vrij
+            </div>
+            {days.map((day, i) => {
+              const key = format(day, "yyyy-MM-dd");
+              const info = allDay[i];
+              const runStart = info.off && (i === 0 || !allDay[i - 1].off);
+              return (
+                <div key={key} className={colClass + " border-l p-1"}>
+                  {info.off && (
+                    <Link
+                      href="/instellingen/vrije-dagen"
+                      title={info.reason || "Afwezig"}
+                      style={{ backgroundImage: HATCH }}
+                      className="block truncate rounded border border-stone-300 bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600"
+                    >
+                      {runStart ? info.reason || "Afwezig" : " "}
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <div className="flex">
           <div className="w-14 shrink-0">
             {hours.map((h) => (
@@ -182,7 +210,6 @@ export function AgendaTimeGrid({
           {days.map((day) => {
             const key = format(day, "yyyy-MM-dd");
             const items = byDay.get(key) ?? [];
-            const segments = timeOffSegmentsForDay(key, timeOff);
             return (
               <div
                 key={key}
@@ -196,28 +223,6 @@ export function AgendaTimeGrid({
                     className="absolute inset-x-0 border-b border-border/70"
                   />
                 ))}
-
-                {segments.map((seg) => {
-                  const visStart = Math.max(seg.startMin, gridStartMin);
-                  const visEnd = Math.min(seg.endMin, gridEndMin);
-                  if (visEnd <= visStart) return null;
-                  return (
-                    <Link
-                      key={seg.id}
-                      href="/instellingen/vrije-dagen"
-                      style={{
-                        top: (visStart - gridStartMin) * perMin,
-                        height: (visEnd - visStart) * perMin,
-                        backgroundColor: "rgb(245 245 244)",
-                        backgroundImage: HATCH,
-                      }}
-                      className="absolute inset-x-0 overflow-hidden border-y border-stone-300 px-2 py-1 text-xs leading-tight text-stone-600"
-                    >
-                      <p className="font-semibold">Afwezig</p>
-                      <p className="break-words">{seg.reason || "Geblokkeerd"}</p>
-                    </Link>
-                  );
-                })}
 
                 {items.map((b) => {
                   const startMin = minutesOfDay(b.starts_at);
