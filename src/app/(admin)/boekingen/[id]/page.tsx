@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/admin/back-link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { AlertTriangle } from "lucide-react";
@@ -36,12 +37,7 @@ export default async function BookingDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link
-        href="/boekingen"
-        className="text-xs text-muted-foreground underline underline-offset-4"
-      >
-        ← Alle boekingen
-      </Link>
+      <BackLink fallback="/boekingen" />
 
       <h1 className="mt-4 text-3xl font-semibold tracking-tight">
         {booking.service.name}

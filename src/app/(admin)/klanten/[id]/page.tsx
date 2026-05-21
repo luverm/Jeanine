@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/admin/back-link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCustomerDetail } from "@/lib/db/admin-customers";
@@ -32,12 +33,7 @@ export default async function CustomerDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link
-        href="/klanten"
-        className="text-xs text-muted-foreground underline underline-offset-4"
-      >
-        ← Alle klanten
-      </Link>
+      <BackLink fallback="/klanten" />
 
       <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
         <div>

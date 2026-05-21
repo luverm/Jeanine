@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/admin/back-link";
 import type { Metadata } from "next";
 import { addDays, format, parseISO, isValid } from "date-fns";
 import { listBookings } from "@/lib/db/admin-bookings";
@@ -55,12 +56,7 @@ export default async function DaySheetPage({
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <Link
-          href="/dashboard"
-          className="text-xs text-muted-foreground underline underline-offset-4"
-        >
-          ← Dashboard
-        </Link>
+        <BackLink fallback="/dashboard" />
         <div className="flex items-center gap-2 text-sm">
           <Link
             href={`/boekingen/dag?date=${prev}`}

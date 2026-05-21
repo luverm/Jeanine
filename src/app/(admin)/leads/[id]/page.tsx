@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/admin/back-link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { format } from "date-fns";
@@ -36,12 +37,7 @@ export default async function LeadDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link
-        href="/leads"
-        className="text-xs text-muted-foreground underline underline-offset-4"
-      >
-        ← Alle leads
-      </Link>
+      <BackLink fallback="/leads" />
 
       <header className="mt-4 flex flex-wrap items-start justify-between gap-4">
         <div>

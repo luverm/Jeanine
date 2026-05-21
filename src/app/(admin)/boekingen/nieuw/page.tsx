@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackLink } from "@/components/admin/back-link";
 import type { Metadata } from "next";
 import { listAllServices } from "@/lib/db/admin-services";
 import { getDefaultStaffId } from "@/lib/db/staff";
@@ -63,12 +63,7 @@ export default async function NewBookingPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <Link
-        href="/boekingen"
-        className="text-xs text-muted-foreground underline underline-offset-4"
-      >
-        ← Alle boekingen
-      </Link>
+      <BackLink fallback="/boekingen" />
       <h1 className="mt-4 text-3xl font-semibold tracking-tight">
         Nieuwe boeking
       </h1>

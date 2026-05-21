@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { BackLink } from "@/components/admin/back-link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getBookingDetail } from "@/lib/db/bookings";
@@ -45,12 +45,7 @@ export default async function InvoicePage({
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <div className="flex items-center justify-between gap-3 print:hidden">
-        <Link
-          href={`/boekingen/${booking.id}`}
-          className="text-xs text-muted-foreground underline underline-offset-4"
-        >
-          ← Terug naar boeking
-        </Link>
+        <BackLink fallback={`/boekingen/${booking.id}`} />
         <PrintButton label="Print / opslaan als PDF" />
       </div>
 
