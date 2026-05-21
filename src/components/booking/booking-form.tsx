@@ -237,7 +237,6 @@ export function BookingForm({
               services={services}
               selectedId={serviceId}
               onSelect={handleSelectService}
-              onNext={() => setStep(1)}
             />
           )}
 
@@ -247,8 +246,6 @@ export function BookingForm({
               blockedDates={blockedDates}
               horizonDays={horizonDays}
               onSelect={handleSelectDate}
-              onBack={() => setStep(0)}
-              onNext={() => setStep(2)}
             />
           )}
 
@@ -263,8 +260,6 @@ export function BookingForm({
               waitlistTime={waitlistTime}
               onWaitlist={(s) => setWaitlistTime(formatTime(s.startsAt))}
               loading={slotsLoading}
-              onBack={() => setStep(1)}
-              onNext={() => setStep(3)}
             />
           )}
 
@@ -273,20 +268,35 @@ export function BookingForm({
               service={service}
               slot={selectedSlot}
               form={form}
-              onBack={() => setStep(2)}
               onSubmit={onSubmit}
-              pending={pending}
             />
           )}
         </div>
       </div>
 
-      <Summary
-        service={service}
-        date={date}
-        slot={selectedSlot ?? null}
-        step={step}
-      />
+      <div className="lg:sticky lg:top-24 lg:self-start">
+        <Summary
+          service={service}
+          date={date}
+          slot={selectedSlot ?? null}
+          step={step}
+        />
+        <BookingNav
+          step={step}
+          canNext={
+            step === 0
+              ? !!serviceId
+              : step === 1
+                ? !!date
+                : step === 2
+                  ? !!selectedStartIso
+                  : true
+          }
+          pending={pending}
+          onBack={() => setStep((s) => Math.max(0, s - 1))}
+          onNext={() => setStep((s) => Math.min(TOTAL_STEPS - 1, s + 1))}
+        />
+      </div>
     </div>
   );
 }
@@ -354,12 +364,10 @@ function ServiceStep({
   services,
   selectedId,
   onSelect,
-  onNext,
 }: {
   services: Service[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  onNext: () => void;
 }) {
   // Group services by UI category, in the order defined in SERVICE_CATEGORIES.
   // Anything that doesn't match a known category falls into "Overig" so it
@@ -449,12 +457,6 @@ function ServiceStep({
           </div>
         ))}
       </div>
-
-      <div className="mt-8 flex justify-end">
-        <Button disabled={!selectedId} onClick={onNext} size="lg">
-          Volgende
-        </Button>
-      </div>
     </section>
   );
 }
@@ -468,15 +470,11 @@ function DateStep({
   blockedDates,
   horizonDays,
   onSelect,
-  onBack,
-  onNext,
 }: {
   date: Date | undefined;
   blockedDates: string[];
   horizonDays: number;
   onSelect: (d: Date | undefined) => void;
-  onBack: () => void;
-  onNext: () => void;
 }) {
   const maxDate = new Date(todayInTz.getTime() + horizonDays * 86_400_000);
   return (
@@ -506,15 +504,6 @@ function DateStep({
           }}
         />
       </div>
-
-      <div className="mt-8 flex justify-between">
-        <Button variant="outline" onClick={onBack}>
-          Terug
-        </Button>
-        <Button disabled={!date} onClick={onNext} size="lg">
-          Volgende
-        </Button>
-      </div>
     </section>
   );
 }
@@ -533,8 +522,6 @@ function TimeStep({
   waitlistTime,
   onWaitlist,
   loading,
-  onBack,
-  onNext,
 }: {
   date: Date | undefined;
   dateStr: string | null;
@@ -545,8 +532,6 @@ function TimeStep({
   waitlistTime: string | null;
   onWaitlist: (slot: Slot) => void;
   loading: boolean;
-  onBack: () => void;
-  onNext: () => void;
 }) {
   const showWaitlist =
     !loading &&
@@ -581,15 +566,6 @@ function TimeStep({
           </div>
         )}
       </div>
-
-      <div className="mt-8 flex justify-between">
-        <Button variant="outline" onClick={onBack}>
-          Terug
-        </Button>
-        <Button disabled={!selected} onClick={onNext} size="lg">
-          Volgende
-        </Button>
-      </div>
     </section>
   );
 }
@@ -602,16 +578,12 @@ function DetailsStep({
   service,
   slot,
   form,
-  onBack,
   onSubmit,
-  pending,
 }: {
   service: Service;
   slot: Slot;
   form: ReturnType<typeof useForm<CustomerInput>>;
-  onBack: () => void;
   onSubmit: (v: CustomerInput) => void;
-  pending: boolean;
 }) {
   return (
     <section>
@@ -634,6 +606,7 @@ function DetailsStep({
       </div>
 
       <form
+        id="booking-details-form"
         onSubmit={form.handleSubmit(onSubmit)}
         className="mt-6 grid gap-5"
         noValidate
@@ -706,17 +679,57 @@ function DetailsStep({
             placeholder="Allergieën, gewenste lengte, inspiratiebeelden..."
           />
         </div>
-
-        <div className="mt-2 flex justify-between">
-          <Button type="button" variant="outline" onClick={onBack}>
-            Terug
-          </Button>
-          <Button type="submit" disabled={pending} size="lg">
-            {pending ? "Bevestigen..." : "Bevestig boeking"}
-          </Button>
-        </div>
       </form>
     </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Navigation — sits right under the summary                               */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+function BookingNav({
+  step,
+  canNext,
+  pending,
+  onBack,
+  onNext,
+}: {
+  step: number;
+  canNext: boolean;
+  pending: boolean;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <div className="mt-4 flex gap-2">
+      {step > 0 && (
+        <Button type="button" variant="outline" onClick={onBack}>
+          Terug
+        </Button>
+      )}
+      {step < TOTAL_STEPS - 1 ? (
+        <Button
+          type="button"
+          disabled={!canNext}
+          onClick={onNext}
+          size="lg"
+          className="flex-1"
+        >
+          Volgende
+        </Button>
+      ) : (
+        <Button
+          type="submit"
+          form="booking-details-form"
+          disabled={pending}
+          size="lg"
+          className="flex-1"
+        >
+          {pending ? "Bevestigen..." : "Bevestig boeking"}
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -737,7 +750,7 @@ function Summary({
 }) {
   const empty = !service && !date && !slot;
   return (
-    <aside className="order-first lg:order-none lg:sticky lg:top-24 lg:self-start">
+    <aside>
       <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
           Samenvatting
