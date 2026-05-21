@@ -135,7 +135,7 @@ export function AdminBookingForm({
       });
       if (result.ok) {
         toast.success("Boeking aangemaakt");
-        router.push(`/boekingen/${result.bookingId}`);
+        router.push("/dashboard");
       } else if (result.code === "SLOT_TAKEN") {
         toast.error("Dat tijdslot is al bezet.");
       } else {

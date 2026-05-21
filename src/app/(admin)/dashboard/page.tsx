@@ -22,7 +22,6 @@ import {
   eachDayOfInterval,
   format,
   parseISO,
-  startOfWeek,
 } from "date-fns";
 
 export const metadata: Metadata = {
@@ -34,7 +33,8 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const todayKey = formatIsoDate(new Date());
-  const weekStart = startOfWeek(parseISO(todayKey), { weekStartsOn: 1 });
+  // The dashboard agenda starts at today and shows the next 7 days.
+  const weekStart = parseISO(todayKey);
   const weekDays = eachDayOfInterval({
     start: weekStart,
     end: addDays(weekStart, 6),
@@ -160,7 +160,9 @@ export default async function DashboardPage() {
 
       <div className="mt-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Agenda — deze week</h2>
+          <h2 className="text-lg font-semibold">
+            Agenda — komende 7 dagen
+          </h2>
           <Link
             href="/agenda"
             className="text-xs text-muted-foreground underline underline-offset-4"

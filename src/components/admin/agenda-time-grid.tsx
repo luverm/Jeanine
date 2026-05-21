@@ -135,7 +135,7 @@ export function AgendaTimeGrid({
         <div className="w-max min-w-full">
         <div className="flex border-b bg-muted/30">
           <div className="sticky left-0 z-20 w-14 shrink-0 border-r bg-background" />
-          {days.map((day, i) => {
+          {days.map((day) => {
             const key = format(day, "yyyy-MM-dd");
             const isToday = key === todayKey;
             const waiting = waitlistByDay.get(key) ?? [];
@@ -152,7 +152,7 @@ export function AgendaTimeGrid({
                   <span className="text-sm font-medium capitalize">
                     {single
                       ? WEEKDAYS_LONG[Number(format(day, "i")) - 1]
-                      : WEEKDAYS[i % 7]}{" "}
+                      : WEEKDAYS[Number(format(day, "i")) - 1]}{" "}
                     <span
                       className={
                         isToday
