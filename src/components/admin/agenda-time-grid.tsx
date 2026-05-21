@@ -127,8 +127,12 @@ export function AgendaTimeGrid({
   const hasAbsence = allDay.some((d) => d.off);
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <div className="w-max min-w-full">
+    <div>
+      <p className="mb-2 text-xs text-muted-foreground">
+        Tik of klik op een vrij tijdvak om een afspraak in te plannen.
+      </p>
+      <div className="overflow-x-auto rounded-lg border">
+        <div className="w-max min-w-full">
         <div className="flex border-b bg-muted/30">
           <div className="w-14 shrink-0" />
           {days.map((day, i) => {
@@ -301,6 +305,7 @@ export function AgendaTimeGrid({
             );
           })}
         </div>
+      </div>
       </div>
     </div>
   );
