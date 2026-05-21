@@ -11,6 +11,7 @@ import {
   ListChecks,
   Image as ImageIcon,
   Star,
+  Type,
   Wallet,
   ChevronRight,
   type LucideIcon,
@@ -97,6 +98,12 @@ const GROUPS: { title: string; items: HubItem[] }[] = [
   {
     title: "Website & content",
     items: [
+      {
+        href: "/instellingen/teksten",
+        label: "Teksten",
+        description: "Paginateksten van de website aanpassen",
+        icon: Type,
+      },
       {
         href: "/instellingen/portfolio",
         label: "Portfolio",

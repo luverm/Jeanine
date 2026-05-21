@@ -9,6 +9,7 @@ import { HeroCarousel } from "@/components/public/hero-carousel";
 import { IntroOverlay } from "@/components/public/intro-overlay";
 import { FaqSection } from "@/components/public/faq-section";
 import { JsonLd } from "@/components/seo/json-ld";
+import { getResolvedContent } from "@/lib/db/site-content";
 import { business } from "@/content/business";
 import { landing } from "@/content/landing";
 
@@ -20,10 +21,11 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [services, portfolio, dbReviews] = await Promise.all([
+  const [services, portfolio, dbReviews, content] = await Promise.all([
     listActiveServices(),
     listPortfolioImages(),
     listVisibleReviews(),
+    getResolvedContent(),
   ]);
   const regular = services.filter((s) => s.kind === "regular").slice(0, 3);
   const bridalTeaser = services.find((s) => s.kind === "bridal");
@@ -73,10 +75,10 @@ export default async function HomePage() {
             {landing.hero.eyebrow}
           </p>
           <h1 className="mt-6 max-w-3xl text-pretty text-4xl tracking-tight sm:text-5xl md:text-7xl">
-            {landing.hero.title}
+            {content["home.hero.title"]}
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-            {landing.hero.subtitle}
+            {content["home.hero.subtitle"]}
           </p>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <Link
@@ -173,10 +175,10 @@ export default async function HomePage() {
               Over
             </p>
             <h2 className="mt-4 text-4xl tracking-tight">
-              {landing.about.title}
+              {content["home.about.title"]}
             </h2>
             <p className="mt-6 whitespace-pre-line text-lg leading-relaxed text-muted-foreground">
-              {landing.about.body}
+              {content["home.about.body"]}
             </p>
           </div>
         </div>
@@ -232,7 +234,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <FaqSection />
+      <FaqSection content={content} />
     </>
   );
 }

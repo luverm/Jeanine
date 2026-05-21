@@ -3,7 +3,16 @@ import { faq } from "@/content/faq";
 import { business } from "@/content/business";
 import { JsonLd } from "@/components/seo/json-ld";
 
-export function FaqSection() {
+export function FaqSection({
+  content = {},
+}: {
+  content?: Record<string, string>;
+}) {
+  const items = faq.items.map((it, i) => ({
+    q: content[`faq.${i}.q`] ?? it.q,
+    a: content[`faq.${i}.a`] ?? it.a,
+  }));
+
   return (
     <section className="border-t">
       <div className="mx-auto max-w-3xl px-4 py-20">
@@ -11,7 +20,7 @@ export function FaqSection() {
           data={{
             "@context": "https://schema.org",
             "@type": "FAQPage",
-            mainEntity: faq.items.map((it) => ({
+            mainEntity: items.map((it) => ({
               "@type": "Question",
               name: it.q,
               acceptedAnswer: { "@type": "Answer", text: it.a },
@@ -25,8 +34,8 @@ export function FaqSection() {
         <p className="mt-3 text-muted-foreground">{faq.intro}</p>
 
         <div className="mt-10 divide-y border-t">
-          {faq.items.map((it) => (
-            <details key={it.q} className="group py-4">
+          {items.map((it, i) => (
+            <details key={i} className="group py-4">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-lg font-medium [&::-webkit-details-marker]:hidden">
                 <span>{it.q}</span>
                 <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />

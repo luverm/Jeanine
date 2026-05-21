@@ -5,6 +5,7 @@ import { listActiveServices } from "@/lib/db/services";
 import { listPortfolioImages } from "@/lib/portfolio";
 import { ServiceCard } from "@/components/public/service-card";
 import { RotatingImage } from "@/components/public/rotating-image";
+import { getResolvedContent } from "@/lib/db/site-content";
 import { landing } from "@/content/landing";
 
 export const revalidate = 3600;
@@ -16,9 +17,10 @@ export const metadata: Metadata = {
 };
 
 export default async function BruidPage() {
-  const [services, portfolio] = await Promise.all([
+  const [services, portfolio, content] = await Promise.all([
     listActiveServices("bridal"),
     listPortfolioImages(),
+    getResolvedContent(),
   ]);
   const heroSlides = portfolio.slice(0, 6);
   const stairImage =
@@ -38,7 +40,7 @@ export default async function BruidPage() {
               {landing.bridal.title}
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-              {landing.bridal.intro}
+              {content["bruid.intro"]}
             </p>
             <ul className="mt-8 grid gap-3 text-base">
               {landing.bridal.bullets.map((b) => (

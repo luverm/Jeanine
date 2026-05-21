@@ -3,6 +3,7 @@ import { listActiveServices } from "@/lib/db/services";
 import type { Service } from "@/lib/services-format";
 import { ServiceCard } from "@/components/public/service-card";
 import { SERVICE_CATEGORIES, categoryForSlug } from "@/content/services";
+import { getResolvedContent } from "@/lib/db/site-content";
 
 export const revalidate = 3600;
 
@@ -12,7 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default async function DienstenPage() {
-  const services = await listActiveServices();
+  const [services, content] = await Promise.all([
+    listActiveServices(),
+    getResolvedContent(),
+  ]);
 
   const buckets = new Map<string, Service[]>();
   for (const s of services) {
@@ -38,12 +42,8 @@ export default async function DienstenPage() {
           Aanbod
         </p>
         <h1 className="mt-4 text-5xl tracking-tight">Diensten</h1>
-        <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-          Knippen, kleuren en feestkapsels kun je eenvoudig online boeken.
-          Voor bruidsstyling vraag je eerst jouw trouwdatum aan. Daarna neem
-          ik contact met je op en kun je zelf de proefsessie inplannen.
-          Tijdens de proefsessie nemen we rustig jouw gewenste look, locatie
-          en planning door, zodat alles perfect aansluit op jouw trouwdag.
+        <p className="mt-6 whitespace-pre-line text-lg leading-relaxed text-muted-foreground">
+          {content["diensten.intro"]}
         </p>
       </header>
 
