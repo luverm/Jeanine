@@ -37,7 +37,7 @@ export default async function BruidPage() {
               Bruidsstyling
             </p>
             <h1 className="mt-6 text-5xl tracking-tight md:text-6xl">
-              {landing.bridal.title}
+              {content["bruid.hero.title"]}
             </h1>
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
               {content["bruid.intro"]}
@@ -93,27 +93,27 @@ export default async function BruidPage() {
               Hoe het werkt
             </p>
             <h2 className="mt-4 text-4xl tracking-tight">
-              Van aanvraag tot de grote dag
+              {content["bruid.process.title"]}
             </h2>
             <ol className="mt-8 space-y-6">
               {[
                 {
                   n: "1",
-                  title: "Vraag je trouwdatum aan",
-                  body: "Laat je trouwdatum en wensen achter. Ik laat je weten of de datum nog vrij is.",
+                  title: content["bruid.step1.title"],
+                  body: content["bruid.step1.body"],
                   note: null as string | null,
                 },
                 {
                   n: "2",
-                  title: "Proefsessie",
-                  body: "Een uitgebreide proefsessie van circa 3 uur in de salon — we bespreken je wensen en werken jouw droomkapsel uit.",
+                  title: content["bruid.step2.title"],
+                  body: content["bruid.step2.body"],
                   note: null as string | null,
                 },
                 {
                   n: "3",
-                  title: "De grote dag",
-                  body: "Ik ben ongeveer 2.5 uur bezig met je haar en make-up, zodat alles tot in detail klopt. Daarna heb je nog een half uur om rustig je jurk aan te trekken en je klaar te maken voor dit bijzondere moment. Als je jurk aan is plaats ik de sluier, en is het plaatje compleet.",
-                  note: "De avond voor de bruiloft was je je haren 2 keer met shampoo en de lengten met conditioner. Geen stylingsproducten gebruiken.",
+                  title: content["bruid.step3.title"],
+                  body: content["bruid.step3.body"],
+                  note: content["bruid.step3.note"] || null,
                 },
               ].map((step) => (
                 <li key={step.n} className="flex items-start gap-4">
@@ -140,10 +140,11 @@ export default async function BruidPage() {
       {services.length > 0 && (
         <section className="border-t bg-muted/30">
           <div className="mx-auto max-w-6xl px-4 py-20">
-            <h2 className="text-3xl tracking-tight">Bruidsdiensten</h2>
-            <p className="mt-2 text-muted-foreground">
-              Geen directe online boeking — je vraagt je trouwdatum aan en we
-              plannen samen de proefsessie en de dag zelf.
+            <h2 className="text-3xl tracking-tight">
+              {content["bruid.services.title"]}
+            </h2>
+            <p className="mt-2 whitespace-pre-line text-muted-foreground">
+              {content["bruid.services.intro"]}
             </p>
             <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {services.map((s) => (
@@ -181,9 +182,11 @@ export default async function BruidPage() {
 
       {/* Closing CTA */}
       <section className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <h2 className="text-4xl tracking-tight">Klaar om te plannen?</h2>
-        <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-          Vertel kort over je trouwdag. Ik neem persoonlijk contact met je op.
+        <h2 className="text-4xl tracking-tight">
+          {content["bruid.cta.title"]}
+        </h2>
+        <p className="mx-auto mt-4 max-w-xl whitespace-pre-line text-muted-foreground">
+          {content["bruid.cta.body"]}
         </p>
         <div className="mt-8">
           <Link

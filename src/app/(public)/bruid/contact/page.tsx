@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { LeadForm } from "@/components/public/lead-form";
+import { getResolvedContent } from "@/lib/db/site-content";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,8 @@ export const metadata: Metadata = {
     "Vraag je trouwdatum aan voor je bruidsstyling — ik neem persoonlijk contact met je op.",
 };
 
-export default function BruidContactPage() {
+export default async function BruidContactPage() {
+  const content = await getResolvedContent();
   return (
     <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:grid-cols-[1fr_320px]">
       <div>
@@ -19,11 +21,10 @@ export default function BruidContactPage() {
             Bruidsstyling
           </p>
           <h1 className="mt-4 text-pretty text-4xl tracking-tight sm:text-5xl">
-            Vraag je trouwdatum aan
+            {content["bruidcontact.title"]}
           </h1>
-          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-            Vertel kort over je trouwdag. Ik neem persoonlijk contact met je
-            op.
+          <p className="mt-6 whitespace-pre-line text-lg leading-relaxed text-muted-foreground">
+            {content["bruidcontact.intro"]}
           </p>
         </header>
 

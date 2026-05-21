@@ -81,7 +81,7 @@ export default async function HomePage() {
         <HeroCarousel slides={heroSlides} />
         <div className="relative mx-auto max-w-6xl px-4 py-28 md:py-40">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            {landing.hero.eyebrow}
+            {content["home.hero.eyebrow"]}
           </p>
           <h1 className="mt-6 max-w-3xl text-pretty text-4xl tracking-tight sm:text-5xl md:text-7xl">
             {content["home.hero.title"]}
@@ -94,13 +94,13 @@ export default async function HomePage() {
               href={landing.hero.primaryCta.href}
               className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-base text-primary-foreground shadow-sm transition hover:bg-primary/90"
             >
-              {landing.hero.primaryCta.label}
+              {content["home.hero.cta1"]}
             </Link>
             <Link
               href={landing.hero.secondaryCta.href}
               className="inline-flex items-center justify-center rounded-full border border-border bg-background/60 px-6 py-3 text-base transition hover:bg-accent hover:text-accent-foreground"
             >
-              {landing.hero.secondaryCta.label}
+              {content["home.hero.cta2"]}
             </Link>
           </div>
         </div>
@@ -110,7 +110,9 @@ export default async function HomePage() {
       <section className="mx-auto max-w-6xl px-4 py-20">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight">Diensten</h2>
+            <h2 className="text-3xl font-semibold tracking-tight">
+              {content["home.services.title"]}
+            </h2>
             <p className="mt-2 text-muted-foreground">
               Een greep uit het aanbod. Bekijk{" "}
               <Link href="/diensten" className="underline underline-offset-4">
@@ -131,7 +133,9 @@ export default async function HomePage() {
       <section className="border-y bg-muted/30">
         <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="flex items-end justify-between gap-4">
-            <h2 className="text-3xl font-semibold tracking-tight">Portfolio</h2>
+            <h2 className="text-3xl font-semibold tracking-tight">
+              {content["home.portfolio.title"]}
+            </h2>
             <Link
               href="/portfolio"
               className="text-sm underline underline-offset-4"
@@ -198,7 +202,9 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl px-4 py-20">
           {reviews.length > 0 ? (
             <>
-              <h2 className="text-3xl font-semibold tracking-tight">Reviews</h2>
+              <h2 className="text-3xl font-semibold tracking-tight">
+                {content["home.reviews.title"]}
+              </h2>
               <div className="mt-10 grid gap-6 md:grid-cols-3">
                 {reviews.map((r, i) => (
                   <figure

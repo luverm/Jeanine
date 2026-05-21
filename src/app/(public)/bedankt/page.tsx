@@ -1,14 +1,15 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { CheckCircle2 } from "lucide-react";
+import { getResolvedContent } from "@/lib/db/site-content";
 
 export const metadata: Metadata = {
   title: "Bedankt voor je bericht",
   robots: { index: false },
 };
 
-import { CheckCircle2 } from "lucide-react";
-
-export default function BedanktPage() {
+export default async function BedanktPage() {
+  const content = await getResolvedContent();
   return (
     <div className="mx-auto max-w-2xl px-4 py-24">
       <div className="flex items-center gap-3 text-primary">
@@ -18,13 +19,10 @@ export default function BedanktPage() {
         </p>
       </div>
       <h1 className="mt-4 text-5xl tracking-tight">
-        Van harte gefeliciteerd met jullie verloving!
+        {content["bedankt.title"]}
       </h1>
-      <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-        Je aanvraag is goed bij mij binnengekomen. Ik lees alles rustig door
-        en ik neem contact met je op met een persoonlijk antwoord. Heb je
-        inspiratiebeelden of een Pinterest-bord? Stuur ze gerust mee als reply
-        op de bevestigingsmail die je zo hebt ontvangen.
+      <p className="mt-6 whitespace-pre-line text-lg leading-relaxed text-muted-foreground">
+        {content["bedankt.body"]}
       </p>
       <div className="mt-10 flex flex-col gap-3 sm:flex-row">
         <Link
