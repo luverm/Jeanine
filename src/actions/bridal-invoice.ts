@@ -22,6 +22,7 @@ const schema = z.object({
     .optional()
     .or(z.literal("")),
   leadId: z.string().uuid().optional().or(z.literal("")),
+  depositCents: z.number().int().min(0).max(10_000_00).optional(),
   lines: z
     .array(
       z.object({
@@ -62,6 +63,7 @@ export async function createBridalInvoiceAction(
       vatRate: business.vatRate,
       prefix: business.invoicePrefix,
       lines: billable,
+      depositCents: d.depositCents,
     });
     if (d.leadId) {
       // Mirror the invoice total onto the lead's agreed price so the

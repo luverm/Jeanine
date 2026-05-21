@@ -30,6 +30,9 @@ export default async function InvoicePage({
   if (!result) notFound();
   const { invoice, lines } = result;
 
+  const deposit = invoice.deposit_cents ?? 0;
+  const due = Math.max(0, invoice.total_cents - deposit);
+
   const rows =
     lines.length > 0
       ? lines.map((l) => ({
@@ -142,6 +145,20 @@ export default async function InvoicePage({
             <span>Totaal</span>
             <span>{formatPrice(invoice.total_cents)}</span>
           </div>
+          {deposit > 0 && (
+            <>
+              <div className="flex justify-between py-1">
+                <span className="text-stone-600">
+                  Reeds voldaan (aanbetaling)
+                </span>
+                <span>−{formatPrice(deposit)}</span>
+              </div>
+              <div className="flex justify-between border-t py-2 font-semibold">
+                <span>Nog te voldoen</span>
+                <span>{formatPrice(due)}</span>
+              </div>
+            </>
+          )}
         </div>
 
         {invoice.vat_rate === 0 && (

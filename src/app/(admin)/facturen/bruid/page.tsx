@@ -42,7 +42,13 @@ export default async function BridalInvoicePage({
         <BridalInvoiceForm
           prefill={
             lead
-              ? { customerName: lead.full_name, customerEmail: lead.email }
+              ? {
+                  customerName: lead.full_name,
+                  customerEmail: lead.email,
+                  depositCents: lead.deposit_paid
+                    ? (lead.deposit_cents ?? 0)
+                    : 0,
+                }
               : undefined
           }
           leadId={lead?.id}

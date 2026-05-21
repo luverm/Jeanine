@@ -38,7 +38,11 @@ export function BridalInvoiceForm({
   leadId,
   vatRate,
 }: {
-  prefill?: { customerName?: string; customerEmail?: string };
+  prefill?: {
+    customerName?: string;
+    customerEmail?: string;
+    depositCents?: number;
+  };
   leadId?: string;
   vatRate: number;
 }) {
@@ -51,6 +55,7 @@ export function BridalInvoiceForm({
   );
   const [issuedOn, setIssuedOn] = useState(today);
   const [lines, setLines] = useState<Line[]>(presetLines());
+  const [depositCents, setDepositCents] = useState(prefill?.depositCents ?? 0);
   const [busy, setBusy] = useState(false);
 
   const incl = lines.reduce(
@@ -59,6 +64,7 @@ export function BridalInvoiceForm({
   );
   const subtotal = vatRate > 0 ? Math.round(incl / (1 + vatRate / 100)) : incl;
   const vat = incl - subtotal;
+  const due = Math.max(0, incl - depositCents);
 
   function patch(id: string, p: Partial<Line>) {
     setLines((ls) => ls.map((l) => (l.id === id ? { ...l, ...p } : l)));
@@ -92,6 +98,7 @@ export function BridalInvoiceForm({
         customerEmail: customerEmail.trim(),
         issuedOn,
         leadId: leadId ?? "",
+        depositCents,
         lines: billable.map((l) => ({
           description: l.description.trim(),
           quantity: l.quantity,
@@ -111,7 +118,7 @@ export function BridalInvoiceForm({
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Naam klant">
           <input
             value={customerName}
@@ -134,6 +141,20 @@ export function BridalInvoiceForm({
             value={issuedOn}
             onChange={(e) => setIssuedOn(e.target.value)}
             type="date"
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          />
+        </Field>
+        <Field label="Aanbetaling reeds ontvangen (€)">
+          <input
+            value={(depositCents / 100).toString()}
+            onChange={(e) =>
+              setDepositCents(
+                Math.max(0, Math.round((Number(e.target.value) || 0) * 100)),
+              )
+            }
+            type="number"
+            min={0}
+            step={0.01}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           />
         </Field>
@@ -220,6 +241,22 @@ export function BridalInvoiceForm({
           <span>Totaal</span>
           <span className="tabular-nums">{formatPrice(incl)}</span>
         </div>
+        {depositCents > 0 && (
+          <>
+            <div className="flex justify-between py-1">
+              <span className="text-muted-foreground">
+                Reeds voldaan (aanbetaling)
+              </span>
+              <span className="tabular-nums">
+                −{formatPrice(depositCents)}
+              </span>
+            </div>
+            <div className="flex justify-between border-t py-2 font-semibold">
+              <span>Nog te voldoen</span>
+              <span className="tabular-nums">{formatPrice(due)}</span>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex justify-end">

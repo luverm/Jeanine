@@ -13,6 +13,7 @@ export type InvoiceRow = {
   vat_rate: number;
   vat_cents: number;
   total_cents: number;
+  deposit_cents: number;
   created_at: string;
 };
 
@@ -118,8 +119,10 @@ export async function createBridalInvoice(args: {
   vatRate: number;
   prefix: string;
   lines: BridalInvoiceLineInput[];
+  depositCents?: number;
 }): Promise<InvoiceRow> {
   const svc = createSupabaseServiceClient();
+  const deposit = Math.max(0, Math.round(args.depositCents ?? 0));
 
   const lines = args.lines
     .map((l) => ({
@@ -150,6 +153,8 @@ export async function createBridalInvoice(args: {
       vat_rate: args.vatRate,
       vat_cents: vat,
       total_cents: inclTotal,
+      // Only sent when set, so invoices keep working before 0021.
+      ...(deposit > 0 ? { deposit_cents: deposit } : {}),
     })
     .select("*")
     .single();
