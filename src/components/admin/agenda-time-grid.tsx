@@ -23,6 +23,7 @@ const EVENT_STYLE: Record<string, string> = {
 };
 
 const HOUR_PX = 64;
+const SLOT_PX = HOUR_PX / 2;
 // Diagonal hatch for time-off (absence) bars.
 const HATCH =
   "repeating-linear-gradient(45deg, rgba(120,113,108,0.22) 0 8px, transparent 8px 16px)";
@@ -236,13 +237,31 @@ export function AgendaTimeGrid({
                     : {}),
                 }}
               >
-                {hours.map((h, i) => (
-                  <div
-                    key={h}
-                    style={{ top: i * HOUR_PX }}
-                    className="absolute inset-x-0 border-b border-border/70"
-                  />
-                ))}
+                {/* Clickable 30-min slots — open the new-booking form. */}
+                {Array.from({
+                  length: (endHour - startHour) * 2,
+                }).map((_, i) => {
+                  const totalMin = startHour * 60 + i * 30;
+                  const hh = String(Math.floor(totalMin / 60)).padStart(
+                    2,
+                    "0",
+                  );
+                  const mm = totalMin % 60 === 0 ? "00" : "30";
+                  return (
+                    <Link
+                      key={i}
+                      href={`/boekingen/nieuw?date=${key}&tijd=${hh}:${mm}`}
+                      aria-label={`Nieuwe afspraak om ${hh}:${mm}`}
+                      style={{ top: i * SLOT_PX, height: SLOT_PX }}
+                      className={
+                        "absolute inset-x-0 border-b transition hover:bg-accent/50 " +
+                        (mm === "00"
+                          ? "border-border/70"
+                          : "border-border/35")
+                      }
+                    />
+                  );
+                })}
 
                 {items.map((b) => {
                   const startMin = minutesOfDay(b.starts_at);

@@ -16,12 +16,18 @@ export const dynamic = "force-dynamic";
 export default async function NewBookingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ lead?: string; customer?: string; date?: string }>;
+  searchParams: Promise<{
+    lead?: string;
+    customer?: string;
+    date?: string;
+    tijd?: string;
+  }>;
 }) {
   const {
     lead: leadId,
     customer: customerId,
     date: dateParam,
+    tijd: timeParam,
   } = await searchParams;
   const [services, staffId] = await Promise.all([
     listAllServices(),
@@ -60,6 +66,8 @@ export default async function NewBookingPage({
 
   const defaultDate =
     dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : undefined;
+  const defaultTime =
+    timeParam && /^\d{2}:\d{2}$/.test(timeParam) ? timeParam : undefined;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -79,6 +87,7 @@ export default async function NewBookingPage({
           defaults={defaults}
           defaultServiceId={defaultServiceId}
           defaultDate={defaultDate}
+          defaultTime={defaultTime}
         />
       </div>
     </div>

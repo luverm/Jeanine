@@ -32,12 +32,14 @@ export function AdminBookingForm({
   defaults,
   defaultServiceId,
   defaultDate,
+  defaultTime,
 }: {
   services: Svc[];
   staffId: string;
   defaults?: { fullName?: string; email?: string; phone?: string };
   defaultServiceId?: string;
   defaultDate?: string;
+  defaultTime?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -45,7 +47,7 @@ export function AdminBookingForm({
     defaultServiceId ?? services[0]?.id ?? "",
   );
   const [date, setDate] = useState(defaultDate ?? "");
-  const [time, setTime] = useState("");
+  const [time, setTime] = useState(defaultTime ?? "");
   const [fullName, setFullName] = useState(defaults?.fullName ?? "");
   const [email, setEmail] = useState(defaults?.email ?? "");
   const [phone, setPhone] = useState(defaults?.phone ?? "");
