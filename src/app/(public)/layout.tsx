@@ -21,15 +21,15 @@ export default async function PublicLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
-        <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+        <nav className="mx-auto flex h-20 max-w-6xl items-center justify-between px-4">
           <Link href="/" aria-label={business.name} className="shrink-0">
             <Image
-              src="/Monogram-Transparant-Cocoa.png"
+              src="/HB-cocoa-transparent.png"
               alt={business.name}
               width={1080}
               height={1080}
               priority
-              className="h-12 w-auto"
+              className="h-16 w-auto"
             />
           </Link>
 

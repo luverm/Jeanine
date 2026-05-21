@@ -172,8 +172,7 @@ export default async function BruidPage() {
       <section className="mx-auto max-w-3xl px-4 py-20 text-center">
         <h2 className="text-4xl tracking-tight">Klaar om te plannen?</h2>
         <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-          Vertel kort over je trouwdag. We nemen binnen twee werkdagen contact
-          op.
+          Vertel kort over je trouwdag. Ik neem persoonlijk contact met je op.
         </p>
         <div className="mt-8">
           <Link

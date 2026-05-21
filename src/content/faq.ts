@@ -20,7 +20,7 @@ export const faq = {
     },
     {
       q: "Hoe werkt bruidsstyling?",
-      a: "Bruidsstyling plan je niet direct online. Vul het bruidscontactformulier in; we nemen binnen twee werkdagen persoonlijk contact op voor een vrijblijvend consult en een passend voorstel.",
+      a: "Bruidsstyling plan je niet direct online. Vraag via het bruidsformulier je trouwdatum aan; ik neem persoonlijk contact met je op en daarna plan je zelf je proefsessie in.",
     },
     {
       q: "Krijg ik een bevestiging?",

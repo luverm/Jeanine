@@ -39,9 +39,11 @@ export default async function DienstenPage() {
         </p>
         <h1 className="mt-4 text-5xl tracking-tight">Diensten</h1>
         <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-          Knippen, kleuren en feestkapsels boek je direct online.
-          Bruidsstyling plan je via een vrijblijvend consult — zo kunnen
-          we je look, locatie en planning rustig doornemen.
+          Knippen, kleuren en feestkapsels kun je eenvoudig online boeken.
+          Voor bruidsstyling vraag je eerst jouw trouwdatum aan. Daarna neem
+          ik contact met je op en kun je zelf de proefsessie inplannen.
+          Tijdens de proefsessie nemen we rustig jouw gewenste look, locatie
+          en planning door, zodat alles perfect aansluit op jouw trouwdag.
         </p>
       </header>
 

@@ -346,9 +346,10 @@ export function leadCustomerAckText(fullName: string): string {
   return [
     `Hoi ${fullName},`,
     "",
-    "Bedankt voor je aanvraag voor je trouwdag. Ik neem binnen twee werkdagen",
-    "persoonlijk contact met je op om je wensen door te nemen en je een",
-    "passend voorstel te sturen.",
+    "Van harte gefeliciteerd met jullie verloving!",
+    "",
+    "Je aanvraag is goed bij mij binnengekomen. Ik lees alles rustig door en",
+    "ik neem contact met je op met een persoonlijk antwoord.",
     "",
     "Heb je inspiratiebeelden of een Pinterest-bord? Stuur ze gerust mee als",
     "reply op deze e-mail.",

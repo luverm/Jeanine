@@ -18,13 +18,13 @@ export default function BedanktPage() {
         </p>
       </div>
       <h1 className="mt-4 text-5xl tracking-tight">
-        Dankjewel — we nemen contact op
+        Van harte gefeliciteerd met jullie verloving!
       </h1>
       <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-        Je aanvraag is binnen. We lezen alles rustig door en sturen binnen twee
-        werkdagen een persoonlijk antwoord. Heb je inspiratiebeelden of een
-        Pinterest-bord? Stuur ze gerust mee als reply op de bevestigings-e-mail
-        die je net hebt gekregen.
+        Je aanvraag is goed bij mij binnengekomen. Ik lees alles rustig door
+        en ik neem contact met je op met een persoonlijk antwoord. Heb je
+        inspiratiebeelden of een Pinterest-bord? Stuur ze gerust mee als reply
+        op de bevestigingsmail die je zo hebt ontvangen.
       </p>
       <div className="mt-10 flex flex-col gap-3 sm:flex-row">
         <Link

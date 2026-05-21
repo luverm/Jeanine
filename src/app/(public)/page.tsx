@@ -159,19 +159,15 @@ export default async function HomePage() {
       {/* About */}
       <section className="mx-auto max-w-6xl px-4 py-20">
         <div className="grid gap-12 md:grid-cols-2 md:items-center">
-          {portfolio.find((p) => p.src.includes("make-up")) && (
-            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-muted md:order-last">
-              <Image
-                src={
-                  portfolio.find((p) => p.src.includes("make-up"))!.src
-                }
-                alt="Bridal styling process"
-                fill
-                sizes="(min-width: 768px) 50vw, 100vw"
-                className="object-cover"
-              />
-            </div>
-          )}
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-muted md:order-last">
+            <Image
+              src="/images/portfolio/bruid-make-up.jpg"
+              alt="Jeanine aan het werk bij een bruid"
+              fill
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="object-cover"
+            />
+          </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
               Over

@@ -42,7 +42,7 @@ export function ServiceCard({ service }: { service: Service }) {
             href="/bruid/contact"
             className="inline-flex rounded-full border border-border px-4 py-2 text-sm transition hover:bg-accent hover:text-accent-foreground"
           >
-            Plan een consult
+            Vraag je datum aan
           </Link>
         )}
       </div>

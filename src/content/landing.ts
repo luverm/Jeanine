@@ -18,7 +18,7 @@ export const landing = {
   bridal: {
     title: "Bruidsstyling",
     intro:
-      "Jouw trouwdag verdient een styliste die met je meedenkt. Vraag je trouwdatum aan — daarna plannen we samen een uitgebreide proefsessie waarin we jouw droomkapsel helemaal uitwerken.",
+      "Een bruidskapsel dat helemaal bij jou past. Vraag je trouwdatum aan — daarna neem ik contact met je op en kun je zelf je proefsessie inplannen. Tijdens het proefkapsel werken we jouw droomkapsel helemaal uit. Ook is dit het moment waarop ik jou en je haar leer kennen, zodat ik op de bruiloft jouw perfecte bruidslook kan realiseren. Samen kijken we naar een look die past bij jouw jurk, stijl en wensen, waarbij mijn focus ligt op het creëren van een kapsel waarin jij je helemaal jezelf voelt op jouw trouwdag. Zo kun je vol vertrouwen stralen op jullie trouwdag.",
     bullets: [
       "Bruidshaarstyling aan huis op jouw trouwdag",
       "Uitgebreide proefsessie van circa 3 uur in de salon",
