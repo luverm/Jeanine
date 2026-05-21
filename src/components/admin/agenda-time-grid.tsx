@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import type { BookingListItem } from "@/lib/db/admin-bookings";
+import type { TimeOffRow } from "@/lib/db/admin-schedule";
 import { formatIsoDate, formatTime } from "@/lib/time";
 
 const WEEKDAYS = ["ma", "di", "wo", "do", "vr", "za", "zo"];
@@ -22,6 +23,9 @@ const EVENT_STYLE: Record<string, string> = {
 };
 
 const HOUR_PX = 64;
+// Diagonal hatch for time-off (absence) blocks.
+const HATCH =
+  "repeating-linear-gradient(45deg, rgba(120,113,108,0.18) 0 8px, transparent 8px 16px)";
 
 /** Groups bookings by their start day (Europe/Amsterdam), skipping cancelled. */
 export function groupByDay(
@@ -47,28 +51,57 @@ function minutesOfDay(iso: string): number {
   return h * 60 + m;
 }
 
+/** The part of each time-off block that falls on a given day, in minutes. */
+function timeOffSegmentsForDay(
+  dayKey: string,
+  timeOff: TimeOffRow[],
+): Array<{ id: string; startMin: number; endMin: number; reason: string }> {
+  const out: Array<{
+    id: string;
+    startMin: number;
+    endMin: number;
+    reason: string;
+  }> = [];
+  for (const t of timeOff) {
+    const startKey = formatIsoDate(new Date(t.starts_at));
+    const endKey = formatIsoDate(new Date(t.ends_at));
+    if (dayKey < startKey || dayKey > endKey) continue;
+    const startMin = dayKey === startKey ? minutesOfDay(t.starts_at) : 0;
+    const endMin = dayKey === endKey ? minutesOfDay(t.ends_at) : 24 * 60;
+    if (endMin <= startMin) continue;
+    out.push({ id: t.id, startMin, endMin, reason: t.reason?.trim() || "" });
+  }
+  return out;
+}
+
 /**
  * Salonized-style time grid: an hour axis with appointments positioned by
- * start time. Blocks are at least as tall as their duration and grow
- * further when the text needs it, so nothing is ever cut off.
+ * start time. Time-off blocks show as hatched "afwezig" areas.
  */
 export function AgendaTimeGrid({
   days,
   byDay,
   waitlistByDay,
   todayKey,
+  timeOff = [],
 }: {
   days: Date[];
   byDay: Map<string, BookingListItem[]>;
   waitlistByDay: Map<string, string[]>;
   todayKey: string;
+  timeOff?: TimeOffRow[];
 }) {
   let startHour = 8;
   let endHour = 19;
   for (const day of days) {
-    for (const b of byDay.get(format(day, "yyyy-MM-dd")) ?? []) {
+    const key = format(day, "yyyy-MM-dd");
+    for (const b of byDay.get(key) ?? []) {
       startHour = Math.min(startHour, Math.floor(minutesOfDay(b.starts_at) / 60));
       endHour = Math.max(endHour, Math.ceil(minutesOfDay(b.ends_at) / 60));
+    }
+    for (const seg of timeOffSegmentsForDay(key, timeOff)) {
+      startHour = Math.min(startHour, Math.floor(seg.startMin / 60));
+      endHour = Math.max(endHour, Math.ceil(seg.endMin / 60));
     }
   }
   startHour = Math.max(6, startHour);
@@ -77,8 +110,10 @@ export function AgendaTimeGrid({
   const hours: number[] = [];
   for (let h = startHour; h <= endHour; h++) hours.push(h);
   const gridHeight = (endHour - startHour) * HOUR_PX;
+  const gridStartMin = startHour * 60;
+  const gridEndMin = endHour * 60;
+  const perMin = HOUR_PX / 60;
   const single = days.length === 1;
-  // Single day fills the width; week columns are fixed-wide and scroll.
   const colClass = single ? "flex-1" : "w-44 shrink-0";
 
   return (
@@ -147,6 +182,7 @@ export function AgendaTimeGrid({
           {days.map((day) => {
             const key = format(day, "yyyy-MM-dd");
             const items = byDay.get(key) ?? [];
+            const segments = timeOffSegmentsForDay(key, timeOff);
             return (
               <div
                 key={key}
@@ -160,22 +196,42 @@ export function AgendaTimeGrid({
                     className="absolute inset-x-0 border-b border-border/70"
                   />
                 ))}
+
+                {segments.map((seg) => {
+                  const visStart = Math.max(seg.startMin, gridStartMin);
+                  const visEnd = Math.min(seg.endMin, gridEndMin);
+                  if (visEnd <= visStart) return null;
+                  return (
+                    <Link
+                      key={seg.id}
+                      href="/instellingen/vrije-dagen"
+                      style={{
+                        top: (visStart - gridStartMin) * perMin,
+                        height: (visEnd - visStart) * perMin,
+                        backgroundColor: "rgb(245 245 244)",
+                        backgroundImage: HATCH,
+                      }}
+                      className="absolute inset-x-0 overflow-hidden border-y border-stone-300 px-2 py-1 text-xs leading-tight text-stone-600"
+                    >
+                      <p className="font-semibold">Afwezig</p>
+                      <p className="break-words">{seg.reason || "Geblokkeerd"}</p>
+                    </Link>
+                  );
+                })}
+
                 {items.map((b) => {
                   const startMin = minutesOfDay(b.starts_at);
                   let endMin = minutesOfDay(b.ends_at);
                   if (endMin <= startMin) endMin = startMin + 30;
-                  const top = (startMin - startHour * 60) * (HOUR_PX / 60);
-                  const minHeight = Math.max(
-                    48,
-                    (endMin - startMin) * (HOUR_PX / 60),
-                  );
+                  const top = (startMin - gridStartMin) * perMin;
+                  const minHeight = Math.max(48, (endMin - startMin) * perMin);
                   return (
                     <Link
                       key={b.id}
                       href={`/boekingen/${b.id}`}
                       style={{ top, minHeight }}
                       className={
-                        "absolute inset-x-1 rounded-md border border-l-4 px-2 py-1 text-xs leading-tight shadow-sm transition hover:z-10 hover:shadow " +
+                        "absolute inset-x-1 z-[1] rounded-md border border-l-4 px-2 py-1 text-xs leading-tight shadow-sm transition hover:z-10 hover:shadow " +
                         (EVENT_STYLE[b.status] ??
                           "border-l-stone-400 bg-stone-50")
                       }

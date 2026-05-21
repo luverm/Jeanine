@@ -14,6 +14,8 @@ import {
 } from "date-fns";
 import { listBookings, type BookingListItem } from "@/lib/db/admin-bookings";
 import { listOpenWaitlistInRange } from "@/lib/db/waitlist";
+import { listTimeOffInRange } from "@/lib/db/admin-schedule";
+import { getDefaultStaffId } from "@/lib/db/staff";
 import { formatIsoDate, formatTime } from "@/lib/time";
 import { AgendaTimeGrid, groupByDay } from "@/components/admin/agenda-time-grid";
 
@@ -90,16 +92,18 @@ export default async function AgendaPage({
     rangeEnd = anchor;
   }
 
-  const [bookings, waitlist] = await Promise.all([
-    listBookings({
-      from: format(rangeStart, "yyyy-MM-dd"),
-      to: format(rangeEnd, "yyyy-MM-dd"),
-    }),
-    listOpenWaitlistInRange(
-      format(rangeStart, "yyyy-MM-dd"),
-      format(rangeEnd, "yyyy-MM-dd"),
-    ),
+  const fromKey = format(rangeStart, "yyyy-MM-dd");
+  const toKey = format(rangeEnd, "yyyy-MM-dd");
+  const [bookings, waitlist, staffId] = await Promise.all([
+    listBookings({ from: fromKey, to: toKey }),
+    listOpenWaitlistInRange(fromKey, toKey),
+    getDefaultStaffId(),
   ]);
+  const timeOff = await listTimeOffInRange(
+    staffId,
+    `${fromKey}T00:00:00Z`,
+    `${toKey}T23:59:59Z`,
+  ).catch(() => []);
   const byDay = groupByDay(bookings);
 
   const waitlistByDay = new Map<string, string[]>();
@@ -197,6 +201,7 @@ export default async function AgendaPage({
             byDay={byDay}
             waitlistByDay={waitlistByDay}
             todayKey={todayKey}
+            timeOff={timeOff}
           />
         )}
       </div>

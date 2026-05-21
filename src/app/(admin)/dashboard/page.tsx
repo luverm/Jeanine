@@ -5,6 +5,8 @@ import { loadInsights } from "@/lib/db/insights";
 import { listLeads } from "@/lib/db/leads";
 import { listInvoices } from "@/lib/db/invoices";
 import { listOpenWaitlistInRange } from "@/lib/db/waitlist";
+import { listTimeOffInRange } from "@/lib/db/admin-schedule";
+import { getDefaultStaffId } from "@/lib/db/staff";
 import { Card } from "@/components/ui/card";
 import {
   AgendaTimeGrid,
@@ -37,15 +39,28 @@ export default async function DashboardPage() {
   const weekFrom = format(weekStart, "yyyy-MM-dd");
   const weekTo = format(addDays(weekStart, 6), "yyyy-MM-dd");
 
-  const [kpis, insights, leads, invoices, weekBookings, weekWaitlist] =
-    await Promise.all([
-      loadDashboardKpis(),
-      loadInsights(),
-      listLeads("new"),
-      listInvoices(8).catch(() => []),
-      listBookings({ from: weekFrom, to: weekTo }),
-      listOpenWaitlistInRange(weekFrom, weekTo),
-    ]);
+  const [
+    kpis,
+    insights,
+    leads,
+    invoices,
+    weekBookings,
+    weekWaitlist,
+    staffId,
+  ] = await Promise.all([
+    loadDashboardKpis(),
+    loadInsights(),
+    listLeads("new"),
+    listInvoices(8).catch(() => []),
+    listBookings({ from: weekFrom, to: weekTo }),
+    listOpenWaitlistInRange(weekFrom, weekTo),
+    getDefaultStaffId(),
+  ]);
+  const weekTimeOff = await listTimeOffInRange(
+    staffId,
+    `${weekFrom}T00:00:00Z`,
+    `${weekTo}T23:59:59Z`,
+  ).catch(() => []);
 
   const byDay = groupByDay(weekBookings);
   const waitlistByDay = new Map<string, string[]>();
@@ -153,6 +168,7 @@ export default async function DashboardPage() {
           byDay={byDay}
           waitlistByDay={waitlistByDay}
           todayKey={todayKey}
+          timeOff={weekTimeOff}
         />
       </div>
 

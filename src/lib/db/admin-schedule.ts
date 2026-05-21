@@ -56,6 +56,24 @@ export async function listTimeOff(staffId: string): Promise<TimeOffRow[]> {
   return (data ?? []) as TimeOffRow[];
 }
 
+/** Time-off blocks overlapping the [fromIso, toIso) window. */
+export async function listTimeOffInRange(
+  staffId: string,
+  fromIso: string,
+  toIso: string,
+): Promise<TimeOffRow[]> {
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("time_off")
+    .select("id, staff_id, starts_at, ends_at, reason")
+    .eq("staff_id", staffId)
+    .lt("starts_at", toIso)
+    .gt("ends_at", fromIso)
+    .order("starts_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as TimeOffRow[];
+}
+
 export async function insertTimeOff(input: {
   staffId: string;
   startsAt: string;

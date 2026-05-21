@@ -48,10 +48,12 @@ export function BookingForm({
   services,
   staffId,
   prefill,
+  blockedDates = [],
 }: {
   services: Service[];
   staffId: string;
   prefill?: BookingPrefill;
+  blockedDates?: string[];
 }) {
   const router = useRouter();
   const prefilledServiceId = prefill?.serviceSlug
@@ -241,6 +243,7 @@ export function BookingForm({
           {step === 1 && (
             <DateStep
               date={date}
+              blockedDates={blockedDates}
               onSelect={handleSelectDate}
               onBack={() => setStep(0)}
               onNext={() => setStep(2)}
@@ -460,11 +463,13 @@ function ServiceStep({
 
 function DateStep({
   date,
+  blockedDates,
   onSelect,
   onBack,
   onNext,
 }: {
   date: Date | undefined;
+  blockedDates: string[];
   onSelect: (d: Date | undefined) => void;
   onBack: () => void;
   onNext: () => void;
@@ -489,6 +494,8 @@ function DateStep({
             // Sunday closed; Saturday is open for regular bookings.
             // Actual availability still comes from opening_hours.
             if (d.getDay() === 0) return true;
+            // Whole days Jeanine blocked off (afwezig / vrij).
+            if (blockedDates.includes(formatIsoDate(d))) return true;
             return false;
           }}
         />
