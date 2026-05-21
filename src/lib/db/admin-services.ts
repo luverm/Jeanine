@@ -47,3 +47,18 @@ export async function deleteService(id: string): Promise<void> {
   const { error } = await supabase.from("services").delete().eq("id", id);
   if (error) throw error;
 }
+
+/** Assigns sequential sort_order values to the given service ids in order. */
+export async function setServiceOrder(ids: string[]): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const results = await Promise.all(
+    ids.map((id, i) =>
+      supabase
+        .from("services")
+        .update({ sort_order: (i + 1) * 10 })
+        .eq("id", id),
+    ),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+}

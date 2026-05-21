@@ -5,6 +5,7 @@ import { serviceUpsertSchema } from "@/lib/schemas/service";
 import {
   upsertService,
   deleteService as dbDeleteService,
+  setServiceOrder,
 } from "@/lib/db/admin-services";
 import { writeAuditLog } from "@/lib/db/bookings";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -32,6 +33,30 @@ export async function saveServiceAction(input: unknown): Promise<SaveServiceResu
   }).catch(() => {});
   revalidatePath("/instellingen/diensten");
   revalidatePath("/diensten");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function reorderServicesAction(
+  ids: unknown,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (
+    !Array.isArray(ids) ||
+    ids.length > 200 ||
+    ids.some((x) => typeof x !== "string")
+  ) {
+    return { ok: false };
+  }
+  try {
+    await setServiceOrder(ids as string[]);
+  } catch (err) {
+    console.error("[service] reorder failed:", err);
+    return { ok: false };
+  }
+  revalidatePath("/instellingen/diensten");
+  revalidatePath("/diensten");
+  revalidatePath("/boeken");
   revalidatePath("/");
   return { ok: true };
 }
