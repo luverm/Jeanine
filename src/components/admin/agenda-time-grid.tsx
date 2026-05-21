@@ -134,7 +134,7 @@ export function AgendaTimeGrid({
       <div className="overflow-x-auto rounded-lg border">
         <div className="w-max min-w-full">
         <div className="flex border-b bg-muted/30">
-          <div className="w-14 shrink-0" />
+          <div className="sticky left-0 z-20 w-14 shrink-0 border-r bg-background" />
           {days.map((day, i) => {
             const key = format(day, "yyyy-MM-dd");
             const isToday = key === todayKey;
@@ -187,7 +187,7 @@ export function AgendaTimeGrid({
 
         {hasAbsence && (
           <div className="flex border-b bg-muted/20">
-            <div className="flex w-14 shrink-0 items-center justify-end pr-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+            <div className="sticky left-0 z-20 flex w-14 shrink-0 items-center justify-end border-r bg-background pr-1.5 text-[10px] uppercase tracking-wide text-muted-foreground">
               vrij
             </div>
             {days.map((day, i) => {
@@ -213,7 +213,7 @@ export function AgendaTimeGrid({
         )}
 
         <div className="flex">
-          <div className="w-14 shrink-0">
+          <div className="sticky left-0 z-20 w-14 shrink-0 border-r bg-background">
             {hours.map((h) => (
               <div
                 key={h}
