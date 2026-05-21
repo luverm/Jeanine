@@ -64,3 +64,17 @@ export async function setSiteValue(key: string, value: string): Promise<void> {
   );
   if (error) throw error;
 }
+
+/** Reads a site_content value as a JSON string array, or [] if absent/invalid. */
+export async function getSiteStringArray(key: string): Promise<string[]> {
+  const raw = await getSiteValue(key);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((x): x is string => typeof x === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}

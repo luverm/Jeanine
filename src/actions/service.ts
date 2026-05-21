@@ -8,7 +8,10 @@ import {
   setServiceOrder,
 } from "@/lib/db/admin-services";
 import { writeAuditLog } from "@/lib/db/bookings";
+import { getSiteStringArray, setSiteValue } from "@/lib/db/site-content";
 import { requireAdmin } from "@/lib/auth/require-admin";
+
+const FEATURED_SERVICES_KEY = "home.featured_services";
 
 export type SaveServiceResult =
   | { ok: true }
@@ -58,6 +61,28 @@ export async function reorderServicesAction(
   revalidatePath("/diensten");
   revalidatePath("/boeken");
   revalidatePath("/");
+  return { ok: true };
+}
+
+export async function setFeaturedServiceAction(
+  id: unknown,
+  featured: unknown,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string" || typeof featured !== "boolean") {
+    return { ok: false };
+  }
+  try {
+    const set = new Set(await getSiteStringArray(FEATURED_SERVICES_KEY));
+    if (featured) set.add(id);
+    else set.delete(id);
+    await setSiteValue(FEATURED_SERVICES_KEY, JSON.stringify([...set]));
+  } catch (err) {
+    console.error("[service] set featured failed:", err);
+    return { ok: false };
+  }
+  revalidatePath("/");
+  revalidatePath("/instellingen/diensten");
   return { ok: true };
 }
 
