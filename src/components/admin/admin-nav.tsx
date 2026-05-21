@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   CalendarDays,
+  CalendarClock,
   Heart,
   UserRound,
   MessageSquare,
@@ -18,6 +19,7 @@ type Item = { href: string; label: string; icon: LucideIcon };
 
 const NAV_ITEMS: Item[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/agenda", label: "Agenda", icon: CalendarClock },
   { href: "/boekingen", label: "Boekingen", icon: CalendarDays },
   { href: "/leads", label: "Leads", icon: Heart },
   { href: "/klanten", label: "Klanten", icon: UserRound },

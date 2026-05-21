@@ -50,6 +50,7 @@ export default async function DashboardPage({
       </section>
 
       <section className="mt-6 flex flex-wrap gap-2">
+        <QuickAction href="/agenda" label="Agenda" />
         <QuickAction href="/boekingen/nieuw" label="Nieuwe boeking" />
         <QuickAction href="/boekingen" label="Alle boekingen" />
         <QuickAction href="/boekingen/dag" label="Dagstaat" />
@@ -114,6 +115,15 @@ export default async function DashboardPage({
       </section>
 
       <div className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Agenda</h2>
+          <Link
+            href="/agenda"
+            className="text-xs text-muted-foreground underline underline-offset-4"
+          >
+            Volledige agenda (maand/week/dag)
+          </Link>
+        </div>
         <MonthCalendar
           month={month}
           layout={device.isMobile ? "list" : "grid"}
