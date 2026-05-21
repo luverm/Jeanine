@@ -101,16 +101,19 @@ export default async function BruidPage() {
                   n: "1",
                   title: "Vraag je trouwdatum aan",
                   body: "Laat je trouwdatum en wensen achter. Ik laat je weten of de datum nog vrij is.",
+                  note: null as string | null,
                 },
                 {
                   n: "2",
                   title: "Proefsessie",
                   body: "Een uitgebreide proefsessie van circa 3 uur in de salon — we bespreken je wensen en werken jouw droomkapsel uit.",
+                  note: null as string | null,
                 },
                 {
                   n: "3",
                   title: "De grote dag",
-                  body: "Ik kom bij je thuis. Voor een bruidsstyling reken ik ongeveer 2,5 uur, plus een half uur om alles rustig af te ronden.",
+                  body: "Ik ben ongeveer 2.5 uur bezig met je haar en make-up, zodat alles tot in detail klopt. Daarna heb je nog een half uur om rustig je jurk aan te trekken en je klaar te maken voor dit bijzondere moment. Als je jurk aan is plaats ik de sluier, en is het plaatje compleet.",
+                  note: "De avond voor de bruiloft was je je haren 2 keer met shampoo en de lengten met conditioner. Geen stylingsproducten gebruiken.",
                 },
               ].map((step) => (
                 <li key={step.n} className="flex items-start gap-4">
@@ -120,6 +123,12 @@ export default async function BruidPage() {
                   <div>
                     <h3 className="text-lg">{step.title}</h3>
                     <p className="mt-1 text-muted-foreground">{step.body}</p>
+                    {step.note && (
+                      <p className="mt-2 flex gap-2 text-sm text-muted-foreground">
+                        <span aria-hidden>•</span>
+                        <span>{step.note}</span>
+                      </p>
+                    )}
                   </div>
                 </li>
               ))}
