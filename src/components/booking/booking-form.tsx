@@ -33,7 +33,6 @@ const STEPS = ["Dienst", "Datum", "Tijd", "Gegevens"] as const;
 const TOTAL_STEPS = STEPS.length;
 
 const todayInTz = new Date(formatIsoDate(new Date()) + "T00:00:00Z");
-const ninetyDaysOut = new Date(todayInTz.getTime() + 90 * 24 * 60 * 60 * 1000);
 
 export type BookingPrefill = {
   serviceSlug?: string;
@@ -49,11 +48,13 @@ export function BookingForm({
   staffId,
   prefill,
   blockedDates = [],
+  horizonDays = 90,
 }: {
   services: Service[];
   staffId: string;
   prefill?: BookingPrefill;
   blockedDates?: string[];
+  horizonDays?: number;
 }) {
   const router = useRouter();
   const prefilledServiceId = prefill?.serviceSlug
@@ -244,6 +245,7 @@ export function BookingForm({
             <DateStep
               date={date}
               blockedDates={blockedDates}
+              horizonDays={horizonDays}
               onSelect={handleSelectDate}
               onBack={() => setStep(0)}
               onNext={() => setStep(2)}
@@ -464,21 +466,25 @@ function ServiceStep({
 function DateStep({
   date,
   blockedDates,
+  horizonDays,
   onSelect,
   onBack,
   onNext,
 }: {
   date: Date | undefined;
   blockedDates: string[];
+  horizonDays: number;
   onSelect: (d: Date | undefined) => void;
   onBack: () => void;
   onNext: () => void;
 }) {
+  const maxDate = new Date(todayInTz.getTime() + horizonDays * 86_400_000);
   return (
     <section>
       <h2 className="text-2xl tracking-tight">Kies een datum</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Beschikbaarheid loopt tot 90 dagen vooruit.
+        Je kunt tot ongeveer {Math.round(horizonDays / 30)} maanden vooruit
+        boeken. Geblokkeerde dagen kun je niet kiezen.
       </p>
 
       <div className="mt-6 flex justify-center rounded-lg border border-border bg-card p-4 sm:p-6">
@@ -490,7 +496,7 @@ function DateStep({
           weekStartsOn={1}
           disabled={(d) => {
             if (d < todayInTz) return true;
-            if (d > ninetyDaysOut) return true;
+            if (d > maxDate) return true;
             // Sunday closed; Saturday is open for regular bookings.
             // Actual availability still comes from opening_hours.
             if (d.getDay() === 0) return true;

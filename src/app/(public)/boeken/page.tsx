@@ -17,7 +17,12 @@ export const metadata: Metadata = {
   description: "Plan je afspraak online — knippen, kleuren of föhnen.",
 };
 
-const HORIZON_DAYS = 90;
+// How far the date picker normally looks ahead, how far past the last
+// blokkade it stays bookable, and a hard ceiling.
+const MIN_HORIZON_DAYS = 90;
+const AFTER_BLOCK_DAYS = 90;
+const MAX_HORIZON_DAYS = 540;
+const LOOKAHEAD_DAYS = 365;
 
 function dayLabel(isoDay: string): string {
   return format(parseISO(isoDay), "d MMMM", { locale: nl });
@@ -42,19 +47,28 @@ export default async function BoekenPage({
 
   const bookable = services.filter((s) => s.is_online_bookable);
 
-  // Time-off (absences) in the bookable window — used to disable whole
-  // closed days in the date picker and to show an absence notice.
+  // Time-off (absences) — used to disable closed days, show an absence
+  // notice, and to keep the 3 months after a blokkade bookable.
   const today = new Date();
   const fromKey = formatIsoDate(today);
-  const toKey = formatIsoDate(addDays(today, HORIZON_DAYS));
+  const lookaheadKey = formatIsoDate(addDays(today, LOOKAHEAD_DAYS));
   const timeOff = await listTimeOffInRange(
     staffId,
     `${fromKey}T00:00:00Z`,
-    `${toKey}T23:59:59Z`,
+    `${lookaheadKey}T23:59:59Z`,
   ).catch(() => []);
 
+  let horizonDays = MIN_HORIZON_DAYS;
+  for (const t of timeOff) {
+    const daysToEnd = Math.ceil(
+      (new Date(t.ends_at).getTime() - today.getTime()) / 86_400_000,
+    );
+    horizonDays = Math.max(horizonDays, daysToEnd + AFTER_BLOCK_DAYS);
+  }
+  horizonDays = Math.min(horizonDays, MAX_HORIZON_DAYS);
+
   const blockedDates: string[] = [];
-  for (let i = 0; i <= HORIZON_DAYS; i++) {
+  for (let i = 0; i <= horizonDays; i++) {
     const dayKey = formatIsoDate(addDays(today, i));
     const ds = startOfDayInTz(dayKey).getTime();
     const de = endOfDayInTz(dayKey).getTime();
@@ -150,6 +164,7 @@ export default async function BoekenPage({
           staffId={staffId}
           prefill={prefill}
           blockedDates={blockedDates}
+          horizonDays={horizonDays}
         />
       )}
 
