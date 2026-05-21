@@ -28,7 +28,10 @@ export default async function PortfolioAdminPage() {
       </p>
 
       <div className="mt-8">
-        <PortfolioAdmin images={images} />
+        <PortfolioAdmin
+          key={images.map((i) => i.name).join("|")}
+          images={images}
+        />
       </div>
     </div>
   );

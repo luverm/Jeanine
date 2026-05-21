@@ -1,7 +1,8 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
-import { PORTFOLIO_BUCKET } from "@/lib/portfolio";
+import { PORTFOLIO_BUCKET, savePortfolioOrder } from "@/lib/portfolio";
 import { requireAdmin } from "@/lib/auth/require-admin";
 
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
@@ -51,6 +52,31 @@ export async function uploadPortfolio(
     uploaded += 1;
   }
   return { ok: true, uploaded };
+}
+
+/** Persists the display order of the portfolio (array of storage names). */
+export async function reorderPortfolio(
+  names: string[],
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (
+    !Array.isArray(names) ||
+    names.length > 500 ||
+    names.some((n) => typeof n !== "string")
+  ) {
+    return { ok: false };
+  }
+  try {
+    await savePortfolioOrder(names);
+  } catch (err) {
+    console.error("[portfolio] reorder failed:", err);
+    return { ok: false };
+  }
+  revalidatePath("/");
+  revalidatePath("/portfolio");
+  revalidatePath("/bruid");
+  revalidatePath("/instellingen/portfolio");
+  return { ok: true };
 }
 
 export async function deletePortfolio(

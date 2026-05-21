@@ -31,6 +31,40 @@ async function listFsPortfolio(): Promise<PortfolioImage[]> {
     }));
 }
 
+/** The admin-set display order, stored as a JSON name list in site_content. */
+const PORTFOLIO_ORDER_KEY = "portfolio.order";
+
+async function getPortfolioOrder(): Promise<string[]> {
+  try {
+    const svc = createSupabaseServiceClient();
+    const { data, error } = await svc
+      .from("site_content")
+      .select("value")
+      .eq("key", PORTFOLIO_ORDER_KEY)
+      .maybeSingle();
+    if (error || !data) return [];
+    const parsed: unknown = JSON.parse((data as { value: string }).value);
+    return Array.isArray(parsed)
+      ? parsed.filter((x): x is string => typeof x === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function savePortfolioOrder(names: string[]): Promise<void> {
+  const svc = createSupabaseServiceClient();
+  const { error } = await svc.from("site_content").upsert(
+    {
+      key: PORTFOLIO_ORDER_KEY,
+      value: JSON.stringify(names),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "key" },
+  );
+  if (error) throw error;
+}
+
 /** Images uploaded by the admin to the Supabase Storage bucket. */
 export async function listStoragePortfolio(): Promise<PortfolioImage[]> {
   try {
@@ -39,7 +73,7 @@ export async function listStoragePortfolio(): Promise<PortfolioImage[]> {
       .from(PORTFOLIO_BUCKET)
       .list("", { limit: 200, sortBy: { column: "name", order: "asc" } });
     if (error || !data) return [];
-    return data
+    const images = data
       .filter((o) =>
         ALLOWED_EXT.includes(path.extname(o.name).toLowerCase()),
       )
@@ -49,6 +83,19 @@ export async function listStoragePortfolio(): Promise<PortfolioImage[]> {
         alt: path.parse(o.name).name.replace(/[-_]/g, " "),
         name: o.name,
       }));
+
+    // Apply the admin-set order; images not in it (newly uploaded) go last.
+    const order = await getPortfolioOrder();
+    if (order.length > 0) {
+      const rank = new Map(order.map((n, i) => [n, i]));
+      const FALLBACK = Number.MAX_SAFE_INTEGER;
+      images.sort((a, b) => {
+        const ra = rank.get(a.name) ?? FALLBACK;
+        const rb = rank.get(b.name) ?? FALLBACK;
+        return ra !== rb ? ra - rb : a.name.localeCompare(b.name);
+      });
+    }
+    return images;
   } catch {
     return [];
   }
