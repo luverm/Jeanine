@@ -2,7 +2,7 @@ export const business = {
   name: "Hair and Bridal by Jeanine",
   ownerName: "Jeanine",
   tagline:
-    "Hair and Bridal by Jeanine is een bruidskapper in Zeeland, gespecialiseerd in bruidskapsels en feestkapsels.",
+    "Hair and Bridal by Jeanine is een kapsalon aan huis in Krabbendijke voor knippen, kleuren en feestkapsels. Gespecialiseerd in bruidsstyling.",
   email: "{{ZAKELIJK_EMAIL}}",
   phone: "{{TELEFOON}}",
   whatsapp: "{{WHATSAPP_LINK}}",

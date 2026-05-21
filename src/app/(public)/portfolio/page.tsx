@@ -20,8 +20,7 @@ export default async function PortfolioPage() {
         </p>
         <h1 className="mt-4 text-5xl tracking-tight">Portfolio</h1>
         <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-          Een selectie uit recent werk — bruidsstyling, feestkapsels en
-          klassiek kapperswerk.
+          Een selectie van bruidsstyling, feestkapsels en haarstyling.
         </p>
       </header>
 
