@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { listTimeOff } from "@/lib/db/admin-schedule";
 import { getDefaultStaffId } from "@/lib/db/staff";
+import { getSiteStringArray } from "@/lib/db/site-content";
 import { TimeOffManager } from "@/components/admin/time-off-form";
 
 export const metadata: Metadata = {
@@ -12,7 +13,10 @@ export const dynamic = "force-dynamic";
 
 export default async function VrijeDagenPage() {
   const staffId = await getDefaultStaffId();
-  const rows = await listTimeOff(staffId);
+  const [rows, hiddenNotices] = await Promise.all([
+    listTimeOff(staffId),
+    getSiteStringArray("timeoff.hidden_notices"),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
@@ -22,7 +26,11 @@ export default async function VrijeDagenPage() {
           Vakantie, ziekte of priveblokkades. Tijden in Europe/Amsterdam.
         </p>
       </header>
-      <TimeOffManager staffId={staffId} rows={rows} />
+      <TimeOffManager
+        staffId={staffId}
+        rows={rows}
+        hiddenNotices={hiddenNotices}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { BookingForm } from "@/components/booking/booking-form";
 import { listActiveServices } from "@/lib/db/services";
 import { getDefaultStaffId } from "@/lib/db/staff";
 import { listTimeOffInRange, listOpeningHours } from "@/lib/db/admin-schedule";
+import { getSiteStringArray } from "@/lib/db/site-content";
 import { verifyWaitlistToken } from "@/lib/booking-token";
 import { getWaitlistContact } from "@/lib/db/waitlist";
 import { formatIsoDate, startOfDayInTz, endOfDayInTz } from "@/lib/time";
@@ -80,6 +81,13 @@ export default async function BoekenPage({
     if (fullyOff) blockedDates.push(dayKey);
   }
 
+  // Absences whose public notice Jeanine switched off (e.g. a private
+  // day off) — the date stays blocked, only the banner is hidden.
+  const hiddenNotices = new Set(
+    await getSiteStringArray("timeoff.hidden_notices"),
+  );
+  const visibleTimeOff = timeOff.filter((t) => !hiddenNotices.has(t.id));
+
   // Weekdays Jeanine is open (0 = Sunday) — days outside this are closed.
   const openingHours = await listOpeningHours(staffId).catch(() => []);
   const openWeekdays = [...new Set(openingHours.map((h) => h.weekday))];
@@ -133,11 +141,11 @@ export default async function BoekenPage({
         </p>
       </header>
 
-      {timeOff.length > 0 && (
+      {visibleTimeOff.length > 0 && (
         <div className="mb-10 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="font-medium">Let op — Jeanine is afwezig</p>
           <ul className="mt-1.5 space-y-0.5">
-            {timeOff.map((t) => {
+            {visibleTimeOff.map((t) => {
               const startKey = formatIsoDate(new Date(t.starts_at));
               const endKey = formatIsoDate(new Date(t.ends_at));
               const period =

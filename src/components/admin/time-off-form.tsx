@@ -6,22 +6,49 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addTimeOffAction, deleteTimeOffAction } from "@/actions/schedule";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  addTimeOffAction,
+  deleteTimeOffAction,
+  setTimeOffNoticeAction,
+} from "@/actions/schedule";
 import { zonedDateTimeToUtc, formatHumanDateTime } from "@/lib/time";
 import type { TimeOffRow } from "@/lib/db/admin-schedule";
 
 export function TimeOffManager({
   staffId,
   rows,
+  hiddenNotices = [],
 }: {
   staffId: string;
   rows: TimeOffRow[];
+  hiddenNotices?: string[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [start, setStart] = useState({ date: "", time: "00:00" });
   const [end, setEnd] = useState({ date: "", time: "23:59" });
   const [reason, setReason] = useState("");
+  const [hidden, setHidden] = useState<Set<string>>(
+    () => new Set(hiddenNotices),
+  );
+
+  function toggleNotice(id: string) {
+    const willShow = hidden.has(id);
+    const next = new Set(hidden);
+    if (willShow) next.delete(id);
+    else next.add(id);
+    setHidden(next);
+    startTransition(async () => {
+      const r = await setTimeOffNoticeAction(id, willShow);
+      if (!r.ok) {
+        toast.error("Opslaan mislukt.");
+        setHidden(hidden);
+        return;
+      }
+      router.refresh();
+    });
+  }
 
   function onAdd() {
     if (!start.date || !end.date) {
@@ -121,30 +148,38 @@ export function TimeOffManager({
         ) : (
           <ul className="mt-3 grid gap-2">
             {rows.map((r) => (
-              <li
-                key={r.id}
-                className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm"
-              >
-                <div>
-                  <p className="font-medium">
-                    {formatHumanDateTime(new Date(r.starts_at))}{" "}
-                    <span className="text-muted-foreground">tot</span>{" "}
-                    {formatHumanDateTime(new Date(r.ends_at))}
-                  </p>
-                  {r.reason && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {r.reason}
+              <li key={r.id} className="rounded-md border p-3 text-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium">
+                      {formatHumanDateTime(new Date(r.starts_at))}{" "}
+                      <span className="text-muted-foreground">tot</span>{" "}
+                      {formatHumanDateTime(new Date(r.ends_at))}
                     </p>
-                  )}
+                    {r.reason && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {r.reason}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDelete(r.id)}
+                    disabled={pending}
+                  >
+                    Verwijderen
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onDelete(r.id)}
-                  disabled={pending}
-                >
-                  Verwijderen
-                </Button>
+                <label className="mt-2 flex cursor-pointer items-center gap-2 border-t pt-2 text-xs text-muted-foreground">
+                  <Checkbox
+                    checked={!hidden.has(r.id)}
+                    onCheckedChange={() => toggleNotice(r.id)}
+                    disabled={pending}
+                  />
+                  Toon een melding over deze afwezigheid op de
+                  boekingspagina
+                </label>
               </li>
             ))}
           </ul>
