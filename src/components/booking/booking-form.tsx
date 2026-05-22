@@ -16,7 +16,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 
-import { customerInputSchema, type CustomerInput } from "@/lib/schemas/booking";
+import {
+  publicCustomerSchema,
+  type PublicCustomerInput,
+} from "@/lib/schemas/booking";
 import {
   formatPrice,
   formatDuration,
@@ -81,8 +84,8 @@ export function BookingForm({
   const prefillAppliedRef = useRef(false);
   const [pending, startTransition] = useTransition();
 
-  const form = useForm<CustomerInput>({
-    resolver: zodResolver(customerInputSchema),
+  const form = useForm<PublicCustomerInput>({
+    resolver: zodResolver(publicCustomerSchema),
     defaultValues: {
       fullName: prefill?.fullName ?? "",
       email: prefill?.email ?? "",
@@ -192,7 +195,7 @@ export function BookingForm({
     (s) => s.startsAt.toISOString() === selectedStartIso,
   );
 
-  function onSubmit(values: CustomerInput) {
+  function onSubmit(values: PublicCustomerInput) {
     if (!service || !selectedSlot || !selectedSlot.available || !idempotencyKey)
       return;
     startTransition(async () => {
@@ -592,15 +595,15 @@ function DetailsStep({
 }: {
   service: Service;
   slot: Slot;
-  form: ReturnType<typeof useForm<CustomerInput>>;
-  onSubmit: (v: CustomerInput) => void;
+  form: ReturnType<typeof useForm<PublicCustomerInput>>;
+  onSubmit: (v: PublicCustomerInput) => void;
 }) {
   return (
     <section>
       <h2 className="text-2xl tracking-tight">Jouw gegevens</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Alle velden zijn optioneel. Vul je e-mail in voor een bevestiging
-        met agenda-bijlage.
+        Vul je naam en contactgegevens in. Je krijgt een bevestiging per
+        e-mail met agenda-bijlage.
       </p>
 
       <div className="mt-6 rounded-lg border border-border bg-accent/20 p-5 text-sm">
@@ -633,7 +636,7 @@ function DetailsStep({
         />
 
         <div>
-          <Label htmlFor="fullName">Naam (optioneel)</Label>
+          <Label htmlFor="fullName">Naam</Label>
           <Input
             id="fullName"
             {...form.register("fullName")}
@@ -649,7 +652,7 @@ function DetailsStep({
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <Label htmlFor="email">E-mail (optioneel)</Label>
+            <Label htmlFor="email">E-mail</Label>
             <Input
               id="email"
               type="email"
@@ -664,7 +667,7 @@ function DetailsStep({
             )}
           </div>
           <div>
-            <Label htmlFor="phone">Telefoon (optioneel)</Label>
+            <Label htmlFor="phone">Telefoon</Label>
             <Input
               id="phone"
               type="tel"

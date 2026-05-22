@@ -153,9 +153,8 @@ export default async function BruidPage() {
             </div>
 
             <p className="mt-8 text-sm text-muted-foreground">
-              Losse bruidsmake-up € 75 · feestkapsel voor moeder, zussen of
-              vriendinnen € 50 per persoon · reiskosten € 0,45 per kilometer
-              vanaf Krabbendijke.
+              Feestkapsel voor moeder, zussen of vriendinnen € 50 per
+              persoon · reiskosten € 0,45 per kilometer vanaf Krabbendijke.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">

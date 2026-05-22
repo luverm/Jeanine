@@ -152,9 +152,6 @@ export default async function BoekenPage({
               );
             })}
           </ul>
-          <p className="mt-1.5 text-amber-800">
-            Volledig vrije dagen kun je niet kiezen in de kalender.
-          </p>
         </div>
       )}
 

@@ -1,11 +1,13 @@
 import { z } from "zod";
 
+// The option label is also its stored value, so leads and admin
+// e-mails show readable text without a separate lookup table.
 export const BRIDAL_SERVICE_OPTIONS = [
-  "bruid",
-  "proefsessie",
-  "bruidsmeisjes",
-  "moeder-bruid",
-  "hairextensions",
+  "Bruidshaarstyling op locatie incl. proefsessie",
+  "Bruidshaarstyling en make-up op locatie incl. proefsessie",
+  "Feestkapsel familie/vrienden",
+  "Moeder van de bruid",
+  "Bruidsmeisjes",
 ] as const;
 
 export type BridalServiceOption = (typeof BRIDAL_SERVICE_OPTIONS)[number];

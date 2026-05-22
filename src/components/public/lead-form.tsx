@@ -16,18 +16,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   BRIDAL_SERVICE_OPTIONS,
   leadInputSchema,
-  type BridalServiceOption,
   type LeadInput,
 } from "@/lib/schemas/lead";
 import { createLead } from "@/actions/lead";
-
-const SERVICE_LABELS: Record<BridalServiceOption, string> = {
-  bruid: "Bruidsstyling",
-  proefsessie: "Proefsessie",
-  bruidsmeisjes: "Bruidsmeisjes",
-  "moeder-bruid": "Moeder van de bruid",
-  hairextensions: "Hairextensions",
-};
 
 export function LeadForm() {
   const router = useRouter();
@@ -209,7 +200,7 @@ export function LeadForm() {
                         }
                       }}
                     />
-                    {SERVICE_LABELS[opt]}
+                    {opt}
                   </label>
                 );
               })}
