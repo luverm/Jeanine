@@ -78,3 +78,24 @@ export async function getSiteStringArray(key: string): Promise<string[]> {
     return [];
   }
 }
+
+/** Reads a site_content value as a JSON string map, or {} if absent/invalid. */
+export async function getSiteStringRecord(
+  key: string,
+): Promise<Record<string, string>> {
+  const raw = await getSiteValue(key);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === "string") out[k] = v;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}

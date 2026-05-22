@@ -8,10 +8,16 @@ import {
   setServiceOrder,
 } from "@/lib/db/admin-services";
 import { writeAuditLog } from "@/lib/db/bookings";
-import { getSiteStringArray, setSiteValue } from "@/lib/db/site-content";
+import {
+  getSiteStringArray,
+  getSiteStringRecord,
+  setSiteValue,
+} from "@/lib/db/site-content";
+import { isAgendaColorKey } from "@/lib/agenda-colors";
 import { requireAdmin } from "@/lib/auth/require-admin";
 
 const FEATURED_SERVICES_KEY = "home.featured_services";
+const SERVICE_COLORS_KEY = "agenda.service_colors";
 
 export type SaveServiceResult =
   | { ok: true }
@@ -82,6 +88,31 @@ export async function setFeaturedServiceAction(
     return { ok: false };
   }
   revalidatePath("/");
+  revalidatePath("/instellingen/diensten");
+  return { ok: true };
+}
+
+export async function setServiceColorAction(
+  id: unknown,
+  color: unknown,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  // An empty string clears the colour; otherwise it must be a known key.
+  if (typeof id !== "string" || typeof color !== "string") {
+    return { ok: false };
+  }
+  if (color !== "" && !isAgendaColorKey(color)) return { ok: false };
+  try {
+    const map = await getSiteStringRecord(SERVICE_COLORS_KEY);
+    if (color === "") delete map[id];
+    else map[id] = color;
+    await setSiteValue(SERVICE_COLORS_KEY, JSON.stringify(map));
+  } catch (err) {
+    console.error("[service] set colour failed:", err);
+    return { ok: false };
+  }
+  revalidatePath("/agenda");
+  revalidatePath("/dashboard");
   revalidatePath("/instellingen/diensten");
   return { ok: true };
 }

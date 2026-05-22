@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { GripVertical, Star } from "lucide-react";
+import { GripVertical, Star, X } from "lucide-react";
 import {
   DndContext,
   type DragEndEvent,
@@ -23,15 +23,19 @@ import { ServiceRow } from "@/components/admin/service-row";
 import {
   reorderServicesAction,
   setFeaturedServiceAction,
+  setServiceColorAction,
 } from "@/actions/service";
 import type { Service } from "@/lib/services-format";
+import { AGENDA_COLORS } from "@/lib/agenda-colors";
 
 export function ServiceList({
   services,
   featuredIds = [],
+  colors = {},
 }: {
   services: Service[];
   featuredIds?: string[];
+  colors?: Record<string, string>;
 }) {
   const router = useRouter();
   const [items, setItems] = useState<Service[]>(services);
@@ -91,6 +95,7 @@ export function ServiceList({
               key={s.id}
               service={s}
               featured={featured.has(s.id)}
+              color={colors[s.id]}
               onToggleFeatured={() => toggleFeatured(s.id)}
             />
           ))}
@@ -103,10 +108,12 @@ export function ServiceList({
 function SortableRow({
   service,
   featured,
+  color,
   onToggleFeatured,
 }: {
   service: Service;
   featured: boolean;
+  color?: string;
   onToggleFeatured: () => void;
 }) {
   const {
@@ -139,6 +146,7 @@ function SortableRow({
       <div className="min-w-0 flex-1">
         <ServiceRow service={service} />
       </div>
+      <ServiceColorPicker serviceId={service.id} color={color} />
       <button
         type="button"
         onClick={onToggleFeatured}
@@ -160,5 +168,88 @@ function SortableRow({
         </span>
       </button>
     </div>
+  );
+}
+
+function ServiceColorPicker({
+  serviceId,
+  color,
+}: {
+  serviceId: string;
+  color?: string;
+}) {
+  const router = useRouter();
+  const [current, setCurrent] = useState<string>(color ?? "");
+  const [open, setOpen] = useState(false);
+  const [, startTransition] = useTransition();
+
+  function pick(next: string) {
+    const previous = current;
+    setCurrent(next);
+    setOpen(false);
+    startTransition(async () => {
+      const r = await setServiceColorAction(serviceId, next);
+      if (!r.ok) {
+        toast.error("Kleur opslaan mislukt.");
+        setCurrent(previous);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  const active = AGENDA_COLORS.find((c) => c.key === current);
+
+  if (open) {
+    return (
+      <div className="flex shrink-0 items-center gap-1 rounded-md border bg-background p-1">
+        {AGENDA_COLORS.map((c) => (
+          <button
+            key={c.key}
+            type="button"
+            onClick={() => pick(c.key)}
+            aria-label={c.label}
+            title={c.label}
+            className={
+              "h-5 w-5 rounded-full transition " +
+              c.swatch +
+              (current === c.key
+                ? " ring-2 ring-stone-900 ring-offset-1"
+                : "")
+            }
+          />
+        ))}
+        <button
+          type="button"
+          onClick={() => pick("")}
+          aria-label="Geen kleur"
+          title="Geen kleur"
+          className="flex h-5 w-5 items-center justify-center rounded-full border text-muted-foreground hover:bg-accent"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setOpen(true)}
+      aria-label="Kleur in de agenda kiezen"
+      title={
+        active ? `Agenda-kleur: ${active.label}` : "Agenda-kleur kiezen"
+      }
+      className="flex w-9 shrink-0 items-center justify-center rounded-md border hover:bg-accent"
+    >
+      <span
+        className={
+          "h-4 w-4 rounded-full " +
+          (active
+            ? active.swatch
+            : "border border-dashed border-muted-foreground")
+        }
+      />
+    </button>
   );
 }

@@ -20,6 +20,7 @@ import {
   type TimeOffRow,
 } from "@/lib/db/admin-schedule";
 import { getDefaultStaffId } from "@/lib/db/staff";
+import { getSiteStringRecord } from "@/lib/db/site-content";
 import { formatIsoDate, formatTime } from "@/lib/time";
 import {
   AgendaTimeGrid,
@@ -118,6 +119,7 @@ export default async function AgendaPage({
     start: h.start_time.slice(0, 5),
     end: h.end_time.slice(0, 5),
   }));
+  const serviceColors = await getSiteStringRecord("agenda.service_colors");
   const byDay = groupByDay(bookings);
 
   const waitlistByDay = new Map<string, string[]>();
@@ -218,6 +220,7 @@ export default async function AgendaPage({
             todayKey={todayKey}
             timeOff={timeOff}
             openingHours={openingBlocks}
+            serviceColors={serviceColors}
           />
         )}
       </div>

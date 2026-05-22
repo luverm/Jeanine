@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { listAllServices } from "@/lib/db/admin-services";
-import { getSiteStringArray } from "@/lib/db/site-content";
+import {
+  getSiteStringArray,
+  getSiteStringRecord,
+} from "@/lib/db/site-content";
 import { NewServiceTrigger } from "@/components/admin/service-row";
 import { ServiceList } from "@/components/admin/service-list";
 import type { Service } from "@/lib/services-format";
@@ -19,9 +22,10 @@ function sig(services: Service[]) {
 }
 
 export default async function DienstenAdminPage() {
-  const [services, featuredIds] = await Promise.all([
+  const [services, featuredIds, colors] = await Promise.all([
     listAllServices(),
     getSiteStringArray("home.featured_services"),
+    getSiteStringRecord("agenda.service_colors"),
   ]);
   const regular = services.filter((s) => s.kind === "regular");
   const bridal = services.filter((s) => s.kind === "bridal");
@@ -36,9 +40,10 @@ export default async function DienstenAdminPage() {
       <p className="mb-6 text-sm text-muted-foreground">
         Sleep met de greep links om de volgorde aan te passen — die
         volgorde wordt ook op de website en in het boekformulier gebruikt.
-        Klik op het ster-icoon rechts om een dienst op de homepage te
-        tonen. Staat er niets geselecteerd, dan kiest de website
-        automatisch een aantal diensten.
+        Met het kleur-rondje kies je de kleur van de dienst in de agenda.
+        Klik op het ster-icoon om een dienst op de homepage te tonen —
+        staat er niets geselecteerd, dan kiest de website er automatisch
+        een aantal.
       </p>
 
       <section>
@@ -53,6 +58,7 @@ export default async function DienstenAdminPage() {
               key={sig(regular)}
               services={regular}
               featuredIds={featuredIds}
+              colors={colors}
             />
           )}
         </div>
@@ -70,6 +76,7 @@ export default async function DienstenAdminPage() {
               key={sig(bridal)}
               services={bridal}
               featuredIds={featuredIds}
+              colors={colors}
             />
           )}
         </div>

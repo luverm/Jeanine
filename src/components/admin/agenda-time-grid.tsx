@@ -2,6 +2,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import type { BookingListItem } from "@/lib/db/admin-bookings";
 import type { TimeOffRow } from "@/lib/db/admin-schedule";
+import { agendaBlockClass } from "@/lib/agenda-colors";
 import { formatIsoDate, formatTime } from "@/lib/time";
 
 const WEEKDAYS = ["ma", "di", "wo", "do", "vr", "za", "zo"];
@@ -91,6 +92,7 @@ export function AgendaTimeGrid({
   todayKey,
   timeOff = [],
   openingHours = [],
+  serviceColors = {},
 }: {
   days: Date[];
   byDay: Map<string, BookingListItem[]>;
@@ -99,6 +101,8 @@ export function AgendaTimeGrid({
   timeOff?: TimeOffRow[];
   /** Opening blocks per weekday (0 = Sunday); hours outside are greyed. */
   openingHours?: OpeningBlock[];
+  /** Service id → agenda colour key; colours appointment blocks. */
+  serviceColors?: Record<string, string>;
 }) {
   const hhmmToMin = (s: string) => {
     const [h, m] = s.split(":").map(Number);
@@ -329,6 +333,14 @@ export function AgendaTimeGrid({
                   if (endMin <= startMin) endMin = startMin + 30;
                   const top = (startMin - gridStartMin) * perMin;
                   const minHeight = Math.max(48, (endMin - startMin) * perMin);
+                  // Service colour wins, except no-shows stay red so they
+                  // always stand out.
+                  const blockClass =
+                    b.status === "no_show"
+                      ? EVENT_STYLE.no_show
+                      : (agendaBlockClass(serviceColors[b.service_id]) ??
+                        EVENT_STYLE[b.status] ??
+                        "border-l-stone-400 bg-stone-50");
                   return (
                     <Link
                       key={b.id}
@@ -336,8 +348,7 @@ export function AgendaTimeGrid({
                       style={{ top, minHeight }}
                       className={
                         "absolute inset-x-1 z-[1] rounded-md border border-l-4 px-2 py-1 text-xs leading-tight shadow-sm transition hover:z-10 hover:shadow " +
-                        (EVENT_STYLE[b.status] ??
-                          "border-l-stone-400 bg-stone-50")
+                        blockClass
                       }
                     >
                       <p className="font-medium text-foreground">

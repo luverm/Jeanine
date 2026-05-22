@@ -10,6 +10,7 @@ import {
   listOpeningHours,
 } from "@/lib/db/admin-schedule";
 import { getDefaultStaffId } from "@/lib/db/staff";
+import { getSiteStringRecord } from "@/lib/db/site-content";
 import { Card } from "@/components/ui/card";
 import {
   AgendaTimeGrid,
@@ -70,6 +71,7 @@ export default async function DashboardPage() {
     start: h.start_time.slice(0, 5),
     end: h.end_time.slice(0, 5),
   }));
+  const serviceColors = await getSiteStringRecord("agenda.service_colors");
 
   const byDay = groupByDay(weekBookings);
   const waitlistByDay = new Map<string, string[]>();
@@ -181,6 +183,7 @@ export default async function DashboardPage() {
           todayKey={todayKey}
           timeOff={weekTimeOff}
           openingHours={openingBlocks}
+          serviceColors={serviceColors}
         />
       </div>
 
