@@ -17,6 +17,31 @@ export type CustomerOption = {
   phone: string | null;
 };
 
+/**
+ * Hard-deletes customers, skipping any that still have bookings — those
+ * carry history and an FK, and must have their bookings removed first.
+ * Returns the count actually removed.
+ */
+export async function deleteCustomers(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const svc = createSupabaseServiceClient();
+  const { data: booked } = await svc
+    .from("bookings")
+    .select("customer_id")
+    .in("customer_id", ids);
+  const blocked = new Set(
+    (booked ?? []).map((b) => (b as { customer_id: string }).customer_id),
+  );
+  const deletable = ids.filter((id) => !blocked.has(id));
+  if (deletable.length === 0) return 0;
+  const { error, count } = await svc
+    .from("customers")
+    .delete({ count: "exact" })
+    .in("id", deletable);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 /** Lightweight name/email search for the booking-form customer picker. */
 export async function searchCustomers(
   q: string,

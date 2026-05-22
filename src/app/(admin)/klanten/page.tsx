@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listCustomers } from "@/lib/db/admin-customers";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { getDeviceInfo } from "@/lib/device";
+import { CustomersList } from "@/components/admin/customers-list";
 
 export const metadata: Metadata = {
   title: "Klanten",
@@ -69,81 +62,8 @@ export default async function KlantenPage({
         <p className="mt-6 rounded-lg border p-8 text-center text-sm text-muted-foreground">
           Geen klanten gevonden.
         </p>
-      ) : device.isMobile ? (
-        <div className="mt-6 grid gap-3">
-          {customers.map((c) => (
-            <div key={c.id} className="rounded-lg border p-4">
-              <div className="flex items-start justify-between gap-3">
-                <Link
-                  href={`/klanten/${c.id}`}
-                  className="font-medium underline-offset-4 hover:underline"
-                >
-                  {c.full_name}
-                </Link>
-                <Link
-                  href={`/boekingen?q=${encodeURIComponent(c.email)}`}
-                  className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs"
-                >
-                  {c.bookings_count} boeking
-                  {c.bookings_count === 1 ? "" : "en"}
-                </Link>
-              </div>
-              <a
-                href={`mailto:${c.email}`}
-                className="mt-2 block text-sm break-all text-muted-foreground"
-              >
-                {c.email}
-              </a>
-              {c.phone && (
-                <a
-                  href={`tel:${c.phone}`}
-                  className="mt-1 block text-sm text-muted-foreground"
-                >
-                  {c.phone}
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
       ) : (
-      <div className="mt-6 overflow-x-auto rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Naam</TableHead>
-              <TableHead>E-mail</TableHead>
-              <TableHead>Telefoon</TableHead>
-              <TableHead className="text-right">Boekingen</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {customers.map((c) => (
-              <TableRow key={c.id}>
-                <TableCell className="font-medium">
-                  <Link
-                    href={`/klanten/${c.id}`}
-                    className="underline-offset-4 hover:underline"
-                  >
-                    {c.full_name}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <a href={`mailto:${c.email}`}>{c.email}</a>
-                </TableCell>
-                <TableCell>{c.phone ?? "—"}</TableCell>
-                <TableCell className="text-right">
-                  <Link
-                    href={`/boekingen?q=${encodeURIComponent(c.email)}`}
-                    className="underline-offset-4 hover:underline"
-                  >
-                    {c.bookings_count}
-                  </Link>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+        <CustomersList customers={customers} isMobile={device.isMobile} />
       )}
     </div>
   );

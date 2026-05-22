@@ -47,6 +47,18 @@ export async function listEmailLog(limit = 100): Promise<EmailLogRow[]> {
   return (data ?? []) as EmailLogRow[];
 }
 
+/** Hard-deletes the given log entries. Returns the count removed. */
+export async function deleteEmailLog(ids: number[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const svc = createSupabaseServiceClient();
+  const { error, count } = await svc
+    .from("email_log")
+    .delete({ count: "exact" })
+    .in("id", ids);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function getEmailLogEntry(
   id: number,
 ): Promise<EmailLogRow | null> {

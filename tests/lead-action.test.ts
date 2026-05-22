@@ -49,7 +49,10 @@ const validInput = {
   city: "Amsterdam",
   postcode: "1011 AB",
   partySize: 4,
-  servicesWanted: ["bruid", "proefsessie"],
+  servicesWanted: [
+    "Bruidshaarstyling op locatie incl. proefsessie",
+    "Bruidsmeisjes",
+  ],
   budgetCents: 200000,
   message: "Op locatie graag.",
   website: "",

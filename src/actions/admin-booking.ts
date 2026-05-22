@@ -16,7 +16,7 @@ import {
 import { cancelBookingAction } from "@/actions/booking";
 import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { dismissNoShowFlag } from "@/lib/db/no-show";
-import { getEmailLogEntry } from "@/lib/db/email-log";
+import { getEmailLogEntry, deleteEmailLog } from "@/lib/db/email-log";
 import { sendEmail } from "@/lib/email/client";
 import {
   sendBookingConfirmation,
@@ -188,6 +188,29 @@ export async function resendEmailAction(
     return { ok: false };
   }
   return { ok: true };
+}
+
+export async function deleteEmailLogAction(
+  ids: unknown,
+): Promise<{ ok: boolean; deleted?: number }> {
+  await requireAdmin();
+  const parsed = z
+    .array(z.number().int().positive())
+    .min(1)
+    .max(500)
+    .safeParse(ids);
+  if (!parsed.success) return { ok: false };
+
+  let deleted: number;
+  try {
+    deleted = await deleteEmailLog(parsed.data);
+  } catch (err) {
+    console.error("[email] delete failed:", err);
+    return { ok: false };
+  }
+
+  revalidatePath("/instellingen/e-mails");
+  return { ok: true, deleted };
 }
 
 const adminBookingSchema = z.object({
