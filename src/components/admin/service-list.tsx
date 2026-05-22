@@ -24,18 +24,24 @@ import {
   reorderServicesAction,
   setFeaturedServiceAction,
   setServiceColorAction,
+  setServiceCategoryAction,
 } from "@/actions/service";
 import type { Service } from "@/lib/services-format";
 import { AGENDA_COLORS } from "@/lib/agenda-colors";
+import type { ServiceCategory } from "@/lib/db/service-categories";
 
 export function ServiceList({
   services,
   featuredIds = [],
   colors = {},
+  categories = [],
+  categoryMap = {},
 }: {
   services: Service[];
   featuredIds?: string[];
   colors?: Record<string, string>;
+  categories?: ServiceCategory[];
+  categoryMap?: Record<string, string>;
 }) {
   const router = useRouter();
   const [items, setItems] = useState<Service[]>(services);
@@ -96,6 +102,8 @@ export function ServiceList({
               service={s}
               featured={featured.has(s.id)}
               color={colors[s.id]}
+              categories={categories}
+              categoryId={categoryMap[s.id] ?? ""}
               onToggleFeatured={() => toggleFeatured(s.id)}
             />
           ))}
@@ -109,11 +117,15 @@ function SortableRow({
   service,
   featured,
   color,
+  categories,
+  categoryId,
   onToggleFeatured,
 }: {
   service: Service;
   featured: boolean;
   color?: string;
+  categories: ServiceCategory[];
+  categoryId: string;
   onToggleFeatured: () => void;
 }) {
   const {
@@ -146,6 +158,13 @@ function SortableRow({
       <div className="min-w-0 flex-1">
         <ServiceRow service={service} />
       </div>
+      {categories.length > 0 && (
+        <ServiceCategorySelect
+          serviceId={service.id}
+          categories={categories}
+          categoryId={categoryId}
+        />
+      )}
       <ServiceColorPicker serviceId={service.id} color={color} />
       <button
         type="button"
@@ -251,5 +270,49 @@ function ServiceColorPicker({
         }
       />
     </button>
+  );
+}
+
+function ServiceCategorySelect({
+  serviceId,
+  categories,
+  categoryId,
+}: {
+  serviceId: string;
+  categories: ServiceCategory[];
+  categoryId: string;
+}) {
+  const router = useRouter();
+  const [current, setCurrent] = useState(categoryId);
+  const [, startTransition] = useTransition();
+
+  function change(next: string) {
+    const previous = current;
+    setCurrent(next);
+    startTransition(async () => {
+      const r = await setServiceCategoryAction(serviceId, next);
+      if (!r.ok) {
+        toast.error("Categorie opslaan mislukt.");
+        setCurrent(previous);
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  return (
+    <select
+      value={current}
+      onChange={(e) => change(e.target.value)}
+      aria-label="Categorie van de dienst"
+      className="w-28 shrink-0 rounded-md border bg-background px-2 text-xs sm:w-36"
+    >
+      <option value="">Geen categorie</option>
+      {categories.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.label}
+        </option>
+      ))}
+    </select>
   );
 }

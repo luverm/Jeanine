@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { serviceUpsertSchema } from "@/lib/schemas/service";
 import {
@@ -13,11 +14,60 @@ import {
   getSiteStringRecord,
   setSiteValue,
 } from "@/lib/db/site-content";
+import { CATEGORY_LIST_KEY, CATEGORY_MAP_KEY } from "@/lib/db/service-categories";
 import { isAgendaColorKey } from "@/lib/agenda-colors";
 import { requireAdmin } from "@/lib/auth/require-admin";
 
 const FEATURED_SERVICES_KEY = "home.featured_services";
 const SERVICE_COLORS_KEY = "agenda.service_colors";
+
+const categoryListSchema = z
+  .array(
+    z.object({
+      id: z.string().min(1).max(64),
+      label: z.string().trim().min(1).max(60),
+    }),
+  )
+  .max(40);
+
+export async function saveServiceCategoriesAction(
+  input: unknown,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  const parsed = categoryListSchema.safeParse(input);
+  if (!parsed.success) return { ok: false };
+  try {
+    await setSiteValue(CATEGORY_LIST_KEY, JSON.stringify(parsed.data));
+  } catch (err) {
+    console.error("[service] save categories failed:", err);
+    return { ok: false };
+  }
+  revalidatePath("/instellingen/diensten");
+  revalidatePath("/diensten");
+  return { ok: true };
+}
+
+export async function setServiceCategoryAction(
+  serviceId: unknown,
+  categoryId: unknown,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof serviceId !== "string" || typeof categoryId !== "string") {
+    return { ok: false };
+  }
+  try {
+    const map = await getSiteStringRecord(CATEGORY_MAP_KEY);
+    if (categoryId === "") delete map[serviceId];
+    else map[serviceId] = categoryId;
+    await setSiteValue(CATEGORY_MAP_KEY, JSON.stringify(map));
+  } catch (err) {
+    console.error("[service] set category failed:", err);
+    return { ok: false };
+  }
+  revalidatePath("/instellingen/diensten");
+  revalidatePath("/diensten");
+  return { ok: true };
+}
 
 export type SaveServiceResult =
   | { ok: true }
