@@ -25,6 +25,7 @@ import {
   formatDuration,
   type Service,
 } from "@/lib/services-format";
+import type { ServiceCategory } from "@/lib/db/service-categories";
 import { fetchDaySlots, type DaySlotDto } from "@/actions/availability";
 import { createBooking } from "@/actions/booking";
 import { SlotGrid, type Slot } from "@/components/booking/slot-grid";
@@ -32,7 +33,7 @@ import { WaitlistCta } from "@/components/booking/waitlist-cta";
 import { formatIsoDate, formatHumanDateTime, formatTime } from "@/lib/time";
 import { SERVICE_CATEGORIES, categoryForSlug } from "@/content/services";
 
-const STEPS = ["Dienst", "Datum", "Tijd", "Gegevens"] as const;
+const STEPS = ["Dienst", "Datum & tijd", "Gegevens"] as const;
 const TOTAL_STEPS = STEPS.length;
 
 const todayInTz = new Date(formatIsoDate(new Date()) + "T00:00:00Z");
@@ -46,6 +47,50 @@ export type BookingPrefill = {
   phone?: string;
 };
 
+type Group = { key: string; label: string; items: Service[] };
+
+/** Groups regular services by the admin's categories, or by slug. */
+function groupRegularServices(
+  services: Service[],
+  categories: ServiceCategory[],
+  categoryMap: Record<string, string>,
+): Group[] {
+  const regular = services.filter((s) => s.kind === "regular");
+  if (categories.length > 0) {
+    const known = new Set(categories.map((c) => c.id));
+    return [
+      ...categories.map((c) => ({
+        key: c.id,
+        label: c.label,
+        items: regular.filter((s) => categoryMap[s.id] === c.id),
+      })),
+      {
+        key: "overig",
+        label: "Overig",
+        items: regular.filter((s) => !known.has(categoryMap[s.id] ?? "")),
+      },
+    ].filter((g) => g.items.length > 0);
+  }
+  const buckets = new Map<string, Service[]>();
+  for (const s of regular) {
+    const key = categoryForSlug(s.slug)?.key ?? "overig";
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key)!.push(s);
+  }
+  const groups: Group[] = [];
+  for (const cat of SERVICE_CATEGORIES) {
+    const items = buckets.get(cat.key);
+    if (items && items.length) {
+      groups.push({ key: cat.key, label: cat.label, items });
+    }
+  }
+  const overig = buckets.get("overig");
+  if (overig && overig.length) {
+    groups.push({ key: "overig", label: "Overig", items: overig });
+  }
+  return groups;
+}
+
 export function BookingForm({
   services,
   staffId,
@@ -54,6 +99,8 @@ export function BookingForm({
   horizonDays = 90,
   openWeekdays = [],
   specialOpenDates = [],
+  categories = [],
+  categoryMap = {},
 }: {
   services: Service[];
   staffId: string;
@@ -62,13 +109,15 @@ export function BookingForm({
   horizonDays?: number;
   openWeekdays?: number[];
   specialOpenDates?: string[];
+  categories?: ServiceCategory[];
+  categoryMap?: Record<string, string>;
 }) {
   const router = useRouter();
   const prefilledServiceId = prefill?.serviceSlug
     ? (services.find((s) => s.slug === prefill.serviceSlug)?.id ?? null)
     : null;
   // A pre-chosen service (e.g. a proefsessie booked from the bridal
-  // page) skips the service-picker and starts at the date step.
+  // page) skips the service-picker and starts at the date+time step.
   const [step, setStep] = useState(prefilledServiceId ? 1 : 0);
   const [serviceId, setServiceId] = useState<string | null>(
     prefilledServiceId,
@@ -124,7 +173,7 @@ export function BookingForm({
         // One-shot: arrived from a waitlist "spot opened" link with a
         // service, date, time and pre-filled contact. Jump straight to
         // the confirm step with the desired time selected — or to the
-        // time step if it's gone, with the contact still filled in.
+        // date+time step if it's gone, with the contact still filled in.
         if (prefill && !prefillAppliedRef.current) {
           prefillAppliedRef.current = true;
           if (prefill.time) {
@@ -135,13 +184,13 @@ export function BookingForm({
             );
             if (hit) {
               setSelectedStartIso(new Date(hit.startsAt).toISOString());
-              setStep(3);
+              setStep(2);
             } else {
               toast.error("Die tijd is net bezet — kies een ander moment.");
-              setStep(2);
+              setStep(1);
             }
           } else {
-            setStep(2);
+            setStep(1);
           }
         }
       })
@@ -223,7 +272,7 @@ export function BookingForm({
 
       if (result.code === "SLOT_TAKEN") {
         toast.error("Dit slot is net weg — kies opnieuw.");
-        setStep(2);
+        setStep(1);
         setSelectedStartIso(null);
         refreshSlots();
         return;
@@ -234,7 +283,7 @@ export function BookingForm({
   }
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
+    <div className="grid gap-10 pb-24 lg:grid-cols-[1fr_320px] lg:pb-0">
       <div>
         <Stepper current={step} />
 
@@ -242,37 +291,33 @@ export function BookingForm({
           {step === 0 && (
             <ServiceStep
               services={services}
+              categories={categories}
+              categoryMap={categoryMap}
               selectedId={serviceId}
               onSelect={handleSelectService}
             />
           )}
 
           {step === 1 && (
-            <DateStep
+            <DateTimeStep
               date={date}
+              dateStr={dateStr}
               blockedDates={blockedDates}
               horizonDays={horizonDays}
               openWeekdays={openWeekdays}
               specialOpenDates={specialOpenDates}
-              onSelect={handleSelectDate}
-            />
-          )}
-
-          {step === 2 && (
-            <TimeStep
-              date={date}
-              dateStr={dateStr}
+              onSelectDate={handleSelectDate}
               serviceId={service?.id ?? null}
               slots={slots}
-              selected={selectedStartIso}
-              onSelect={setSelectedStartIso}
+              selectedStartIso={selectedStartIso}
+              onSelectTime={setSelectedStartIso}
               waitlistTime={waitlistTime}
               onWaitlist={(s) => setWaitlistTime(formatTime(s.startsAt))}
               loading={slotsLoading}
             />
           )}
 
-          {step === 3 && service && selectedSlot && (
+          {step === 2 && service && selectedSlot && (
             <DetailsStep
               service={service}
               slot={selectedSlot}
@@ -296,10 +341,8 @@ export function BookingForm({
             step === 0
               ? !!serviceId
               : step === 1
-                ? !!date
-                : step === 2
-                  ? !!selectedStartIso
-                  : true
+                ? !!selectedStartIso
+                : true
           }
           pending={pending}
           onBack={() => setStep((s) => Math.max(0, s - 1))}
@@ -371,37 +414,18 @@ function Stepper({ current }: { current: number }) {
 
 function ServiceStep({
   services,
+  categories,
+  categoryMap,
   selectedId,
   onSelect,
 }: {
   services: Service[];
+  categories: ServiceCategory[];
+  categoryMap: Record<string, string>;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
-  // Group services by UI category, in the order defined in SERVICE_CATEGORIES.
-  // Anything that doesn't match a known category falls into "Overig" so it
-  // stays bookable even if its slug doesn't follow the convention.
-  const groups: Array<{ key: string; label: string; items: Service[] }> = [];
-  const buckets = new Map<string, Service[]>();
-  for (const s of services) {
-    // Bridal services (e.g. proefsessies) are booked via the bridal
-    // page, not from this walk-in picker.
-    if (s.kind !== "regular") continue;
-    const cat = categoryForSlug(s.slug);
-    const key = cat?.key ?? "overig";
-    if (!buckets.has(key)) buckets.set(key, []);
-    buckets.get(key)!.push(s);
-  }
-  for (const cat of SERVICE_CATEGORIES) {
-    const items = buckets.get(cat.key);
-    if (items && items.length) {
-      groups.push({ key: cat.key, label: cat.label, items });
-    }
-  }
-  const overig = buckets.get("overig");
-  if (overig && overig.length) {
-    groups.push({ key: "overig", label: "Overig", items: overig });
-  }
+  const groups = groupRegularServices(services, categories, categoryMap);
 
   return (
     <section>
@@ -471,38 +495,58 @@ function ServiceStep({
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
-/* Step 2 — choose date                                                    */
+/* Step 2 — choose date and time (combined)                                */
 /* ─────────────────────────────────────────────────────────────────────── */
 
-function DateStep({
+function DateTimeStep({
   date,
+  dateStr,
   blockedDates,
   horizonDays,
   openWeekdays,
   specialOpenDates,
-  onSelect,
+  onSelectDate,
+  serviceId,
+  slots,
+  selectedStartIso,
+  onSelectTime,
+  waitlistTime,
+  onWaitlist,
+  loading,
 }: {
   date: Date | undefined;
+  dateStr: string | null;
   blockedDates: string[];
   horizonDays: number;
   openWeekdays: number[];
   specialOpenDates: string[];
-  onSelect: (d: Date | undefined) => void;
+  onSelectDate: (d: Date | undefined) => void;
+  serviceId: string | null;
+  slots: Slot[];
+  selectedStartIso: string | null;
+  onSelectTime: (iso: string) => void;
+  waitlistTime: string | null;
+  onWaitlist: (slot: Slot) => void;
+  loading: boolean;
 }) {
   const maxDate = new Date(todayInTz.getTime() + horizonDays * 86_400_000);
+  const showWaitlist =
+    !loading &&
+    !!dateStr &&
+    (slots.length === 0 || slots.some((s) => !s.available));
+
   return (
     <section>
-      <h2 className="text-2xl tracking-tight">Kies een datum</h2>
+      <h2 className="text-2xl tracking-tight">Kies datum en tijd</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Je kunt tot ongeveer {Math.round(horizonDays / 30)} maanden vooruit
-        boeken. Geblokkeerde dagen kun je niet kiezen.
+        Kies een dag — de vrije tijden verschijnen er meteen onder.
       </p>
 
       <div className="mt-6 flex justify-center rounded-lg border border-border bg-card p-4 sm:p-6">
         <Calendar
           mode="single"
           selected={date}
-          onSelect={onSelect}
+          onSelect={onSelectDate}
           locale={nl}
           weekStartsOn={1}
           disabled={(d) => {
@@ -526,74 +570,42 @@ function DateStep({
           }}
         />
       </div>
-    </section>
-  );
-}
 
-/* ─────────────────────────────────────────────────────────────────────── */
-/* Step 3 — choose time                                                    */
-/* ─────────────────────────────────────────────────────────────────────── */
-
-function TimeStep({
-  date,
-  dateStr,
-  serviceId,
-  slots,
-  selected,
-  onSelect,
-  waitlistTime,
-  onWaitlist,
-  loading,
-}: {
-  date: Date | undefined;
-  dateStr: string | null;
-  serviceId: string | null;
-  slots: Slot[];
-  selected: string | null;
-  onSelect: (iso: string) => void;
-  waitlistTime: string | null;
-  onWaitlist: (slot: Slot) => void;
-  loading: boolean;
-}) {
-  const showWaitlist =
-    !loading &&
-    !!dateStr &&
-    (slots.length === 0 || slots.some((s) => !s.available));
-
-  return (
-    <section>
-      <h2 className="text-2xl tracking-tight">Kies een tijd</h2>
       {date && (
-        <p className="mt-1 text-sm text-muted-foreground">
-          {format(date, "EEEE d MMMM yyyy", { locale: nl })}
-        </p>
-      )}
-
-      <div className="mt-6">
-        <SlotGrid
-          slots={slots}
-          selected={selected}
-          onSelect={onSelect}
-          onWaitlist={onWaitlist}
-          loading={loading}
-        />
-        {showWaitlist && dateStr && (
-          <div className="mt-4">
-            <WaitlistCta
-              key={`${dateStr}:${waitlistTime ?? "day"}`}
-              serviceId={serviceId}
-              preferredDate={dateStr}
-              preferredTime={waitlistTime ?? undefined}
+        <div className="mt-8">
+          <h3 className="text-sm font-medium">
+            Beschikbare tijden ·{" "}
+            <span className="text-muted-foreground">
+              {format(date, "EEEE d MMMM", { locale: nl })}
+            </span>
+          </h3>
+          <div className="mt-3">
+            <SlotGrid
+              slots={slots}
+              selected={selectedStartIso}
+              onSelect={onSelectTime}
+              onWaitlist={onWaitlist}
+              loading={loading}
             />
+            {showWaitlist && dateStr && (
+              <div className="mt-4">
+                <WaitlistCta
+                  key={`${dateStr}:${waitlistTime ?? "day"}`}
+                  serviceId={serviceId}
+                  preferredDate={dateStr}
+                  preferredTime={waitlistTime ?? undefined}
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
-/* Step 4 — customer details                                               */
+/* Step 3 — customer details                                               */
 /* ─────────────────────────────────────────────────────────────────────── */
 
 function DetailsStep({
@@ -708,7 +720,7 @@ function DetailsStep({
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
-/* Navigation — sits right under the summary                               */
+/* Navigation — sticky bottom bar on mobile, under the summary on desktop  */
 /* ─────────────────────────────────────────────────────────────────────── */
 
 function BookingNav({
@@ -725,7 +737,7 @@ function BookingNav({
   onNext: () => void;
 }) {
   return (
-    <div className="mt-4 flex gap-2">
+    <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t bg-background p-3 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] lg:static lg:mt-4 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
       {step > 0 && (
         <Button type="button" variant="outline" onClick={onBack}>
           Terug
@@ -814,7 +826,7 @@ function Summary({
               icon={<Clock className="h-4 w-4" />}
               label="Tijd"
               value={slot ? formatTime(slot.startsAt) : null}
-              done={step > 2}
+              done={step > 1}
             />
           </dl>
         )}

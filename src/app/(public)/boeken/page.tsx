@@ -11,6 +11,10 @@ import {
   listSpecialOpenings,
 } from "@/lib/db/admin-schedule";
 import { getSiteStringArray } from "@/lib/db/site-content";
+import {
+  listServiceCategories,
+  getServiceCategoryMap,
+} from "@/lib/db/service-categories";
 import { verifyWaitlistToken } from "@/lib/booking-token";
 import { getWaitlistContact } from "@/lib/db/waitlist";
 import { formatIsoDate, startOfDayInTz, endOfDayInTz } from "@/lib/time";
@@ -101,6 +105,12 @@ export default async function BoekenPage({
     (s) => s.date,
   );
 
+  // Admin-defined service categories group the service picker.
+  const [categories, categoryMap] = await Promise.all([
+    listServiceCategories(),
+    getServiceCategoryMap(),
+  ]);
+
   // Coming from a waitlist "spot opened" mail: the service/date/time are
   // in the URL; the contact details are resolved server-side from the
   // signed waitlist id so no personal data travels in the link.
@@ -185,6 +195,8 @@ export default async function BoekenPage({
           horizonDays={horizonDays}
           openWeekdays={openWeekdays}
           specialOpenDates={specialOpenDates}
+          categories={categories}
+          categoryMap={categoryMap}
         />
       )}
 
