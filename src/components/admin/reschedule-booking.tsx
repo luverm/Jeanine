@@ -25,6 +25,7 @@ export function RescheduleBooking({
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [duration, setDuration] = useState(durationMin);
   const [slots, setSlots] = useState<string[] | null>(null);
   const [pending, startTransition] = useTransition();
   const [loadingSlots, startSlots] = useTransition();
@@ -49,8 +50,12 @@ export function RescheduleBooking({
       toast.error("Vul datum en tijd in.");
       return;
     }
+    if (!Number.isFinite(duration) || duration < 15 || duration > 480) {
+      toast.error("Duur moet tussen 15 en 480 minuten liggen.");
+      return;
+    }
     const start = zonedDateTimeToUtc(date, time);
-    const end = new Date(start.getTime() + durationMin * 60_000);
+    const end = new Date(start.getTime() + duration * 60_000);
     startTransition(async () => {
       const result = await rescheduleBooking({
         id: bookingId,
@@ -79,7 +84,7 @@ export function RescheduleBooking({
 
   return (
     <div className="grid gap-3 rounded-lg border p-4">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <div>
           <Label htmlFor="r-date">Nieuwe datum</Label>
           <Input
@@ -100,6 +105,19 @@ export function RescheduleBooking({
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
+            className="mt-1.5"
+          />
+        </div>
+        <div>
+          <Label htmlFor="r-duration">Duur (min)</Label>
+          <Input
+            id="r-duration"
+            type="number"
+            min={15}
+            max={480}
+            step={5}
+            value={duration}
+            onChange={(e) => setDuration(Number(e.target.value))}
             className="mt-1.5"
           />
         </div>

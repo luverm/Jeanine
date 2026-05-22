@@ -51,6 +51,14 @@ export function ChatWidget() {
     return () => window.clearTimeout(t);
   }, []);
 
+  // Other parts of the site (e.g. the "Andere vraag?" link) can open
+  // the chat by dispatching this event.
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("hbj:open-chat", handler);
+    return () => window.removeEventListener("hbj:open-chat", handler);
+  }, []);
+
   // Persist the active token so the conversation survives navigation.
   useEffect(() => {
     if (!token) return;

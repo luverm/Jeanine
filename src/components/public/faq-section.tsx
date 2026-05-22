@@ -2,6 +2,7 @@ import { ChevronDown } from "lucide-react";
 import { faq } from "@/content/faq";
 import { business } from "@/content/business";
 import { JsonLd } from "@/components/seo/json-ld";
+import { OpenChatButton } from "@/components/public/open-chat-button";
 
 export function FaqSection({
   content = {},
@@ -48,7 +49,11 @@ export function FaqSection({
         </div>
 
         <p className="mt-12 text-sm text-muted-foreground">
-          Andere vraag? Neem gerust contact op met {business.ownerName}.
+          Andere vraag?{" "}
+          <OpenChatButton className="font-medium text-foreground underline underline-offset-4 hover:text-foreground/70">
+            Stuur {business.ownerName} een bericht via de chat
+          </OpenChatButton>
+          .
         </p>
       </div>
     </section>
