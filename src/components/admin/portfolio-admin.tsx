@@ -26,6 +26,8 @@ import {
   deletePortfolio,
   reorderPortfolio,
   setAboutImage,
+  setBruidProcessImage,
+  toggleBruidHeroImage,
 } from "@/actions/portfolio";
 
 type Img = { src: string; alt: string; name?: string };
@@ -34,9 +36,13 @@ type Photo = { src: string; alt: string; name: string };
 export function PortfolioAdmin({
   images,
   aboutImage,
+  processImage,
+  heroImages = [],
 }: {
   images: Img[];
   aboutImage: string;
+  processImage: string;
+  heroImages?: string[];
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -45,6 +51,10 @@ export function PortfolioAdmin({
     images.filter((i): i is Photo => typeof i.name === "string"),
   );
   const [aboutSel, setAboutSel] = useState(aboutImage);
+  const [processSel, setProcessSel] = useState(processImage);
+  const [heroSet, setHeroSet] = useState<Set<string>>(
+    () => new Set(heroImages),
+  );
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
@@ -84,6 +94,38 @@ export function PortfolioAdmin({
       } else {
         setAboutSel(prev);
         toast.error("Instellen mislukt.");
+      }
+    });
+  }
+
+  function pickProcess(name: string) {
+    const prev = processSel;
+    const next = processSel === name ? "" : name;
+    setProcessSel(next);
+    startTransition(async () => {
+      const r = await setBruidProcessImage(next);
+      if (r.ok) {
+        toast.success(
+          next ? "Foto bij ‘Hoe het werkt’ ingesteld" : "Foto losgekoppeld",
+        );
+      } else {
+        setProcessSel(prev);
+        toast.error("Instellen mislukt.");
+      }
+    });
+  }
+
+  function toggleHero(name: string) {
+    const selected = !heroSet.has(name);
+    const next = new Set(heroSet);
+    if (selected) next.add(name);
+    else next.delete(name);
+    setHeroSet(next);
+    startTransition(async () => {
+      const r = await toggleBruidHeroImage(name, selected);
+      if (!r.ok) {
+        setHeroSet(heroSet);
+        toast.error("Opslaan mislukt.");
       }
     });
   }
@@ -137,9 +179,11 @@ export function PortfolioAdmin({
       ) : (
         <div>
           <p className="mb-3 text-sm text-muted-foreground">
-            Sleep de foto&apos;s om de volgorde aan te passen — die volgorde
-            wordt ook op de website gebruikt. Met ‘Over Jeanine’ kies je
-            welke foto bij dat blok op de homepage komt te staan.
+            Sleep de foto&apos;s om de volgorde aan te passen. Met de knoppen
+            kies je per foto waar hij verschijnt: <strong>Over Jeanine</strong>{" "}
+            (homepage), <strong>Bruid-intro</strong> (foto bij &lsquo;Hoe het
+            werkt&rsquo;) en <strong>Bruidsfoto</strong> (verschijnt in de
+            wisselende foto&apos;s op de bruidspagina).
           </p>
           <DndContext
             sensors={sensors}
@@ -158,8 +202,12 @@ export function PortfolioAdmin({
                     index={i}
                     pending={pending}
                     isAbout={img.name === aboutSel}
+                    isProcess={img.name === processSel}
+                    isHero={heroSet.has(img.name)}
                     onRemove={remove}
                     onPickAbout={pickAbout}
+                    onPickProcess={pickProcess}
+                    onToggleHero={toggleHero}
                   />
                 ))}
               </div>
@@ -171,20 +219,57 @@ export function PortfolioAdmin({
   );
 }
 
+function RoleChip({
+  label,
+  active,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={
+        "rounded-full border px-2 py-0.5 text-[11px] font-medium transition disabled:opacity-50 " +
+        (active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-background hover:bg-accent")
+      }
+    >
+      {label}
+    </button>
+  );
+}
+
 function SortablePhoto({
   img,
   index,
   pending,
   isAbout,
+  isProcess,
+  isHero,
   onRemove,
   onPickAbout,
+  onPickProcess,
+  onToggleHero,
 }: {
   img: Photo;
   index: number;
   pending: boolean;
   isAbout: boolean;
+  isProcess: boolean;
+  isHero: boolean;
   onRemove: (name: string) => void;
   onPickAbout: (name: string) => void;
+  onPickProcess: (name: string) => void;
+  onToggleHero: (name: string) => void;
 }) {
   const {
     attributes,
@@ -226,22 +311,27 @@ function SortablePhoto({
         <span className="absolute right-1.5 top-1.5 rounded bg-background/80 p-1 text-muted-foreground">
           <GripVertical className="h-4 w-4" />
         </span>
-        {isAbout && (
-          <span className="absolute bottom-1.5 left-1.5 rounded bg-primary px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground">
-            Over Jeanine
-          </span>
-        )}
       </div>
-      <Button
-        type="button"
-        variant={isAbout ? "default" : "outline"}
-        size="sm"
-        className="mt-2 w-full"
-        onClick={() => onPickAbout(img.name)}
-        disabled={pending || isAbout}
-      >
-        {isAbout ? "★ Over Jeanine" : "Toon bij Over Jeanine"}
-      </Button>
+      <div className="mt-2 flex flex-wrap gap-1">
+        <RoleChip
+          label="Over Jeanine"
+          active={isAbout}
+          disabled={pending || isAbout}
+          onClick={() => onPickAbout(img.name)}
+        />
+        <RoleChip
+          label="Bruid-intro"
+          active={isProcess}
+          disabled={pending}
+          onClick={() => onPickProcess(img.name)}
+        />
+        <RoleChip
+          label="Bruidsfoto"
+          active={isHero}
+          disabled={pending}
+          onClick={() => onToggleHero(img.name)}
+        />
+      </div>
       <Button
         type="button"
         variant="destructive"

@@ -5,9 +5,11 @@ import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import {
   PORTFOLIO_BUCKET,
   ABOUT_IMAGE_KEY,
+  BRUID_PROCESS_IMAGE_KEY,
+  BRUID_HERO_IMAGES_KEY,
   savePortfolioOrder,
 } from "@/lib/portfolio";
-import { setSiteValue } from "@/lib/db/site-content";
+import { setSiteValue, getSiteStringArray } from "@/lib/db/site-content";
 import { requireAdmin } from "@/lib/auth/require-admin";
 
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
@@ -97,6 +99,46 @@ export async function setAboutImage(
     return { ok: false };
   }
   revalidatePath("/");
+  revalidatePath("/instellingen/portfolio");
+  return { ok: true };
+}
+
+/** Picks the photo shown in the bridal page "Hoe het werkt" block ("" clears). */
+export async function setBruidProcessImage(
+  name: string,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof name !== "string" || name.length > 300) return { ok: false };
+  try {
+    await setSiteValue(BRUID_PROCESS_IMAGE_KEY, name);
+  } catch (err) {
+    console.error("[portfolio] set bridal process image failed:", err);
+    return { ok: false };
+  }
+  revalidatePath("/bruid");
+  revalidatePath("/instellingen/portfolio");
+  return { ok: true };
+}
+
+/** Toggles a photo in the curated bridal-hero selection. */
+export async function toggleBruidHeroImage(
+  name: string,
+  selected: boolean,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof name !== "string" || typeof selected !== "boolean") {
+    return { ok: false };
+  }
+  try {
+    const set = new Set(await getSiteStringArray(BRUID_HERO_IMAGES_KEY));
+    if (selected) set.add(name);
+    else set.delete(name);
+    await setSiteValue(BRUID_HERO_IMAGES_KEY, JSON.stringify([...set]));
+  } catch (err) {
+    console.error("[portfolio] toggle bridal hero image failed:", err);
+    return { ok: false };
+  }
+  revalidatePath("/bruid");
   revalidatePath("/instellingen/portfolio");
   return { ok: true };
 }

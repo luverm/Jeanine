@@ -1,7 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { listStoragePortfolio, ABOUT_IMAGE_KEY } from "@/lib/portfolio";
-import { getSiteValue } from "@/lib/db/site-content";
+import {
+  listStoragePortfolio,
+  ABOUT_IMAGE_KEY,
+  BRUID_PROCESS_IMAGE_KEY,
+  BRUID_HERO_IMAGES_KEY,
+} from "@/lib/portfolio";
+import { getSiteValue, getSiteStringArray } from "@/lib/db/site-content";
 import { PortfolioAdmin } from "@/components/admin/portfolio-admin";
 
 export const metadata: Metadata = {
@@ -12,9 +17,11 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function PortfolioAdminPage() {
-  const [images, aboutImage] = await Promise.all([
+  const [images, aboutImage, processImage, heroImages] = await Promise.all([
     listStoragePortfolio(),
     getSiteValue(ABOUT_IMAGE_KEY),
+    getSiteValue(BRUID_PROCESS_IMAGE_KEY),
+    getSiteStringArray(BRUID_HERO_IMAGES_KEY),
   ]);
 
   return (
@@ -36,6 +43,8 @@ export default async function PortfolioAdminPage() {
           key={images.map((i) => i.name).join("|")}
           images={images}
           aboutImage={aboutImage ?? ""}
+          processImage={processImage ?? ""}
+          heroImages={heroImages}
         />
       </div>
     </div>

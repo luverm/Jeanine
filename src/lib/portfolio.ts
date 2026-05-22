@@ -13,6 +13,12 @@ export const ABOUT_IMAGE_KEY = "home.about.image";
 /** Fallback "Over Jeanine" photo when none is picked. */
 export const ABOUT_IMAGE_FALLBACK = "/images/portfolio/bruid-make-up.jpg";
 
+/** site_content key for the bridal page "Hoe het werkt" photo. */
+export const BRUID_PROCESS_IMAGE_KEY = "bruid.process.image";
+
+/** site_content key for the curated bridal hero photos (JSON name array). */
+export const BRUID_HERO_IMAGES_KEY = "bruid.hero_images";
+
 export type PortfolioImage = {
   src: string;
   alt: string;

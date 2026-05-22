@@ -2,10 +2,18 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { listActiveServices } from "@/lib/db/services";
-import { listPortfolioImages } from "@/lib/portfolio";
+import {
+  listPortfolioImages,
+  BRUID_PROCESS_IMAGE_KEY,
+  BRUID_HERO_IMAGES_KEY,
+} from "@/lib/portfolio";
 import { ServiceCard } from "@/components/public/service-card";
 import { RotatingImage } from "@/components/public/rotating-image";
-import { getResolvedContent } from "@/lib/db/site-content";
+import {
+  getResolvedContent,
+  getSiteValue,
+  getSiteStringArray,
+} from "@/lib/db/site-content";
 import { landing } from "@/content/landing";
 
 export const revalidate = 3600;
@@ -17,14 +25,24 @@ export const metadata: Metadata = {
 };
 
 export default async function BruidPage() {
-  const [services, portfolio, content] = await Promise.all([
-    listActiveServices("bridal"),
-    listPortfolioImages(),
-    getResolvedContent(),
-  ]);
-  const heroSlides = portfolio.slice(0, 6);
+  const [services, portfolio, content, processName, heroNames] =
+    await Promise.all([
+      listActiveServices("bridal"),
+      listPortfolioImages(),
+      getResolvedContent(),
+      getSiteValue(BRUID_PROCESS_IMAGE_KEY),
+      getSiteStringArray(BRUID_HERO_IMAGES_KEY),
+    ]);
+  // Admin-curated bridal photos win; otherwise fall back to the first six.
+  const heroSet = new Set(heroNames);
+  const pickedHero = portfolio.filter((p) => p.name && heroSet.has(p.name));
+  const heroSlides = pickedHero.length > 0 ? pickedHero : portfolio.slice(0, 6);
   const stairImage =
-    portfolio.find((p) => p.src.includes("trap")) ?? portfolio[1];
+    (processName
+      ? portfolio.find((p) => p.name === processName)
+      : undefined) ??
+    portfolio.find((p) => p.src.includes("trap")) ??
+    portfolio[1];
 
   return (
     <>
