@@ -13,10 +13,8 @@ import {
 import { getDefaultStaffId } from "@/lib/db/staff";
 import { getSiteStringRecord } from "@/lib/db/site-content";
 import { Card } from "@/components/ui/card";
-import {
-  AgendaTimeGrid,
-  groupByDay,
-} from "@/components/admin/agenda-time-grid";
+import { AgendaTimeGrid } from "@/components/admin/agenda-time-grid";
+import { groupByDay } from "@/lib/agenda-grid-data";
 import { formatIsoDate } from "@/lib/time";
 import { formatPrice } from "@/lib/db/services";
 import {

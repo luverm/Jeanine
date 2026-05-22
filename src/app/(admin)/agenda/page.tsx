@@ -23,11 +23,11 @@ import {
 import { getDefaultStaffId } from "@/lib/db/staff";
 import { getSiteStringRecord } from "@/lib/db/site-content";
 import { formatIsoDate, formatTime } from "@/lib/time";
+import { AgendaTimeGrid } from "@/components/admin/agenda-time-grid";
 import {
-  AgendaTimeGrid,
   groupByDay,
   timeOffSegmentsForDay,
-} from "@/components/admin/agenda-time-grid";
+} from "@/lib/agenda-grid-data";
 
 export const metadata: Metadata = {
   title: "Agenda",
