@@ -17,6 +17,7 @@ import { listOpenWaitlistInRange } from "@/lib/db/waitlist";
 import {
   listTimeOffInRange,
   listOpeningHours,
+  listSpecialOpenings,
   type TimeOffRow,
 } from "@/lib/db/admin-schedule";
 import { getDefaultStaffId } from "@/lib/db/staff";
@@ -120,6 +121,7 @@ export default async function AgendaPage({
     end: h.end_time.slice(0, 5),
   }));
   const serviceColors = await getSiteStringRecord("agenda.service_colors");
+  const specialOpenings = await listSpecialOpenings().catch(() => []);
   const byDay = groupByDay(bookings);
 
   const waitlistByDay = new Map<string, string[]>();
@@ -220,6 +222,7 @@ export default async function AgendaPage({
             todayKey={todayKey}
             timeOff={timeOff}
             openingHours={openingBlocks}
+            specialOpenings={specialOpenings}
             serviceColors={serviceColors}
           />
         )}

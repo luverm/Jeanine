@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { getSiteValue, setSiteValue } from "@/lib/db/site-content";
 
 export type OpeningHourRow = {
   id: string;
@@ -94,4 +95,45 @@ export async function deleteTimeOff(id: string): Promise<void> {
   const supabase = createSupabaseServiceClient();
   const { error } = await supabase.from("time_off").delete().eq("id", id);
   if (error) throw error;
+}
+
+/**
+ * A one-off opening on a date that's normally closed (or a different
+ * window than the recurring weekday hours). Stored in site_content.
+ */
+export type SpecialOpening = {
+  id: string;
+  date: string; // YYYY-MM-DD (Europe/Amsterdam)
+  start: string; // HH:MM
+  end: string; // HH:MM
+};
+
+const SPECIAL_OPENINGS_KEY = "schedule.special_openings";
+
+export async function listSpecialOpenings(): Promise<SpecialOpening[]> {
+  const raw = await getSiteValue(SPECIAL_OPENINGS_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return (parsed as unknown[])
+      .filter(
+        (x): x is SpecialOpening =>
+          !!x &&
+          typeof x === "object" &&
+          typeof (x as SpecialOpening).id === "string" &&
+          typeof (x as SpecialOpening).date === "string" &&
+          typeof (x as SpecialOpening).start === "string" &&
+          typeof (x as SpecialOpening).end === "string",
+      )
+      .sort((a, b) => a.date.localeCompare(b.date));
+  } catch {
+    return [];
+  }
+}
+
+export async function saveSpecialOpenings(
+  rows: SpecialOpening[],
+): Promise<void> {
+  await setSiteValue(SPECIAL_OPENINGS_KEY, JSON.stringify(rows));
 }

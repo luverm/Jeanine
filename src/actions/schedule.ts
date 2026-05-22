@@ -2,10 +2,13 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { v4 as uuidv4 } from "uuid";
 import {
   replaceOpeningHours,
   insertTimeOff,
   deleteTimeOff,
+  listSpecialOpenings,
+  saveSpecialOpenings,
 } from "@/lib/db/admin-schedule";
 import { writeAuditLog } from "@/lib/db/bookings";
 import { getSiteStringArray, setSiteValue } from "@/lib/db/site-content";
@@ -67,6 +70,56 @@ export async function deleteTimeOffAction(id: string): Promise<{ ok: boolean }> 
   await deleteTimeOff(id);
   revalidatePath("/instellingen/vrije-dagen");
   revalidatePath("/boeken");
+  return { ok: true };
+}
+
+const specialOpeningSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  start: z.string().regex(/^\d{2}:\d{2}$/),
+  end: z.string().regex(/^\d{2}:\d{2}$/),
+});
+
+/** Adds a one-off opening on a date that's normally closed. */
+export async function addSpecialOpeningAction(
+  input: unknown,
+): Promise<{ ok: boolean; message?: string }> {
+  await requireAdmin();
+  const parsed = specialOpeningSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: "Ongeldige invoer." };
+  if (parsed.data.end <= parsed.data.start) {
+    return { ok: false, message: "Eindtijd moet na de starttijd liggen." };
+  }
+  try {
+    const rows = await listSpecialOpenings();
+    rows.push({ id: uuidv4(), ...parsed.data });
+    await saveSpecialOpenings(rows);
+  } catch (err) {
+    console.error("[schedule] add special opening failed:", err);
+    return { ok: false, message: "Opslaan mislukt." };
+  }
+  revalidatePath("/instellingen/extra-open");
+  revalidatePath("/boeken");
+  revalidatePath("/agenda");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+export async function deleteSpecialOpeningAction(
+  id: string,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  if (typeof id !== "string") return { ok: false };
+  try {
+    const rows = await listSpecialOpenings();
+    await saveSpecialOpenings(rows.filter((r) => r.id !== id));
+  } catch (err) {
+    console.error("[schedule] delete special opening failed:", err);
+    return { ok: false };
+  }
+  revalidatePath("/instellingen/extra-open");
+  revalidatePath("/boeken");
+  revalidatePath("/agenda");
+  revalidatePath("/dashboard");
   return { ok: true };
 }
 

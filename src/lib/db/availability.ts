@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { listSpecialOpenings } from "@/lib/db/admin-schedule";
 import {
   TZ,
   startOfDayInTz,
@@ -214,36 +215,46 @@ export async function getAvailableSlotsWithDiagnostics(
   const weekday = weekdayInTz(dayStart);
   diag.weekday = weekday;
 
-  const [{ data: hours, error: hoursErr }, { data: timeOff, error: toErr }, { data: bookings, error: bookErr }] =
-    await Promise.all([
-      supabase
-        .from("opening_hours")
-        .select("start_time, end_time")
-        .eq("staff_id", staffId)
-        .eq("weekday", weekday),
-      supabase
-        .from("time_off")
-        .select("starts_at, ends_at")
-        .eq("staff_id", staffId)
-        .lt("starts_at", windowEnd.toISOString())
-        .gt("ends_at", windowStart.toISOString()),
-      supabase
-        .from("bookings")
-        .select("starts_at, ends_at")
-        .eq("staff_id", staffId)
-        .in("status", ["pending", "confirmed"])
-        .lt("starts_at", windowEnd.toISOString())
-        .gt("ends_at", windowStart.toISOString()),
-    ]);
+  const [
+    { data: hours, error: hoursErr },
+    { data: timeOff, error: toErr },
+    { data: bookings, error: bookErr },
+    specialOpenings,
+  ] = await Promise.all([
+    supabase
+      .from("opening_hours")
+      .select("start_time, end_time")
+      .eq("staff_id", staffId)
+      .eq("weekday", weekday),
+    supabase
+      .from("time_off")
+      .select("starts_at, ends_at")
+      .eq("staff_id", staffId)
+      .lt("starts_at", windowEnd.toISOString())
+      .gt("ends_at", windowStart.toISOString()),
+    supabase
+      .from("bookings")
+      .select("starts_at, ends_at")
+      .eq("staff_id", staffId)
+      .in("status", ["pending", "confirmed"])
+      .lt("starts_at", windowEnd.toISOString())
+      .gt("ends_at", windowStart.toISOString()),
+    listSpecialOpenings(),
+  ]);
 
   if (hoursErr) throw hoursErr;
   if (toErr) throw toErr;
   if (bookErr) throw bookErr;
 
-  const openingBlocks = (hours ?? []).map((h: { start_time: string; end_time: string }) => ({
-    start: h.start_time.slice(0, 5),
-    end: h.end_time.slice(0, 5),
-  }));
+  // A one-off opening for this date replaces the recurring weekday hours.
+  const todaySpecials = specialOpenings.filter((s) => s.date === date);
+  const openingBlocks =
+    todaySpecials.length > 0
+      ? todaySpecials.map((s) => ({ start: s.start, end: s.end }))
+      : (hours ?? []).map((h: { start_time: string; end_time: string }) => ({
+          start: h.start_time.slice(0, 5),
+          end: h.end_time.slice(0, 5),
+        }));
   diag.openingBlocks = openingBlocks;
   diag.bookings = bookings ?? [];
   diag.timeOff = timeOff ?? [];

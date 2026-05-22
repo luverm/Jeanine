@@ -8,6 +8,7 @@ import { listOpenWaitlistInRange } from "@/lib/db/waitlist";
 import {
   listTimeOffInRange,
   listOpeningHours,
+  listSpecialOpenings,
 } from "@/lib/db/admin-schedule";
 import { getDefaultStaffId } from "@/lib/db/staff";
 import { getSiteStringRecord } from "@/lib/db/site-content";
@@ -72,6 +73,7 @@ export default async function DashboardPage() {
     end: h.end_time.slice(0, 5),
   }));
   const serviceColors = await getSiteStringRecord("agenda.service_colors");
+  const specialOpenings = await listSpecialOpenings().catch(() => []);
 
   const byDay = groupByDay(weekBookings);
   const waitlistByDay = new Map<string, string[]>();
@@ -183,6 +185,7 @@ export default async function DashboardPage() {
           todayKey={todayKey}
           timeOff={weekTimeOff}
           openingHours={openingBlocks}
+          specialOpenings={specialOpenings}
           serviceColors={serviceColors}
         />
       </div>

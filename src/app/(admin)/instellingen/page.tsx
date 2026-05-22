@@ -5,6 +5,7 @@ import {
   Scissors,
   Clock,
   CalendarOff,
+  CalendarPlus,
   CalendarClock,
   RefreshCw,
   Mail,
@@ -64,6 +65,12 @@ const GROUPS: { title: string; items: HubItem[] }[] = [
         label: "Vrije dagen / blokkades",
         description: "Vakantie, vrije dagen en pauzes",
         icon: CalendarOff,
+      },
+      {
+        href: "/instellingen/extra-open",
+        label: "Extra openingsdagen",
+        description: "Eenmalig open op een gesloten dag",
+        icon: CalendarPlus,
       },
       {
         href: "/instellingen/agenda",

@@ -53,6 +53,7 @@ export function BookingForm({
   blockedDates = [],
   horizonDays = 90,
   openWeekdays = [],
+  specialOpenDates = [],
 }: {
   services: Service[];
   staffId: string;
@@ -60,6 +61,7 @@ export function BookingForm({
   blockedDates?: string[];
   horizonDays?: number;
   openWeekdays?: number[];
+  specialOpenDates?: string[];
 }) {
   const router = useRouter();
   const prefilledServiceId = prefill?.serviceSlug
@@ -251,6 +253,7 @@ export function BookingForm({
               blockedDates={blockedDates}
               horizonDays={horizonDays}
               openWeekdays={openWeekdays}
+              specialOpenDates={specialOpenDates}
               onSelect={handleSelectDate}
             />
           )}
@@ -476,12 +479,14 @@ function DateStep({
   blockedDates,
   horizonDays,
   openWeekdays,
+  specialOpenDates,
   onSelect,
 }: {
   date: Date | undefined;
   blockedDates: string[];
   horizonDays: number;
   openWeekdays: number[];
+  specialOpenDates: string[];
   onSelect: (d: Date | undefined) => void;
 }) {
   const maxDate = new Date(todayInTz.getTime() + horizonDays * 86_400_000);
@@ -503,16 +508,20 @@ function DateStep({
           disabled={(d) => {
             if (d < todayInTz) return true;
             if (d > maxDate) return true;
+            const iso = formatIsoDate(d);
+            // A one-off opening makes a normally-closed day bookable.
+            const isSpecialOpen = specialOpenDates.includes(iso);
             // Weekdays without opening hours are closed. Fall back to
             // "Sunday closed" only when no opening hours are configured.
             if (
-              openWeekdays.length > 0
+              !isSpecialOpen &&
+              (openWeekdays.length > 0
                 ? !openWeekdays.includes(d.getDay())
-                : d.getDay() === 0
+                : d.getDay() === 0)
             )
               return true;
             // Whole days Jeanine blocked off (afwezig / vrij).
-            if (blockedDates.includes(formatIsoDate(d))) return true;
+            if (blockedDates.includes(iso)) return true;
             return false;
           }}
         />

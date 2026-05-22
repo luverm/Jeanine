@@ -5,7 +5,11 @@ import { Toaster } from "@/components/ui/sonner";
 import { BookingForm } from "@/components/booking/booking-form";
 import { listActiveServices } from "@/lib/db/services";
 import { getDefaultStaffId } from "@/lib/db/staff";
-import { listTimeOffInRange, listOpeningHours } from "@/lib/db/admin-schedule";
+import {
+  listTimeOffInRange,
+  listOpeningHours,
+  listSpecialOpenings,
+} from "@/lib/db/admin-schedule";
 import { getSiteStringArray } from "@/lib/db/site-content";
 import { verifyWaitlistToken } from "@/lib/booking-token";
 import { getWaitlistContact } from "@/lib/db/waitlist";
@@ -92,6 +96,11 @@ export default async function BoekenPage({
   const openingHours = await listOpeningHours(staffId).catch(() => []);
   const openWeekdays = [...new Set(openingHours.map((h) => h.weekday))];
 
+  // One-off openings make a normally-closed day bookable.
+  const specialOpenDates = (await listSpecialOpenings().catch(() => [])).map(
+    (s) => s.date,
+  );
+
   // Coming from a waitlist "spot opened" mail: the service/date/time are
   // in the URL; the contact details are resolved server-side from the
   // signed waitlist id so no personal data travels in the link.
@@ -175,6 +184,7 @@ export default async function BoekenPage({
           blockedDates={blockedDates}
           horizonDays={horizonDays}
           openWeekdays={openWeekdays}
+          specialOpenDates={specialOpenDates}
         />
       )}
 

@@ -84,6 +84,11 @@ export function timeOffSegmentsForDay(
  * start time. Absences show as a hatched bar in an all-day row on top.
  */
 export type OpeningBlock = { weekday: number; start: string; end: string };
+export type SpecialOpeningBlock = {
+  date: string;
+  start: string;
+  end: string;
+};
 
 export function AgendaTimeGrid({
   days,
@@ -92,6 +97,7 @@ export function AgendaTimeGrid({
   todayKey,
   timeOff = [],
   openingHours = [],
+  specialOpenings = [],
   serviceColors = {},
 }: {
   days: Date[];
@@ -101,6 +107,8 @@ export function AgendaTimeGrid({
   timeOff?: TimeOffRow[];
   /** Opening blocks per weekday (0 = Sunday); hours outside are greyed. */
   openingHours?: OpeningBlock[];
+  /** One-off openings on specific dates; override the weekday hours. */
+  specialOpenings?: SpecialOpeningBlock[];
   /** Service id → agenda colour key; colours appointment blocks. */
   serviceColors?: Record<string, string>;
 }) {
@@ -109,12 +117,19 @@ export function AgendaTimeGrid({
     return h * 60 + m;
   };
   /** Opening windows (minutes from midnight) for a given day, sorted. */
-  const dayWindows = (day: Date) =>
-    openingHours
-      .filter((o) => o.weekday === day.getDay())
+  const dayWindows = (day: Date) => {
+    const key = format(day, "yyyy-MM-dd");
+    const special = specialOpenings.filter((s) => s.date === key);
+    const blocks: Array<{ start: string; end: string }> =
+      special.length > 0
+        ? special
+        : openingHours.filter((o) => o.weekday === day.getDay());
+    return blocks
       .map((o) => ({ start: hhmmToMin(o.start), end: hhmmToMin(o.end) }))
       .sort((a, b) => a.start - b.start);
-  const hasOpeningHours = openingHours.length > 0;
+  };
+  const hasOpeningHours =
+    openingHours.length > 0 || specialOpenings.length > 0;
   const isClosed = (day: Date) =>
     hasOpeningHours && dayWindows(day).length === 0;
 
@@ -133,6 +148,12 @@ export function AgendaTimeGrid({
     if (!visibleWeekdays.has(o.weekday)) continue;
     startHour = Math.min(startHour, Math.floor(hhmmToMin(o.start) / 60));
     endHour = Math.max(endHour, Math.ceil(hhmmToMin(o.end) / 60));
+  }
+  const visibleDates = new Set(days.map((d) => format(d, "yyyy-MM-dd")));
+  for (const s of specialOpenings) {
+    if (!visibleDates.has(s.date)) continue;
+    startHour = Math.min(startHour, Math.floor(hhmmToMin(s.start) / 60));
+    endHour = Math.max(endHour, Math.ceil(hhmmToMin(s.end) / 60));
   }
   startHour = Math.max(5, startHour);
   endHour = Math.min(23, endHour);
