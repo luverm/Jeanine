@@ -66,6 +66,20 @@ export async function createCustomerReview(input: {
   if (error) throw error;
 }
 
+/** Review submitted from the public site: hidden until Jeanine approves it. */
+export async function createPublicReview(input: {
+  author: string;
+  quote: string;
+}): Promise<void> {
+  const svc = createSupabaseServiceClient();
+  const { error } = await svc.from("reviews").insert({
+    author: input.author,
+    quote: input.quote,
+    is_visible: false,
+  });
+  if (error) throw error;
+}
+
 export async function hasReviewForBooking(
   bookingId: string,
 ): Promise<boolean> {

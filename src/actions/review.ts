@@ -1,9 +1,11 @@
 "use server";
 
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import {
   createReview,
   createCustomerReview,
+  createPublicReview,
   hasReviewForBooking,
   setReviewVisible,
   deleteReview,
@@ -57,6 +59,38 @@ export async function deleteReviewAction(
   } catch {
     return { ok: false };
   }
+  return { ok: true };
+}
+
+const publicSubmitSchema = z.object({
+  author: z.string().trim().min(2).max(120),
+  quote: z.string().trim().min(4).max(600),
+  website: z.string().max(0).optional().or(z.literal("")),
+});
+
+export type SubmitPublicReviewResult =
+  | { ok: true }
+  | { ok: false; code: "INPUT" };
+
+/**
+ * Open review submitted from the website. Stored hidden, so Jeanine
+ * approves it before it appears. Honeypot drops bots silently.
+ */
+export async function submitPublicReviewAction(
+  input: unknown,
+): Promise<SubmitPublicReviewResult> {
+  const parsed = publicSubmitSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, code: "INPUT" };
+  const { author, quote, website } = parsed.data;
+  if (website) return { ok: true };
+
+  try {
+    await createPublicReview({ author, quote });
+  } catch (err) {
+    console.error("[review] public submit failed:", err);
+    return { ok: false, code: "INPUT" };
+  }
+  revalidatePath("/instellingen/reviews");
   return { ok: true };
 }
 

@@ -12,6 +12,7 @@ import { ServiceCard } from "@/components/public/service-card";
 import { HeroCarousel } from "@/components/public/hero-carousel";
 import { IntroOverlay } from "@/components/public/intro-overlay";
 import { FaqSection } from "@/components/public/faq-section";
+import { PublicReviewForm } from "@/components/public/public-review-form";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
   getResolvedContent,
@@ -258,6 +259,16 @@ export default async function HomePage() {
               </a>
             </div>
           )}
+
+          <div className="mt-12 border-t pt-8">
+            <p className="text-sm text-muted-foreground">
+              Zelf bij Jeanine geweest? Deel je ervaring — na een korte
+              controle verschijnt je review hier.
+            </p>
+            <div className="mt-3">
+              <PublicReviewForm />
+            </div>
+          </div>
         </div>
       </section>
 
