@@ -1,7 +1,8 @@
 import "server-only";
 import { sendEmail } from "@/lib/email/client";
 import {
-  bookingConfirmationText,
+  bookingConfirmationEmail,
+  bookingRescheduledEmail,
   bookingAdminText,
   googleCalendarUrl,
 } from "@/lib/email/messages";
@@ -50,15 +51,14 @@ export async function sendBookingConfirmation(m: BookingMail): Promise<void> {
 
   await sendEmail({
     to: m.customer.email,
-    subject: `Afspraak bevestigd — ${m.serviceName}`,
     context: "booking_confirmation",
-    text: bookingConfirmationText({
+    ...(await bookingConfirmationEmail({
       customerName: m.customer.fullName,
       serviceName: m.serviceName,
       startsAt: m.startsAt,
       calendarUrl,
       cancelUrl,
-    }),
+    })),
     attachments: ics
       ? [{ filename: "afspraak.ics", content: ics, contentType: "text/calendar" }]
       : undefined,
@@ -111,15 +111,14 @@ export async function sendBookingRescheduled(m: BookingMail): Promise<void> {
 
   await sendEmail({
     to: m.customer.email,
-    subject: `Afspraak verzet — ${m.serviceName}`,
     context: "booking_rescheduled",
-    text: bookingConfirmationText({
+    ...(await bookingRescheduledEmail({
       customerName: m.customer.fullName,
       serviceName: m.serviceName,
       startsAt: m.startsAt,
       calendarUrl,
       cancelUrl,
-    }),
+    })),
     attachments: ics
       ? [{ filename: "afspraak.ics", content: ics, contentType: "text/calendar" }]
       : undefined,

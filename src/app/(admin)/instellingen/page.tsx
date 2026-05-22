@@ -9,6 +9,7 @@ import {
   CalendarClock,
   RefreshCw,
   Mail,
+  Mails,
   ListChecks,
   Image as ImageIcon,
   Star,
@@ -88,6 +89,12 @@ const GROUPS: { title: string; items: HubItem[] }[] = [
         label: "Terugkom-mail",
         description: "Automatische ‘tijd voor een nieuwe afspraak’",
         icon: RefreshCw,
+      },
+      {
+        href: "/instellingen/mailteksten",
+        label: "Mailteksten",
+        description: "De tekst van automatische e-mails aanpassen",
+        icon: Mails,
       },
       {
         href: "/instellingen/e-mails",

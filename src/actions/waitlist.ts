@@ -8,7 +8,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
 import {
-  waitlistConfirmationText,
+  waitlistConfirmationEmail,
   waitlistAdminText,
 } from "@/lib/email/messages";
 
@@ -38,13 +38,12 @@ async function notifyWaitlist(d: {
   try {
     await sendEmail({
       to: d.email,
-      subject: "Je staat op de wachtlijst",
       context: "waitlist_confirmation",
-      text: waitlistConfirmationText({
+      ...(await waitlistConfirmationEmail({
         fullName: d.fullName,
         serviceName,
         preferredDate: d.preferredDate || null,
-      }),
+      })),
     });
   } catch (err) {
     console.error("[waitlist] confirmation mail failed:", err);

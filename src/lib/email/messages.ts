@@ -1,5 +1,9 @@
 import { business } from "@/content/business";
 import { formatHumanDateTime, format } from "@/lib/time";
+import {
+  renderEmailTemplate,
+  type RenderedEmail,
+} from "@/lib/email/templates";
 
 /** Drop unfilled `{{PLACEHOLDER}}` content values. */
 function real(value: string): string | null {
@@ -15,9 +19,9 @@ function contactLine(): string {
   return "Verhinderd? Laat het ons even weten.";
 }
 
-function locationLine(): string | null {
+function locationLine(): string {
   const street = real(business.address.street);
-  if (!street) return null;
+  if (!street) return "";
   return `Locatie: ${street}, ${business.address.postcode} ${business.address.city}`;
 }
 
@@ -38,51 +42,153 @@ function dutchDate(date: string): string {
   }
 }
 
-export function bookingCancelledText(args: {
+/* ─── Customer-facing e-mails (editable in Instellingen → Mailteksten) ─── */
+
+export function bookingConfirmationEmail(args: {
   customerName: string;
   serviceName: string;
   startsAt: Date;
-}): string {
-  return [
-    `Hoi ${args.customerName},`,
-    "",
-    `Je afspraak bij ${business.name} is geannuleerd:`,
-    "",
-    `Dienst: ${args.serviceName}`,
-    `Was gepland op: ${formatHumanDateTime(args.startsAt)}`,
-    "",
-    "Wil je een nieuwe afspraak? Boek gerust opnieuw online.",
-    "",
-    helpLine(),
-    "",
-    "Tot snel,",
-    business.ownerName,
-  ].join("\n");
+  calendarUrl?: string;
+  cancelUrl?: string;
+}): Promise<RenderedEmail> {
+  return renderEmailTemplate("booking_confirmation", {
+    naam: args.customerName,
+    bedrijf: business.name,
+    eigenaar: business.ownerName,
+    dienst: args.serviceName,
+    wanneer: formatHumanDateTime(args.startsAt),
+    locatie: locationLine(),
+    agendalink: args.calendarUrl ?? "",
+    annuleerlink: args.cancelUrl ?? "",
+    contact: contactLine(),
+  });
 }
 
-export function waitlistConfirmationText(args: {
+export function bookingRescheduledEmail(args: {
+  customerName: string;
+  serviceName: string;
+  startsAt: Date;
+  calendarUrl?: string;
+  cancelUrl?: string;
+}): Promise<RenderedEmail> {
+  return renderEmailTemplate("booking_rescheduled", {
+    naam: args.customerName,
+    bedrijf: business.name,
+    eigenaar: business.ownerName,
+    dienst: args.serviceName,
+    wanneer: formatHumanDateTime(args.startsAt),
+    locatie: locationLine(),
+    agendalink: args.calendarUrl ?? "",
+    annuleerlink: args.cancelUrl ?? "",
+    contact: contactLine(),
+  });
+}
+
+export function bookingCancelledEmail(args: {
+  customerName: string;
+  serviceName: string;
+  startsAt: Date;
+}): Promise<RenderedEmail> {
+  return renderEmailTemplate("booking_cancelled", {
+    naam: args.customerName,
+    bedrijf: business.name,
+    eigenaar: business.ownerName,
+    dienst: args.serviceName,
+    wanneer: formatHumanDateTime(args.startsAt),
+    contact: helpLine(),
+  });
+}
+
+export function bookingReminderEmail(args: {
+  customerName: string;
+  serviceName: string;
+  startsAt: Date;
+  cancelUrl?: string;
+}): Promise<RenderedEmail> {
+  return renderEmailTemplate("booking_reminder", {
+    naam: args.customerName,
+    bedrijf: business.name,
+    eigenaar: business.ownerName,
+    dienst: args.serviceName,
+    wanneer: formatHumanDateTime(args.startsAt),
+    locatie: locationLine(),
+    contact: args.cancelUrl
+      ? `Niet meer nodig? Verzetten of annuleren: ${args.cancelUrl}`
+      : contactLine(),
+  });
+}
+
+export function rebookingNudgeEmail(args: {
+  customerName: string;
+  lastServiceName: string;
+  bookingUrl: string;
+}): Promise<RenderedEmail> {
+  return renderEmailTemplate("rebooking_nudge", {
+    naam: args.customerName,
+    bedrijf: business.name,
+    eigenaar: business.ownerName,
+    dienst: args.lastServiceName,
+    boeklink: args.bookingUrl,
+    contact: contactLine(),
+  });
+}
+
+export function waitlistConfirmationEmail(args: {
   fullName: string;
   serviceName?: string | null;
   preferredDate?: string | null;
-}): string {
-  const what = args.serviceName ? ` voor ${args.serviceName}` : "";
-  const when = args.preferredDate
-    ? ` op ${dutchDate(args.preferredDate)}`
-    : "";
-  return [
-    `Hoi ${args.fullName},`,
-    "",
-    `Je staat op de wachtlijst${what}${when} bij ${business.name}.`,
-    "",
-    "Komt er een plek vrij, dan krijg je automatisch een e-mail met een",
-    "boeklink. Wie het eerst boekt, heeft de plek.",
-    "",
-    helpLine(),
-    "",
-    "Tot snel,",
-    business.ownerName,
-  ].join("\n");
+}): Promise<RenderedEmail> {
+  const samenvatting =
+    (args.serviceName || "een afspraak") +
+    (args.preferredDate ? ` op ${dutchDate(args.preferredDate)}` : "");
+  return renderEmailTemplate("waitlist_confirmation", {
+    naam: args.fullName,
+    bedrijf: business.name,
+    eigenaar: business.ownerName,
+    samenvatting,
+    contact: helpLine(),
+  });
 }
+
+export function waitlistOpeningEmail(args: {
+  customerName: string;
+  serviceName: string;
+  freedAt: Date;
+  bookingUrl: string;
+}): Promise<RenderedEmail> {
+  return renderEmailTemplate("waitlist_opening", {
+    naam: args.customerName,
+    bedrijf: business.name,
+    eigenaar: business.ownerName,
+    dienst: args.serviceName,
+    wanneer: formatHumanDateTime(args.freedAt),
+    boeklink: args.bookingUrl,
+  });
+}
+
+export function reviewRequestEmail(args: {
+  customerName: string;
+  serviceName: string;
+  reviewUrl: string;
+}): Promise<RenderedEmail> {
+  return renderEmailTemplate("review_request", {
+    naam: args.customerName,
+    bedrijf: business.name,
+    eigenaar: business.ownerName,
+    dienst: args.serviceName,
+    reviewlink: args.reviewUrl,
+  });
+}
+
+export function leadCustomerAckEmail(fullName: string): Promise<RenderedEmail> {
+  return renderEmailTemplate("lead_customer_ack", {
+    naam: fullName,
+    bedrijf: business.name,
+    eigenaar: business.ownerName,
+  });
+}
+
+/* ─── Admin notices & chat links (fixed text) ─── */
 
 export function waitlistAdminText(args: {
   fullName: string;
@@ -106,122 +212,6 @@ export function waitlistAdminText(args: {
   ]
     .filter((line) => line !== null)
     .join("\n");
-}
-
-export function bookingConfirmationText(args: {
-  customerName: string;
-  serviceName: string;
-  startsAt: Date;
-  calendarUrl?: string;
-  cancelUrl?: string;
-}): string {
-  return [
-    `Hoi ${args.customerName},`,
-    "",
-    `Je afspraak bij ${business.name} is bevestigd.`,
-    "",
-    `Dienst: ${args.serviceName}`,
-    `Wanneer: ${formatHumanDateTime(args.startsAt)}`,
-    locationLine(),
-    "",
-    args.calendarUrl ? `Zet in je agenda: ${args.calendarUrl}` : null,
-    args.cancelUrl ? `Verzetten of annuleren? ${args.cancelUrl}` : null,
-    args.calendarUrl || args.cancelUrl ? "" : null,
-    contactLine(),
-    "",
-    "Tot snel,",
-    business.ownerName,
-  ]
-    .filter((line) => line !== null)
-    .join("\n");
-}
-
-export function bookingReminderText(args: {
-  customerName: string;
-  serviceName: string;
-  startsAt: Date;
-  cancelUrl?: string;
-}): string {
-  return [
-    `Hoi ${args.customerName},`,
-    "",
-    `Kleine herinnering aan je afspraak bij ${business.name}:`,
-    "",
-    `Dienst: ${args.serviceName}`,
-    `Wanneer: ${formatHumanDateTime(args.startsAt)}`,
-    locationLine(),
-    "",
-    args.cancelUrl
-      ? `Niet meer nodig? Verzetten of annuleren: ${args.cancelUrl}`
-      : contactLine(),
-    "",
-    "Tot snel,",
-    business.ownerName,
-  ]
-    .filter((line) => line !== null)
-    .join("\n");
-}
-
-export function rebookingNudgeText(args: {
-  customerName: string;
-  lastServiceName: string;
-  bookingUrl: string;
-}): string {
-  return [
-    `Hoi ${args.customerName},`,
-    "",
-    `Het is alweer even geleden sinds je laatste afspraak (${args.lastServiceName}) bij ${business.name}. Tijd om weer eens bij te laten werken?`,
-    "",
-    `Een nieuwe afspraak plan je zo in: ${args.bookingUrl}`,
-    "",
-    contactLine(),
-    "",
-    "Tot snel,",
-    business.ownerName,
-  ]
-    .filter((line) => line !== null)
-    .join("\n");
-}
-
-export function waitlistOpeningText(args: {
-  customerName: string;
-  serviceName: string;
-  freedAt: Date;
-  bookingUrl: string;
-}): string {
-  return [
-    `Hoi ${args.customerName},`,
-    "",
-    `Goed nieuws — er is een plek vrijgekomen bij ${business.name} waar je op de wachtlijst voor staat:`,
-    "",
-    `Dienst: ${args.serviceName}`,
-    `Vrijgekomen moment: ${formatHumanDateTime(args.freedAt)}`,
-    "",
-    `Wie het eerst boekt, krijgt de plek: ${args.bookingUrl}`,
-    "",
-    "Net te laat of niet het juiste moment? Geen zorgen — je blijft gewoon op de wachtlijst staan voor een volgende keer.",
-    "",
-    "Tot snel,",
-    business.ownerName,
-  ].join("\n");
-}
-
-export function reviewRequestText(args: {
-  customerName: string;
-  serviceName: string;
-  reviewUrl: string;
-}): string {
-  return [
-    `Hoi ${args.customerName},`,
-    "",
-    `Bedankt voor je bezoek aan ${business.name} (${args.serviceName})! Ik hoop dat je er blij mee bent.`,
-    "",
-    "Zou je een korte review willen achterlaten? Het kost een halve minuut en helpt anderen enorm:",
-    args.reviewUrl,
-    "",
-    "Alvast bedankt,",
-    business.ownerName,
-  ].join("\n");
 }
 
 export function chatResumeText(args: {
@@ -340,22 +330,4 @@ export function leadAdminText(args: {
   ]
     .filter((line) => line !== null)
     .join("\n");
-}
-
-export function leadCustomerAckText(fullName: string): string {
-  return [
-    `Hoi ${fullName},`,
-    "",
-    "Van harte gefeliciteerd met jullie verloving!",
-    "",
-    "Je aanvraag is goed bij mij binnengekomen. Ik lees alles rustig door en",
-    "ik neem contact met je op met een persoonlijk antwoord.",
-    "",
-    "Heb je inspiratiebeelden of een Pinterest-bord? Stuur ze gerust mee als",
-    "reply op deze e-mail.",
-    "",
-    "Tot snel,",
-    business.ownerName,
-    business.name,
-  ].join("\n");
 }

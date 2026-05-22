@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { getBusiness } from "@/lib/db/business-settings";
-import { rebookingNudgeText } from "@/lib/email/messages";
+import { rebookingNudgeEmail } from "@/lib/email/messages";
 import { RebookingSettingsForm } from "@/components/admin/rebooking-settings-form";
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function RebookingSettingsPage() {
   const { rebooking } = await getBusiness();
-  const exampleEmail = rebookingNudgeText({
+  const example = await rebookingNudgeEmail({
     customerName: "Anouk",
     lastServiceName: "Knippen & föhnen",
     bookingUrl: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://jouwsite.nl"}/boeken`,
@@ -60,14 +60,19 @@ export default async function RebookingSettingsPage() {
         <h2 className="text-base font-semibold">Voorbeeld van de mail</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Dit is precies de tekst die de klant ontvangt — hier met
-          voorbeeldgegevens ingevuld.
+          voorbeeldgegevens ingevuld. De tekst pas je aan via{" "}
+          <Link
+            href="/instellingen/mailteksten"
+            className="underline underline-offset-4"
+          >
+            Mailteksten
+          </Link>
+          .
         </p>
         <div className="mt-4 rounded-md border bg-muted/30 p-4 text-sm">
-          <p className="font-medium">
-            Onderwerp: Tijd voor een nieuwe afspraak?
-          </p>
+          <p className="font-medium">Onderwerp: {example.subject}</p>
           <p className="mt-3 whitespace-pre-line text-muted-foreground">
-            {exampleEmail}
+            {example.text}
           </p>
         </div>
       </Card>

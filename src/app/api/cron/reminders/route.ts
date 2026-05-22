@@ -10,9 +10,9 @@ import { purgeOldThreads } from "@/lib/db/chat";
 import { deleteChatImages } from "@/lib/chat-images";
 import { sendEmail } from "@/lib/email/client";
 import {
-  bookingReminderText,
-  rebookingNudgeText,
-  reviewRequestText,
+  bookingReminderEmail,
+  rebookingNudgeEmail,
+  reviewRequestEmail,
 } from "@/lib/email/messages";
 import { signBooking } from "@/lib/booking-token";
 
@@ -62,14 +62,13 @@ export async function GET(request: NextRequest) {
     try {
       await sendEmail({
         to: b.customer.email,
-        subject: "Herinnering aan je afspraak",
         context: "booking_reminder",
-        text: bookingReminderText({
+        ...(await bookingReminderEmail({
           customerName: b.customer.full_name,
           serviceName: b.service?.name ?? "Afspraak",
           startsAt: new Date(b.starts_at),
           cancelUrl: `${siteUrl}/afspraak/${b.id}?token=${signBooking(b.id)}`,
-        }),
+        })),
       });
       await markReminderSent(b.id);
       sent += 1;
@@ -91,13 +90,12 @@ export async function GET(request: NextRequest) {
       try {
         await sendEmail({
           to: c.email,
-          subject: "Tijd voor een nieuwe afspraak?",
           context: "rebooking_nudge",
-          text: rebookingNudgeText({
+          ...(await rebookingNudgeEmail({
             customerName: c.full_name,
             lastServiceName: c.last_service,
             bookingUrl: `${siteUrl}/boeken`,
-          }),
+          })),
         });
         await markRebookingNudged(c.customer_id);
         rebookSent += 1;
@@ -124,13 +122,12 @@ export async function GET(request: NextRequest) {
       try {
         await sendEmail({
           to: b.customer.email,
-          subject: "Hoe was je afspraak?",
           context: "review_request",
-          text: reviewRequestText({
+          ...(await reviewRequestEmail({
             customerName: b.customer.full_name,
             serviceName: b.service?.name ?? "je afspraak",
             reviewUrl: `${siteUrl}/review/${b.id}?token=${signBooking(b.id)}`,
-          }),
+          })),
         });
         await markReviewRequestSent(b.id);
         reviewSent += 1;

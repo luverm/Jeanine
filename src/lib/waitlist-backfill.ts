@@ -3,7 +3,7 @@ import { getBookingDetail } from "@/lib/db/bookings";
 import { findWaitlistMatches } from "@/lib/db/waitlist";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
-import { waitlistOpeningText } from "@/lib/email/messages";
+import { waitlistOpeningEmail } from "@/lib/email/messages";
 import { formatIsoDate, formatTime } from "@/lib/time";
 import { signWaitlist } from "@/lib/booking-token";
 
@@ -58,14 +58,13 @@ export async function notifyWaitlistForFreedSlot(args: {
     try {
       await sendEmail({
         to: m.email,
-        subject: "Er is een plek vrijgekomen",
         context: "waitlist_opening",
-        text: waitlistOpeningText({
+        ...(await waitlistOpeningEmail({
           customerName: m.full_name,
           serviceName: service.name,
           freedAt,
           bookingUrl,
-        }),
+        })),
       });
       sent += 1;
     } catch (err) {

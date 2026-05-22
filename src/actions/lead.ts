@@ -15,7 +15,7 @@ import { deleteBridalAttachments } from "@/actions/bridal-upload";
 import { writeAuditLog } from "@/lib/db/bookings";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { sendEmail } from "@/lib/email/client";
-import { leadAdminText, leadCustomerAckText } from "@/lib/email/messages";
+import { leadAdminText, leadCustomerAckEmail } from "@/lib/email/messages";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
@@ -104,11 +104,9 @@ async function sendLeadEmails(args: {
   const leadUrl = `${siteUrl}/leads/${args.leadId}`;
 
   const jobs = [
-    sendEmail({
-      to: args.data.email,
-      subject: "We hebben je bericht ontvangen",
-      text: leadCustomerAckText(args.data.fullName),
-    }),
+    leadCustomerAckEmail(args.data.fullName).then((m) =>
+      sendEmail({ to: args.data.email, ...m }),
+    ),
   ];
 
   if (adminEmail) {

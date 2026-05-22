@@ -38,6 +38,14 @@ vi.mock("@/lib/email/client", () => ({
   sendEmail: vi.fn(async () => ({ id: "stub" })),
 }));
 
+vi.mock("@/lib/email/messages", () => ({
+  leadCustomerAckEmail: vi.fn(async () => ({
+    subject: "Ontvangen",
+    text: "Bedankt",
+  })),
+  leadAdminText: vi.fn(() => "admin notice"),
+}));
+
 import { createLead } from "@/actions/lead";
 import { _resetRateLimitStore } from "@/lib/rate-limit";
 

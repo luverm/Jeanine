@@ -18,7 +18,7 @@ import { resolveWaitlistForCustomer } from "@/lib/db/waitlist";
 import { upsertCustomerByEmail } from "@/lib/db/customers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "@/lib/email/client";
-import { bookingCancelledText } from "@/lib/email/messages";
+import { bookingCancelledEmail } from "@/lib/email/messages";
 import {
   sendBookingConfirmation,
   sendBookingAdminNotice,
@@ -236,16 +236,15 @@ export async function cancelBookingAction(id: string): Promise<{ ok: boolean }> 
   // Skip the mail/backfill if this was already a cancelled booking.
   if (before && before.status !== "cancelled") {
     if (before.customer?.email) {
-      await safe(() =>
+      await safe(async () =>
         sendEmail({
           to: before.customer.email,
-          subject: `Afspraak geannuleerd — ${before.service.name}`,
           context: "booking_cancelled_customer",
-          text: bookingCancelledText({
+          ...(await bookingCancelledEmail({
             customerName: before.customer.full_name,
             serviceName: before.service.name,
             startsAt: new Date(before.starts_at),
-          }),
+          })),
         }),
       );
     }
@@ -281,16 +280,15 @@ export async function cancelOwnBooking(
   );
 
   if (booking.customer?.email) {
-    await safe(() =>
+    await safe(async () =>
       sendEmail({
         to: booking.customer.email,
-        subject: `Afspraak geannuleerd — ${booking.service.name}`,
         context: "booking_cancelled_customer",
-        text: bookingCancelledText({
+        ...(await bookingCancelledEmail({
           customerName: booking.customer.full_name,
           serviceName: booking.service.name,
           startsAt: new Date(booking.starts_at),
-        }),
+        })),
       }),
     );
   }
