@@ -13,6 +13,7 @@ import {
   Star,
   Type,
   Wallet,
+  FileText,
   ChevronRight,
   type LucideIcon,
 } from "lucide-react";
@@ -115,6 +116,12 @@ const GROUPS: { title: string; items: HubItem[] }[] = [
         label: "Reviews",
         description: "Klantbeoordelingen beheren",
         icon: Star,
+      },
+      {
+        href: "/instellingen/documenten",
+        label: "Documenten",
+        description: "Bruidsbrochure en proefkapsel-PDF",
+        icon: FileText,
       },
     ],
   },

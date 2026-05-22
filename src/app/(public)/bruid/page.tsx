@@ -6,6 +6,8 @@ import {
   listPortfolioImages,
   BRUID_PROCESS_IMAGE_KEY,
   BRUID_HERO_IMAGES_KEY,
+  BRUID_BROCHURE_KEY,
+  BRUID_PROEFKAPSEL_KEY,
 } from "@/lib/portfolio";
 import { ServiceCard } from "@/components/public/service-card";
 import { RotatingImage } from "@/components/public/rotating-image";
@@ -25,14 +27,25 @@ export const metadata: Metadata = {
 };
 
 export default async function BruidPage() {
-  const [services, portfolio, content, processName, heroNames] =
-    await Promise.all([
-      listActiveServices("bridal"),
-      listPortfolioImages(),
-      getResolvedContent(),
-      getSiteValue(BRUID_PROCESS_IMAGE_KEY),
-      getSiteStringArray(BRUID_HERO_IMAGES_KEY),
-    ]);
+  const [
+    services,
+    portfolio,
+    content,
+    processName,
+    heroNames,
+    brochureUrl,
+    proefkapselUrl,
+  ] = await Promise.all([
+    listActiveServices("bridal"),
+    listPortfolioImages(),
+    getResolvedContent(),
+    getSiteValue(BRUID_PROCESS_IMAGE_KEY),
+    getSiteStringArray(BRUID_HERO_IMAGES_KEY),
+    getSiteValue(BRUID_BROCHURE_KEY),
+    getSiteValue(BRUID_PROEFKAPSEL_KEY),
+  ]);
+  const brochureHref = brochureUrl || "/brochure-bruidsstyling.pdf";
+  const proefkapselHref = proefkapselUrl || "/proefkapsel-info.pdf";
   // Admin-curated bridal photos win; otherwise fall back to the first six.
   const heroSet = new Set(heroNames);
   const pickedHero = portfolio.filter((p) => p.name && heroSet.has(p.name));
@@ -177,7 +190,7 @@ export default async function BruidPage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <a
-                href="/brochure-bruidsstyling.pdf"
+                href={brochureHref}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium transition hover:bg-accent"
@@ -185,7 +198,7 @@ export default async function BruidPage() {
                 Download bruidsbrochure (PDF)
               </a>
               <a
-                href="/proefkapsel-info.pdf"
+                href={proefkapselHref}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium transition hover:bg-accent"

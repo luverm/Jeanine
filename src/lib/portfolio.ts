@@ -19,6 +19,10 @@ export const BRUID_PROCESS_IMAGE_KEY = "bruid.process.image";
 /** site_content key for the curated bridal hero photos (JSON name array). */
 export const BRUID_HERO_IMAGES_KEY = "bruid.hero_images";
 
+/** site_content keys for the PDFs linked on the bridal page. */
+export const BRUID_BROCHURE_KEY = "bruid.brochure_url";
+export const BRUID_PROEFKAPSEL_KEY = "bruid.proefkapsel_url";
+
 export type PortfolioImage = {
   src: string;
   alt: string;
