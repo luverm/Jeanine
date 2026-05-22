@@ -376,6 +376,59 @@ export async function rescheduleBooking(
   return { ok: true };
 }
 
+const durationSchema = z.object({
+  id: uuidString(),
+  durationMin: z.number().int().min(15).max(480),
+});
+
+export type UpdateDurationResult =
+  | { ok: true }
+  | { ok: false; code: "INVALID_INPUT" | "NOT_FOUND" | "SLOT_TAKEN" };
+
+/**
+ * Changes only the length of an appointment — the start stays put, the
+ * end moves. No customer e-mail: the visit time is unchanged.
+ */
+export async function updateBookingDurationAction(
+  input: unknown,
+): Promise<UpdateDurationResult> {
+  await requireAdmin();
+  const parsed = durationSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, code: "INVALID_INPUT" };
+  const { id, durationMin } = parsed.data;
+
+  const before = await getBookingDetail(id);
+  if (!before) return { ok: false, code: "NOT_FOUND" };
+
+  const endsAt = new Date(
+    new Date(before.starts_at).getTime() + durationMin * 60_000,
+  ).toISOString();
+
+  const svc = createSupabaseServiceClient();
+  const { error } = await svc
+    .from("bookings")
+    .update({ ends_at: endsAt })
+    .eq("id", id);
+  if (error) {
+    if (isExclusionViolation(error)) return { ok: false, code: "SLOT_TAKEN" };
+    throw error;
+  }
+
+  await writeAuditLog({
+    actor: "admin",
+    action: "booking.duration_change",
+    entity: "booking",
+    entityId: id,
+    payload: { durationMin },
+  }).catch(() => {});
+
+  revalidatePath("/boekingen");
+  revalidatePath(`/boekingen/${id}`);
+  revalidatePath("/agenda");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
 const paymentSchema = z.object({
   id: uuidString(),
   paid: z.boolean(),

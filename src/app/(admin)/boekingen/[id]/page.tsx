@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingStatusActions } from "@/components/admin/booking-status-actions";
 import { RescheduleBooking } from "@/components/admin/reschedule-booking";
+import { BookingDurationButton } from "@/components/admin/booking-duration-button";
 import { BookingNotesForm } from "@/components/admin/booking-notes-form";
 import { BookingPayment } from "@/components/admin/booking-payment";
 import { NoShowDismiss } from "@/components/admin/no-show-dismiss";
@@ -34,6 +35,13 @@ export default async function BookingDetailPage({
 
   const flagged = await getNoShowFlags([booking.customer_id]);
   const noShowCount = flagged.get(booking.customer_id);
+
+  // The booking's actual length — may differ from the service default.
+  const currentMinutes = Math.round(
+    (new Date(booking.ends_at).getTime() -
+      new Date(booking.starts_at).getTime()) /
+      60_000,
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
@@ -75,7 +83,7 @@ export default async function BookingDetailPage({
         {booking.customer.phone && (
           <Row label="Telefoon" value={<a href={`tel:${booking.customer.phone}`}>{booking.customer.phone}</a>} />
         )}
-        <Row label="Duur" value={formatDuration(booking.service.duration_min)} />
+        <Row label="Duur" value={formatDuration(currentMinutes)} />
         <Row label="Prijs" value={formatPrice(booking.service.price_cents)} />
       </Card>
 
@@ -89,6 +97,12 @@ export default async function BookingDetailPage({
               serviceId={booking.service_id}
               staffId={booking.staff_id}
               durationMin={booking.service.duration_min}
+            />
+          )}
+          {booking.status !== "cancelled" && (
+            <BookingDurationButton
+              bookingId={booking.id}
+              currentMinutes={currentMinutes}
             />
           )}
           <div className="flex flex-wrap gap-2">
