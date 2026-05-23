@@ -111,7 +111,58 @@ export function InvoicesList({
         )}
       </div>
 
-      <div className="mt-3 overflow-x-auto rounded-lg border">
+      {/* Mobile: stacked cards */}
+      <div className="mt-3 grid gap-3 sm:hidden">
+        {invoices.map((inv) => {
+          const checked = selected.has(inv.id);
+          return (
+            <div
+              key={inv.id}
+              className={
+                "rounded-lg border p-4 " + (checked ? "bg-accent/40" : "")
+              }
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggle(inv.id)}
+                    aria-label={`Selecteer factuur ${inv.number}`}
+                    className={CHECKBOX + " mt-1"}
+                  />
+                  <div>
+                    <Link
+                      href={`/facturen/${inv.id}`}
+                      className="text-base font-medium underline underline-offset-4"
+                    >
+                      {inv.number}
+                    </Link>
+                    <p className="text-xs text-muted-foreground">
+                      {inv.issued_on} ·{" "}
+                      {inv.booking_id ? "Boeking" : "Bruid"}
+                    </p>
+                  </div>
+                </div>
+                <DeleteInvoiceButton
+                  number={inv.number}
+                  onDelete={() => deleteIds([inv.id])}
+                  pending={pending}
+                />
+              </div>
+              <div className="mt-3 flex items-baseline justify-between gap-3 text-sm">
+                <span className="break-words">{inv.customer_name}</span>
+                <span className="shrink-0 text-base font-medium tabular-nums">
+                  {formatPrice(inv.total_cents)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="mt-3 hidden overflow-x-auto rounded-lg border sm:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
@@ -223,7 +274,7 @@ function DeleteInvoiceButton({
       onClick={() => setConfirming(true)}
       aria-label={`Factuur ${number} verwijderen`}
       title="Factuur verwijderen"
-      className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
     >
       <Trash2 className="h-4 w-4" />
     </button>
