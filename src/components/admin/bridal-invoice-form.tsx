@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/services-format";
 import { createBridalInvoiceAction } from "@/actions/bridal-invoice";
@@ -32,6 +32,10 @@ function newId(): string {
     ? crypto.randomUUID()
     : `l-${Math.random().toString(36).slice(2)}`;
 }
+
+// `text-base` keeps iOS from zooming in when focusing an input.
+const INPUT =
+  "w-full rounded-md border bg-background px-3 py-2 text-base sm:text-sm";
 
 export function BridalInvoiceForm({
   prefill,
@@ -117,13 +121,13 @@ export function BridalInvoiceForm({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-24 sm:pb-0">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Naam klant">
           <input
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            className={INPUT}
             maxLength={120}
           />
         </Field>
@@ -132,7 +136,7 @@ export function BridalInvoiceForm({
             value={customerEmail}
             onChange={(e) => setCustomerEmail(e.target.value)}
             type="email"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            className={INPUT}
             maxLength={254}
           />
         </Field>
@@ -141,7 +145,7 @@ export function BridalInvoiceForm({
             value={issuedOn}
             onChange={(e) => setIssuedOn(e.target.value)}
             type="date"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            className={INPUT}
           />
         </Field>
         <Field label="Aanbetaling reeds ontvangen (€)">
@@ -153,82 +157,37 @@ export function BridalInvoiceForm({
               )
             }
             type="number"
+            inputMode="decimal"
             min={0}
             step={0.01}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            className={INPUT}
           />
         </Field>
       </div>
 
-      <div>
-        <div className="grid grid-cols-[1fr_5rem_7rem_6rem_2rem] items-center gap-3 border-b pb-2 text-xs uppercase tracking-wider text-muted-foreground">
-          <span>Omschrijving</span>
-          <span className="text-right">Aantal</span>
-          <span className="text-right">Stuksprijs €</span>
-          <span className="text-right">Bedrag</span>
-          <span />
+      <div className="rounded-lg border">
+        <div className="border-b bg-muted/30 px-4 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Regels
         </div>
-        <div className="divide-y">
+        <ul className="divide-y">
           {lines.map((l) => (
-            <div
-              key={l.id}
-              className="grid grid-cols-[1fr_5rem_7rem_6rem_2rem] items-center gap-3 py-2"
-            >
-              <input
-                value={l.description}
-                onChange={(e) => patch(l.id, { description: e.target.value })}
-                placeholder="Omschrijving"
-                className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
-                maxLength={200}
+            <li key={l.id} className="px-4 py-4">
+              <LineRow
+                line={l}
+                onPatch={(p) => patch(l.id, p)}
+                onRemove={() => remove(l.id)}
               />
-              <input
-                value={l.quantity}
-                onChange={(e) =>
-                  patch(l.id, { quantity: Number(e.target.value) || 0 })
-                }
-                type="number"
-                min={0}
-                step={1}
-                className="w-full rounded-md border bg-background px-2 py-1.5 text-right text-sm"
-              />
-              <input
-                value={(l.unitCents / 100).toString()}
-                onChange={(e) =>
-                  patch(l.id, {
-                    unitCents: Math.round((Number(e.target.value) || 0) * 100),
-                  })
-                }
-                type="number"
-                min={0}
-                step={0.01}
-                className="w-full rounded-md border bg-background px-2 py-1.5 text-right text-sm"
-              />
-              <span className="text-right text-sm tabular-nums">
-                {formatPrice(Math.round(l.quantity * l.unitCents))}
-              </span>
-              <button
-                type="button"
-                onClick={() => remove(l.id)}
-                aria-label="Regel verwijderen"
-                className="rounded-md p-1 text-muted-foreground hover:bg-muted"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
+            </li>
           ))}
+        </ul>
+        <div className="border-t px-4 py-3">
+          <Button type="button" variant="outline" size="sm" onClick={add}>
+            <Plus className="mr-1 h-4 w-4" /> Regel toevoegen
+          </Button>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={add}
-          className="mt-3"
-        >
-          <Plus className="mr-1 h-4 w-4" /> Regel toevoegen
-        </Button>
       </div>
 
-      <div className="ml-auto w-64 text-sm">
+      <div className="w-full text-sm sm:ml-auto sm:w-72">
         <div className="flex justify-between py-1">
           <span className="text-muted-foreground">Subtotaal</span>
           <span className="tabular-nums">{formatPrice(subtotal)}</span>
@@ -259,11 +218,125 @@ export function BridalInvoiceForm({
         )}
       </div>
 
-      <div className="flex justify-end">
-        <Button type="button" onClick={submit} disabled={busy}>
+      <div
+        className={
+          "fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t bg-background p-3 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] " +
+          "sm:static sm:mt-4 sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none"
+        }
+      >
+        <Button
+          type="button"
+          onClick={submit}
+          disabled={busy}
+          size="lg"
+          className="flex-1 sm:flex-none"
+        >
           {busy ? "Aanmaken…" : "Factuur aanmaken"}
         </Button>
       </div>
+    </div>
+  );
+}
+
+function LineRow({
+  line,
+  onPatch,
+  onRemove,
+}: {
+  line: Line;
+  onPatch: (p: Partial<Line>) => void;
+  onRemove: () => void;
+}) {
+  const amount = Math.round(line.quantity * line.unitCents);
+
+  return (
+    <div className="grid gap-3">
+      <div className="flex items-start gap-2">
+        <input
+          value={line.description}
+          onChange={(e) => onPatch({ description: e.target.value })}
+          placeholder="Omschrijving"
+          className={INPUT + " flex-1"}
+          maxLength={200}
+        />
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Regel verwijderen"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-end">
+        <FieldSmall label="Aantal">
+          <QuantityStepper
+            value={line.quantity}
+            onChange={(q) => onPatch({ quantity: q })}
+          />
+        </FieldSmall>
+        <FieldSmall label="Stuksprijs €">
+          <input
+            value={(line.unitCents / 100).toString()}
+            onChange={(e) =>
+              onPatch({
+                unitCents: Math.round((Number(e.target.value) || 0) * 100),
+              })
+            }
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step={0.01}
+            className={INPUT + " text-right"}
+          />
+        </FieldSmall>
+        <FieldSmall label="Bedrag" align="right">
+          <span className="block py-2 text-base font-medium tabular-nums sm:text-sm">
+            {formatPrice(amount)}
+          </span>
+        </FieldSmall>
+      </div>
+    </div>
+  );
+}
+
+function QuantityStepper({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex items-stretch overflow-hidden rounded-md border">
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(0, value - 1))}
+        aria-label="Aantal verlagen"
+        className="flex w-10 items-center justify-center text-muted-foreground hover:bg-accent"
+      >
+        <Minus className="h-4 w-4" />
+      </button>
+      <input
+        value={value}
+        onChange={(e) =>
+          onChange(Math.max(0, Math.round(Number(e.target.value) || 0)))
+        }
+        type="number"
+        inputMode="numeric"
+        min={0}
+        step={1}
+        className="w-16 border-x bg-background py-2 text-center text-base sm:text-sm"
+      />
+      <button
+        type="button"
+        onClick={() => onChange(value + 1)}
+        aria-label="Aantal verhogen"
+        className="flex w-10 items-center justify-center text-muted-foreground hover:bg-accent"
+      >
+        <Plus className="h-4 w-4" />
+      </button>
     </div>
   );
 }
@@ -278,6 +351,25 @@ function Field({
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-muted-foreground">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function FieldSmall({
+  label,
+  align,
+  children,
+}: {
+  label: string;
+  align?: "right";
+  children: React.ReactNode;
+}) {
+  return (
+    <label className={"block " + (align === "right" ? "text-right" : "")}>
+      <span className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
       {children}
