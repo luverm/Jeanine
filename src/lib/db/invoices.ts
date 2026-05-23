@@ -235,3 +235,15 @@ export async function deleteAllInvoices(): Promise<number> {
   if (error) throw error;
   return count ?? 0;
 }
+
+/** Hard-deletes the given invoices. Returns the count removed. */
+export async function deleteInvoices(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  const svc = createSupabaseServiceClient();
+  const { error, count } = await svc
+    .from("invoices")
+    .delete({ count: "exact" })
+    .in("id", ids);
+  if (error) throw error;
+  return count ?? 0;
+}

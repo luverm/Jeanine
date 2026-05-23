@@ -1,8 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { listInvoices } from "@/lib/db/invoices";
-import { formatPrice } from "@/lib/db/services";
 import { DangerDeleteInvoices } from "@/components/admin/danger-delete-invoices";
+import { InvoicesList } from "@/components/admin/invoices-list";
 
 export const metadata: Metadata = {
   title: "Facturen",
@@ -51,43 +51,7 @@ export default async function InvoicesListPage() {
           Nog geen facturen.
         </p>
       ) : (
-        <div className="mt-6 overflow-hidden rounded-lg border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3">Nummer</th>
-                <th className="px-4 py-3">Datum</th>
-                <th className="px-4 py-3">Klant</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3 text-right">Totaal</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {invoices.map((inv) => (
-                <tr key={inv.id} className="hover:bg-accent/40">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/facturen/${inv.id}`}
-                      className="font-medium underline underline-offset-4"
-                    >
-                      {inv.number}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {inv.issued_on}
-                  </td>
-                  <td className="px-4 py-3">{inv.customer_name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {inv.booking_id ? "Boeking" : "Bruid"}
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums">
-                    {formatPrice(inv.total_cents)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <InvoicesList invoices={invoices} />
       )}
 
       <DangerDeleteInvoices />
