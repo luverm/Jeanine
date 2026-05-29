@@ -7,6 +7,7 @@ import { getNoShowFlags } from "@/lib/db/no-show";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CustomerNotesForm } from "@/components/admin/customer-notes-form";
+import { CustomerContactForm } from "@/components/admin/customer-contact-form";
 import { NoShowDismiss } from "@/components/admin/no-show-dismiss";
 import { formatPrice } from "@/lib/db/services";
 import { formatHumanDateTime } from "@/lib/time";
@@ -36,7 +37,7 @@ export default async function CustomerDetailPage({
       <BackLink fallback="/klanten" />
 
       <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-3xl font-semibold tracking-tight">
             {customer.full_name}
           </h1>
@@ -49,6 +50,16 @@ export default async function CustomerDetailPage({
               </>
             )}
           </p>
+          <div className="mt-2">
+            <CustomerContactForm
+              customerId={customer.id}
+              initial={{
+                fullName: customer.full_name,
+                email: customer.email,
+                phone: customer.phone,
+              }}
+            />
+          </div>
         </div>
         <Link
           href={`/boekingen/nieuw?customer=${customer.id}`}

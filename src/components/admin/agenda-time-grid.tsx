@@ -8,7 +8,8 @@ import { toast } from "sonner";
 import {
   DndContext,
   type DragEndEvent,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   pointerWithin,
   useSensor,
   useSensors,
@@ -67,6 +68,7 @@ export function AgendaTimeGrid({
   openingHours = [],
   specialOpenings = [],
   serviceColors = {},
+  returnPath,
 }: {
   days: Date[];
   byDay: Map<string, BookingListItem[]>;
@@ -79,11 +81,21 @@ export function AgendaTimeGrid({
   specialOpenings?: SpecialOpeningBlock[];
   /** Service id → agenda colour key; colours appointment blocks. */
   serviceColors?: Record<string, string>;
+  /** Where /boekingen/nieuw should send the user after a successful
+   * create — usually the current agenda view+date, so they stay in
+   * context after adding an appointment. */
+  returnPath?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  // Desktop: 8px drag distance to start. Mobile: long-press 350ms so a
+  // scroll across an appointment never accidentally starts a drag (which
+  // previously sent the customer an "afspraak verzet" mail).
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 350, tolerance: 8 },
+    }),
   );
 
   const allBookings = Array.from(byDay.values()).flat();
@@ -202,8 +214,9 @@ export function AgendaTimeGrid({
   return (
     <div>
       <p className="mb-2 text-xs text-muted-foreground">
-        Tik op een vrij tijdvak voor een nieuwe afspraak. Sleep een
-        afspraak naar een ander tijdstip om hem te verzetten.
+        Tik op een vrij tijdvak voor een nieuwe afspraak. Op desktop sleep
+        je een afspraak naar een ander tijdstip; op mobiel hou je hem 350ms
+        vast voordat slepen begint.
       </p>
       <DndContext
         sensors={sensors}
@@ -250,7 +263,7 @@ export function AgendaTimeGrid({
                         </span>
                       </span>
                       <Link
-                        href={`/boekingen/nieuw?date=${key}`}
+                        href={`/boekingen/nieuw?date=${key}${returnPath ? `&from=${encodeURIComponent(returnPath)}` : ""}`}
                         aria-label={`Nieuwe boeking op ${key}`}
                         title="Nieuwe boeking"
                         className="inline-flex h-5 w-5 items-center justify-center rounded text-sm leading-none text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -354,7 +367,7 @@ export function AgendaTimeGrid({
                         <DroppableSlot
                           key={i}
                           id={`s:${key}|${hh}:${mm}`}
-                          href={`/boekingen/nieuw?date=${key}&tijd=${hh}:${mm}`}
+                          href={`/boekingen/nieuw?date=${key}&tijd=${hh}:${mm}${returnPath ? `&from=${encodeURIComponent(returnPath)}` : ""}`}
                           top={i * SLOT_PX}
                           height={SLOT_PX}
                           label={`${hh}:${mm}`}
@@ -464,7 +477,7 @@ function DraggableBooking({
       {...listeners}
       {...attributes}
       className={
-        "absolute inset-x-1 z-[1] touch-none cursor-grab rounded-md border border-l-4 px-2 py-1 text-xs leading-tight shadow-sm transition hover:z-10 hover:shadow active:cursor-grabbing " +
+        "absolute inset-x-1 z-[1] cursor-grab rounded-md border border-l-4 px-2 py-1 text-xs leading-tight shadow-sm transition hover:z-10 hover:shadow active:cursor-grabbing " +
         blockClass
       }
     >

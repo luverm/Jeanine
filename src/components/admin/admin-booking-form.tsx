@@ -33,6 +33,7 @@ export function AdminBookingForm({
   defaultServiceId,
   defaultDate,
   defaultTime,
+  returnTo,
 }: {
   services: Svc[];
   staffId: string;
@@ -40,6 +41,9 @@ export function AdminBookingForm({
   defaultServiceId?: string;
   defaultDate?: string;
   defaultTime?: string;
+  /** Where to send the user on success. Defaults to /agenda on the chosen
+   * day when set from there, otherwise /dashboard. */
+  returnTo?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -135,7 +139,10 @@ export function AdminBookingForm({
       });
       if (result.ok) {
         toast.success("Boeking aangemaakt");
-        router.push("/dashboard");
+        const fallback = date
+          ? `/agenda?view=dag&date=${date}`
+          : "/dashboard";
+        router.push(returnTo ?? fallback);
       } else if (result.code === "SLOT_TAKEN") {
         toast.error("Dat tijdslot is al bezet.");
       } else {

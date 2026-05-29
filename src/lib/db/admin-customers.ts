@@ -133,6 +133,29 @@ export async function updateCustomerNotes(
   if (error) throw error;
 }
 
+export type CustomerContactUpdate = {
+  fullName: string;
+  email: string;
+  phone: string | null;
+};
+
+/** Updates the editable contact fields on a customer. */
+export async function updateCustomerContact(
+  id: string,
+  fields: CustomerContactUpdate,
+): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("customers")
+    .update({
+      full_name: fields.fullName,
+      email: fields.email,
+      phone: fields.phone,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export async function listCustomers(q?: string): Promise<CustomerListItem[]> {
   const supabase = createSupabaseServiceClient();
   let query = supabase
