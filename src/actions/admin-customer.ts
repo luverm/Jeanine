@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import {
   updateCustomerNotes,
+  updateCustomerContact,
   searchCustomers,
   deleteCustomers,
   type CustomerOption,
@@ -45,6 +46,46 @@ export async function updateCustomerNotesAction(
     entityId: id,
     payload: { length: trimmed.length },
   }).catch(() => {});
+  return { ok: true };
+}
+
+const contactSchema = z.object({
+  id: uuidString(),
+  fullName: z.string().trim().min(2).max(120),
+  email: z.string().trim().toLowerCase().email().max(254),
+  phone: z.string().trim().max(40).optional(),
+});
+
+export async function updateCustomerContactAction(
+  input: unknown,
+): Promise<{ ok: boolean; code?: "INVALID" | "DUPLICATE_EMAIL" }> {
+  await requireAdmin();
+  const parsed = contactSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, code: "INVALID" };
+  try {
+    await updateCustomerContact(parsed.data.id, {
+      fullName: parsed.data.fullName,
+      email: parsed.data.email,
+      phone: parsed.data.phone?.trim() ? parsed.data.phone : null,
+    });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === "23505") return { ok: false, code: "DUPLICATE_EMAIL" };
+    console.error("[customer] contact update failed:", err);
+    return { ok: false };
+  }
+  await writeAuditLog({
+    actor: "admin",
+    action: "customer.contact_update",
+    entity: "customer",
+    entityId: parsed.data.id,
+    payload: {
+      email: parsed.data.email,
+      phone: parsed.data.phone ?? null,
+    },
+  }).catch(() => {});
+  revalidatePath(`/klanten/${parsed.data.id}`);
+  revalidatePath("/klanten");
   return { ok: true };
 }
 

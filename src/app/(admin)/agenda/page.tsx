@@ -24,6 +24,7 @@ import { getDefaultStaffId } from "@/lib/db/staff";
 import { getSiteStringRecord } from "@/lib/db/site-content";
 import { formatIsoDate, formatTime } from "@/lib/time";
 import { AgendaTimeGrid } from "@/components/admin/agenda-time-grid";
+import { AgendaDatePicker } from "@/components/admin/agenda-date-picker";
 import {
   groupByDay,
   timeOffSegmentsForDay,
@@ -203,7 +204,7 @@ export default async function AgendaPage({
         </div>
       </div>
 
-      <h2 className="mt-4 text-lg font-semibold capitalize">{title}</h2>
+      <AgendaDatePicker view={view} currentDate={anchor} title={title} />
 
       <div className="mt-4">
         {view === "maand" ? (
@@ -213,6 +214,7 @@ export default async function AgendaPage({
             waitlistByDay={waitlistByDay}
             timeOff={timeOff}
             todayKey={todayKey}
+            returnPath={`/agenda?view=${view}&date=${formatIsoDate(anchor)}`}
           />
         ) : (
           <AgendaTimeGrid
@@ -224,6 +226,7 @@ export default async function AgendaPage({
             openingHours={openingBlocks}
             specialOpenings={specialOpenings}
             serviceColors={serviceColors}
+            returnPath={`/agenda?view=${view}&date=${formatIsoDate(anchor)}`}
           />
         )}
       </div>
@@ -259,12 +262,14 @@ function MonthView({
   waitlistByDay,
   timeOff,
   todayKey,
+  returnPath,
 }: {
   anchor: Date;
   byDay: Map<string, BookingListItem[]>;
   waitlistByDay: Map<string, string[]>;
   timeOff: TimeOffRow[];
   todayKey: string;
+  returnPath?: string;
 }) {
   const gridStart = startOfWeek(startOfMonth(anchor), { weekStartsOn: 1 });
   const gridEnd = endOfWeek(endOfMonth(anchor), { weekStartsOn: 1 });
@@ -312,7 +317,7 @@ function MonthView({
                     {format(day, "d")}
                   </Link>
                   <Link
-                    href={`/boekingen/nieuw?date=${key}`}
+                    href={`/boekingen/nieuw?date=${key}${returnPath ? `&from=${encodeURIComponent(returnPath)}` : ""}`}
                     aria-label={`Nieuwe boeking op ${key}`}
                     title="Nieuwe boeking"
                     className="inline-flex h-5 w-5 items-center justify-center rounded text-sm leading-none text-muted-foreground hover:bg-accent hover:text-foreground"

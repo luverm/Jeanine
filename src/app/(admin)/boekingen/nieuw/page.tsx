@@ -21,6 +21,7 @@ export default async function NewBookingPage({
     customer?: string;
     date?: string;
     tijd?: string;
+    from?: string;
   }>;
 }) {
   const {
@@ -28,6 +29,7 @@ export default async function NewBookingPage({
     customer: customerId,
     date: dateParam,
     tijd: timeParam,
+    from: fromParam,
   } = await searchParams;
   const [services, staffId] = await Promise.all([
     listAllServices(),
@@ -68,6 +70,11 @@ export default async function NewBookingPage({
     dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : undefined;
   const defaultTime =
     timeParam && /^\d{2}:\d{2}$/.test(timeParam) ? timeParam : undefined;
+  // Same-origin redirect target after a successful create. The booking
+  // form rejects any value that isn't a clean relative path, so this is
+  // safe to round-trip through the URL.
+  const returnTo =
+    fromParam && /^\/[a-z0-9?&=/\-_.%:]+$/i.test(fromParam) ? fromParam : undefined;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -88,6 +95,7 @@ export default async function NewBookingPage({
           defaultServiceId={defaultServiceId}
           defaultDate={defaultDate}
           defaultTime={defaultTime}
+          returnTo={returnTo}
         />
       </div>
     </div>
