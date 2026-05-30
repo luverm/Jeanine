@@ -26,7 +26,9 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   contacted: "Contact gehad",
   quoted: "Voorstel",
   won: "Gewonnen",
-  lost: "Verloren",
+  // Jeanine gebruikt deze kolom voor afgeronde bruiloften, niet voor
+  // verloren leads — labels gewijzigd zodat de UI dat reflecteert.
+  lost: "Afgerond",
 };
 
 export const LEAD_STATUS_VARIANTS: Record<LeadStatus, BadgeVariant> = {
@@ -34,7 +36,7 @@ export const LEAD_STATUS_VARIANTS: Record<LeadStatus, BadgeVariant> = {
   contacted: "secondary",
   quoted: "secondary",
   won: "outline",
-  lost: "destructive",
+  lost: "outline",
 };
 
 export function bookingStatusLabel(status: string): string {

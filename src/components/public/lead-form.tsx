@@ -32,6 +32,7 @@ export function LeadForm() {
       email: "",
       phone: "",
       weddingDate: "",
+      street: "",
       city: "",
       postcode: "",
       partySize: 1,
@@ -152,6 +153,18 @@ export function LeadForm() {
             <p className="mt-1 text-xs text-red-600">{errors.partySize.message}</p>
           )}
         </div>
+      </div>
+
+      <div>
+        <Label htmlFor="street">Straat + huisnummer</Label>
+        <Input
+          id="street"
+          autoComplete="street-address"
+          {...form.register("street")}
+        />
+        {errors.street && (
+          <p className="mt-1 text-xs text-red-600">{errors.street.message}</p>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

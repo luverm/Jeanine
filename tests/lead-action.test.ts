@@ -54,6 +54,7 @@ const validInput = {
   email: "anna@example.com",
   phone: "+31612345678",
   weddingDate: "2099-06-15",
+  street: "Damrak 1",
   city: "Amsterdam",
   postcode: "1011 AB",
   partySize: 4,

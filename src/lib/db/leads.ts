@@ -16,6 +16,10 @@ export type LeadRow = {
   message: string | null;
   notes: string | null;
   attachment_paths: string[] | null;
+  /** Admin-only post-trial result photos (object paths in bridal-results). */
+  result_paths: string[] | null;
+  /** When the trial session is/was scheduled, if at all. */
+  trial_session_at: string | null;
   agreed_price_cents: number | null;
   deposit_cents: number | null;
   deposit_paid: boolean | null;
@@ -137,6 +141,87 @@ export async function updateLeadNotes(
   const { error } = await supabase
     .from("bridal_leads")
     .update({ notes: notes || null })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export type LeadContactUpdate = {
+  fullName: string;
+  email: string;
+  phone: string | null;
+  location: string | null;
+};
+
+/** Updates the editable contact fields on a bridal lead. */
+export async function updateLeadContact(
+  id: string,
+  fields: LeadContactUpdate,
+): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("bridal_leads")
+    .update({
+      full_name: fields.fullName,
+      email: fields.email,
+      phone: fields.phone,
+      location: fields.location,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/** Sets (or clears, when null) the scheduled trial-session date/time. */
+export async function setLeadTrialSession(
+  id: string,
+  at: string | null,
+): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("bridal_leads")
+    .update({ trial_session_at: at })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/** Adds the given object paths to the lead's result_paths array. */
+export async function appendLeadResultPaths(
+  id: string,
+  paths: string[],
+): Promise<void> {
+  if (paths.length === 0) return;
+  const supabase = createSupabaseServiceClient();
+  const { data: row } = await supabase
+    .from("bridal_leads")
+    .select("result_paths")
+    .eq("id", id)
+    .maybeSingle();
+  const existing =
+    (row as { result_paths: string[] | null } | null)?.result_paths ?? [];
+  const next = [...existing, ...paths];
+  const { error } = await supabase
+    .from("bridal_leads")
+    .update({ result_paths: next })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/** Removes a single object path from the lead's result_paths array. */
+export async function removeLeadResultPath(
+  id: string,
+  path: string,
+): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { data: row } = await supabase
+    .from("bridal_leads")
+    .select("result_paths")
+    .eq("id", id)
+    .maybeSingle();
+  const existing =
+    (row as { result_paths: string[] | null } | null)?.result_paths ?? [];
+  const next = existing.filter((p) => p !== path);
+  const { error } = await supabase
+    .from("bridal_leads")
+    .update({ result_paths: next })
     .eq("id", id);
   if (error) throw error;
 }

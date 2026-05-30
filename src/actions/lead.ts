@@ -7,10 +7,13 @@ import {
   insertLead,
   updateLeadStatus,
   updateLeadNotes,
+  updateLeadContact,
+  setLeadTrialSession,
   updateLeadFinance,
   deleteLead,
   type LeadStatus,
 } from "@/lib/db/leads";
+import { uuidString } from "@/lib/schemas/uuid";
 import { deleteBridalAttachments } from "@/actions/bridal-upload";
 import { writeAuditLog } from "@/lib/db/bookings";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -57,7 +60,7 @@ export async function createLead(input: unknown): Promise<CreateLeadResult> {
     email: data.email,
     phone: data.phone,
     weddingDate: data.weddingDate,
-    location: `${data.city} (${data.postcode})`,
+    location: `${data.street}, ${data.postcode} ${data.city}`,
     partySize: data.partySize,
     servicesWanted: data.servicesWanted,
     budgetCents: data.budgetCents ?? null,
@@ -119,6 +122,7 @@ async function sendLeadEmails(args: {
           email: args.data.email,
           phone: args.data.phone,
           weddingDate: args.data.weddingDate,
+          street: args.data.street,
           city: args.data.city,
           postcode: args.data.postcode,
           partySize: args.data.partySize,
@@ -187,6 +191,77 @@ export async function updateLeadNotesAction(
       payload: { length: trimmed.length },
     }),
   );
+  return { ok: true };
+}
+
+const contactSchema = z.object({
+  id: uuidString(),
+  fullName: z.string().trim().min(2).max(120),
+  email: z.string().trim().toLowerCase().email().max(254),
+  phone: z.string().trim().max(40).optional(),
+  location: z.string().trim().max(200).optional(),
+});
+
+export async function updateLeadContactAction(
+  input: unknown,
+): Promise<{ ok: boolean; code?: "INVALID" }> {
+  await requireAdmin();
+  const parsed = contactSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, code: "INVALID" };
+  try {
+    await updateLeadContact(parsed.data.id, {
+      fullName: parsed.data.fullName,
+      email: parsed.data.email,
+      phone: parsed.data.phone?.trim() ? parsed.data.phone : null,
+      location: parsed.data.location?.trim() ? parsed.data.location : null,
+    });
+  } catch (err) {
+    console.error("[lead] contact update failed:", err);
+    return { ok: false };
+  }
+  await safe(() =>
+    writeAuditLog({
+      actor: "admin",
+      action: "lead.contact_update",
+      entity: "bridal_lead",
+      entityId: parsed.data.id,
+      payload: {
+        email: parsed.data.email,
+        phone: parsed.data.phone ?? null,
+      },
+    }),
+  );
+  revalidatePath(`/leads/${parsed.data.id}`);
+  return { ok: true };
+}
+
+const trialSchema = z.object({
+  id: uuidString(),
+  // Accept either an ISO timestamp or an empty/null to clear.
+  at: z
+    .string()
+    .min(1)
+    .refine((v) => !Number.isNaN(Date.parse(v)), "Ongeldige datum/tijd")
+    .nullable(),
+});
+
+export async function setLeadTrialSessionAction(
+  input: unknown,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  const parsed = trialSchema.safeParse(input);
+  if (!parsed.success) return { ok: false };
+  try {
+    await setLeadTrialSession(
+      parsed.data.id,
+      parsed.data.at ? new Date(parsed.data.at).toISOString() : null,
+    );
+  } catch (err) {
+    console.error("[lead] trial-session update failed:", err);
+    return { ok: false };
+  }
+  revalidatePath(`/leads/${parsed.data.id}`);
+  revalidatePath("/leads");
   return { ok: true };
 }
 

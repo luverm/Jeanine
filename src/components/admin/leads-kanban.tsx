@@ -21,9 +21,18 @@ const COLUMNS: Array<{ id: LeadStatus; title: string }> = [
   { id: "new", title: "Nieuw" },
   { id: "contacted", title: "Contact gehad" },
   { id: "quoted", title: "Voorstel" },
-  { id: "won", title: "Won" },
-  { id: "lost", title: "Lost" },
+  { id: "won", title: "Gewonnen" },
+  { id: "lost", title: "Afgerond" },
 ];
+
+// Compare two leads by wedding date (ascending). Leads without a date
+// drop to the bottom so the upcoming weddings stay at the top.
+function byWeddingDate(a: LeadRow, b: LeadRow): number {
+  if (!a.wedding_date && !b.wedding_date) return 0;
+  if (!a.wedding_date) return 1;
+  if (!b.wedding_date) return -1;
+  return a.wedding_date.localeCompare(b.wedding_date);
+}
 
 export function LeadsKanban({ initial }: { initial: LeadRow[] }) {
   const [leads, setLeads] = useState<LeadRow[]>(initial);
@@ -39,6 +48,10 @@ export function LeadsKanban({ initial }: { initial: LeadRow[] }) {
       lost: [],
     };
     for (const lead of leads) map[lead.status].push(lead);
+    // Show upcoming weddings first in the Won column, and most-recently
+    // wedded brides first in the Afgerond column.
+    map.won.sort(byWeddingDate);
+    map.lost.sort((a, b) => -byWeddingDate(a, b));
     return map;
   }, [leads]);
 
@@ -142,6 +155,11 @@ function LeadCard({ lead }: { lead: LeadRow }) {
         {typeof lead.party_size === "number" && (
           <p className="mt-1 text-xs text-muted-foreground">
             {lead.party_size} {lead.party_size === 1 ? "persoon" : "personen"}
+          </p>
+        )}
+        {lead.trial_session_at && (
+          <p className="mt-2 inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-900">
+            ✓ Proefsessie {new Date(lead.trial_session_at).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}
           </p>
         )}
       </Link>

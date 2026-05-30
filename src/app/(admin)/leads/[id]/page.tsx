@@ -8,9 +8,15 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LeadStatusSelect } from "@/components/admin/lead-status-select";
 import { LeadNotesForm } from "@/components/admin/lead-notes-form";
+import { LeadContactForm } from "@/components/admin/lead-contact-form";
+import { LeadTrialSessionForm } from "@/components/admin/lead-trial-session-form";
+import { LeadResultsManager } from "@/components/admin/lead-results-manager";
 import { LeadFinanceForm } from "@/components/admin/lead-finance-form";
 import { LeadDelete } from "@/components/admin/lead-delete";
-import { signBridalAttachments } from "@/actions/bridal-upload";
+import {
+  signBridalAttachments,
+  signLeadResults,
+} from "@/actions/bridal-upload";
 import { leadStatusLabel, leadStatusVariant } from "@/lib/status-labels";
 
 export const metadata: Metadata = {
@@ -30,6 +36,12 @@ export default async function LeadDetailPage({
   if (!lead) notFound();
 
   const attachments = await signBridalAttachments(lead.attachment_paths ?? []);
+  const resultPaths = lead.result_paths ?? [];
+  const resultUrls = await signLeadResults(resultPaths);
+  const resultPhotos = resultPaths.map((path, i) => ({
+    path,
+    url: resultUrls[i] ?? "",
+  }));
 
   const wedding = lead.wedding_date
     ? format(new Date(lead.wedding_date), "EEEE d MMMM yyyy")
@@ -91,6 +103,37 @@ export default async function LeadDetailPage({
             value={`€ ${(lead.budget_cents / 100).toLocaleString("nl-NL")}`}
           />
         )}
+        <div className="pt-2">
+          <LeadContactForm
+            leadId={lead.id}
+            initial={{
+              fullName: lead.full_name,
+              email: lead.email,
+              phone: lead.phone,
+              location: lead.location,
+            }}
+          />
+        </div>
+      </Card>
+
+      <Card className="mt-6 p-6">
+        <h2 className="text-base font-semibold">Proefsessie</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Wanneer staat het proefkapsel ingepland?
+        </p>
+        <div className="mt-4">
+          <LeadTrialSessionForm
+            leadId={lead.id}
+            trialSessionAt={lead.trial_session_at}
+          />
+        </div>
+      </Card>
+
+      <Card className="mt-6 p-6">
+        <h2 className="text-base font-semibold">Eindresultaat (alleen voor jou)</h2>
+        <div className="mt-4">
+          <LeadResultsManager leadId={lead.id} initial={resultPhotos} />
+        </div>
       </Card>
 
       {lead.message && (
