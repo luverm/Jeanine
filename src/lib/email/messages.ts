@@ -297,6 +297,7 @@ export function leadAdminText(args: {
   email: string;
   phone: string;
   weddingDate: string;
+  street: string;
   city: string;
   postcode: string;
   partySize: number;
@@ -318,7 +319,7 @@ export function leadAdminText(args: {
     `E-mail: ${args.email}`,
     `Telefoon: ${args.phone}`,
     `Trouwdatum: ${wedding}`,
-    `Locatie: ${args.city} (${args.postcode})`,
+    `Locatie: ${args.street}, ${args.postcode} ${args.city}`,
     `Aantal: ${args.partySize}`,
     `Diensten: ${args.servicesWanted.join(", ")}`,
     typeof args.budgetCents === "number"

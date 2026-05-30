@@ -33,6 +33,7 @@ export const leadInputSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Kies een datum")
     .refine((v) => v >= today(), "Trouwdatum moet in de toekomst liggen"),
+  street: z.string().trim().min(2, "Straat is te kort").max(120),
   city: z.string().trim().min(2, "Stad is te kort").max(80),
   postcode: z
     .string()

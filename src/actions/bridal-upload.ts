@@ -4,8 +4,14 @@ import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request-ip";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import {
+  appendLeadResultPaths,
+  removeLeadResultPath,
+} from "@/lib/db/leads";
+import { uuidString } from "@/lib/schemas/uuid";
 
 const BRIDAL_BUCKET = "bridal-moodboards";
+const BRIDAL_RESULTS_BUCKET = "bridal-results";
 
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -91,4 +97,92 @@ export async function deleteBridalAttachments(
   } catch (err) {
     console.error("[bridal-upload] attachment cleanup failed:", err);
   }
+}
+
+/**
+ * Uploads admin-only result photos (post-trial-session) for a lead and
+ * appends them to result_paths. Returns the object paths so callers can
+ * sign them immediately if needed.
+ */
+export async function uploadLeadResults(
+  leadId: string,
+  formData: FormData,
+): Promise<{ ok: boolean; paths?: string[] }> {
+  await requireAdmin();
+  const idCheck = uuidString().safeParse(leadId);
+  if (!idCheck.success) return { ok: false };
+
+  const files = formData
+    .getAll("files")
+    .filter((f): f is File => f instanceof File && f.size > 0)
+    .slice(0, 12);
+  if (files.length === 0) return { ok: true, paths: [] };
+
+  const svc = createSupabaseServiceClient();
+  const folder = `${leadId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const paths: string[] = [];
+  for (const file of files) {
+    if (!ALLOWED.includes(file.type) || file.size > MAX_BYTES) continue;
+    const objectPath = `${folder}/${paths.length + 1}${ext(file.type)}`;
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const { error } = await svc.storage
+        .from(BRIDAL_RESULTS_BUCKET)
+        .upload(objectPath, bytes, { contentType: file.type });
+      if (!error) paths.push(objectPath);
+      else console.error("[bridal-results] failed:", error.message);
+    } catch (err) {
+      console.error("[bridal-results] failed:", err);
+    }
+  }
+
+  if (paths.length > 0) {
+    try {
+      await appendLeadResultPaths(leadId, paths);
+    } catch (err) {
+      console.error("[bridal-results] db update failed:", err);
+      return { ok: false };
+    }
+  }
+  return { ok: true, paths };
+}
+
+/** Short-lived signed URLs for admin-only result photos. */
+export async function signLeadResults(paths: string[]): Promise<string[]> {
+  await requireAdmin();
+  if (!paths || paths.length === 0) return [];
+  try {
+    const svc = createSupabaseServiceClient();
+    const { data, error } = await svc.storage
+      .from(BRIDAL_RESULTS_BUCKET)
+      .createSignedUrls(paths, 60 * 60);
+    if (error || !data) return [];
+    return data
+      .map((d) => d.signedUrl)
+      .filter((u): u is string => Boolean(u));
+  } catch {
+    return [];
+  }
+}
+
+/** Deletes one result photo from Storage and from the lead's array. */
+export async function deleteLeadResult(
+  leadId: string,
+  path: string,
+): Promise<{ ok: boolean }> {
+  await requireAdmin();
+  const idCheck = uuidString().safeParse(leadId);
+  if (!idCheck.success) return { ok: false };
+  // Reject any path that doesn't live under this lead's folder — stops
+  // a crafted call from removing another lead's photos.
+  if (!path.startsWith(`${leadId}/`)) return { ok: false };
+  try {
+    await removeLeadResultPath(leadId, path);
+    const svc = createSupabaseServiceClient();
+    await svc.storage.from(BRIDAL_RESULTS_BUCKET).remove([path]);
+  } catch (err) {
+    console.error("[bridal-results] delete failed:", err);
+    return { ok: false };
+  }
+  return { ok: true };
 }
