@@ -46,19 +46,32 @@ function splitVat(inclCents: number, vatRate: number) {
   return { subtotal, vat: inclCents - subtotal };
 }
 
-/** Next sequential invoice number for the current year: {prefix}{YYYY}-{NNN}. */
+/** Next sequential invoice number for the current year: {prefix}{YYYY}-{NNN}.
+ *
+ * Reads the highest existing suffix for this prefix+year and increments —
+ * NOT a count(*), because deletes shrink the count and would hand out
+ * numbers that already exist. */
 async function nextInvoiceNumber(
   svc: ReturnType<typeof createSupabaseServiceClient>,
   prefix: string,
 ): Promise<string> {
   const year = new Date().getFullYear();
-  const { count } = await svc
+  const stem = `${prefix}${year}-`;
+  const { data } = await svc
     .from("invoices")
-    .select("id", { count: "exact", head: true })
-    .gte("issued_on", `${year}-01-01`)
-    .lte("issued_on", `${year}-12-31`);
-  const seq = (count ?? 0) + 1;
-  return `${prefix}${year}-${String(seq).padStart(3, "0")}`;
+    .select("number")
+    .like("number", `${stem}%`)
+    .order("number", { ascending: false })
+    .limit(1);
+  let highest = 0;
+  const latest = (data as { number: string }[] | null)?.[0]?.number;
+  if (latest) {
+    const suffix = latest.slice(stem.length);
+    const n = Number.parseInt(suffix, 10);
+    if (Number.isFinite(n)) highest = n;
+  }
+  const seq = highest + 1;
+  return `${stem}${String(seq).padStart(3, "0")}`;
 }
 
 /**
@@ -79,26 +92,31 @@ export async function ensureInvoiceForBooking(args: {
   const existing = await getInvoiceByBooking(args.bookingId);
   if (existing) return existing;
 
-  const number = await nextInvoiceNumber(svc, args.prefix);
-
   const { subtotal, vat } = splitVat(args.inclCents, args.vatRate);
-  const { data, error } = await svc
-    .from("invoices")
-    .insert({
-      number,
-      booking_id: args.bookingId,
-      customer_name: args.customerName,
-      customer_email: args.customerEmail,
-      description: args.description,
-      subtotal_cents: subtotal,
-      vat_rate: args.vatRate,
-      vat_cents: vat,
-      total_cents: args.inclCents,
-    })
-    .select("*")
-    .single();
-  if (error || !data) throw error ?? new Error("Failed to create invoice");
-  return data as InvoiceRow;
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const number = await nextInvoiceNumber(svc, args.prefix);
+    const { data, error } = await svc
+      .from("invoices")
+      .insert({
+        number,
+        booking_id: args.bookingId,
+        customer_name: args.customerName,
+        customer_email: args.customerEmail,
+        description: args.description,
+        subtotal_cents: subtotal,
+        vat_rate: args.vatRate,
+        vat_cents: vat,
+        total_cents: args.inclCents,
+      })
+      .select("*")
+      .single();
+    if (!error && data) return data as InvoiceRow;
+    lastError = error;
+    const code = (error as { code?: string } | null)?.code;
+    if (code !== "23505") break;
+  }
+  throw lastError ?? new Error("Failed to create invoice");
 }
 
 export type BridalInvoiceLineInput = {
@@ -135,31 +153,45 @@ export async function createBridalInvoice(args: {
   if (lines.length === 0) throw new Error("Geen factuurregels");
 
   const inclTotal = lines.reduce((s, l) => s + l.amount_cents, 0);
-  const number = await nextInvoiceNumber(svc, args.prefix);
   const { subtotal, vat } = splitVat(inclTotal, args.vatRate);
   const summary =
     lines.length === 1 ? lines[0].description : "Bruidsstyling — zie specificatie";
 
-  const { data, error } = await svc
-    .from("invoices")
-    .insert({
-      number,
-      booking_id: null,
-      customer_name: args.customerName,
-      customer_email: args.customerEmail,
-      issued_on: args.issuedOn || undefined,
-      description: summary,
-      subtotal_cents: subtotal,
-      vat_rate: args.vatRate,
-      vat_cents: vat,
-      total_cents: inclTotal,
-      // Only sent when set, so invoices keep working before 0021.
-      ...(deposit > 0 ? { deposit_cents: deposit } : {}),
-    })
-    .select("*")
-    .single();
-  if (error || !data) throw error ?? new Error("Failed to create invoice");
-  const invoice = data as InvoiceRow;
+  // Insert the invoice, retrying on a unique-number race (23505). The
+  // next-number lookup is advisory: two parallel creates can both read
+  // the same highest suffix, so retry up to a few times with a fresh
+  // lookup before giving up.
+  let invoice: InvoiceRow | null = null;
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < 5 && !invoice; attempt++) {
+    const number = await nextInvoiceNumber(svc, args.prefix);
+    const { data, error } = await svc
+      .from("invoices")
+      .insert({
+        number,
+        booking_id: null,
+        customer_name: args.customerName,
+        customer_email: args.customerEmail,
+        issued_on: args.issuedOn || undefined,
+        description: summary,
+        subtotal_cents: subtotal,
+        vat_rate: args.vatRate,
+        vat_cents: vat,
+        total_cents: inclTotal,
+        // Only sent when set, so invoices keep working before 0021.
+        ...(deposit > 0 ? { deposit_cents: deposit } : {}),
+      })
+      .select("*")
+      .single();
+    if (!error && data) {
+      invoice = data as InvoiceRow;
+      break;
+    }
+    lastError = error;
+    const code = (error as { code?: string } | null)?.code;
+    if (code !== "23505") break; // not a unique-collision — stop retrying
+  }
+  if (!invoice) throw lastError ?? new Error("Failed to create invoice");
 
   const { error: lineErr } = await svc.from("invoice_lines").insert(
     lines.map((l, i) => ({
