@@ -81,10 +81,21 @@ export async function createBridalInvoiceAction(
     });
     return { ok: true, id: invoice.id };
   } catch (err) {
+    // Supabase gooit PostgrestError-objecten die GEEN Error-instances zijn;
+    // de oude `instanceof Error`-check viel daarom altijd terug op de
+    // nietszeggende "Aanmaken mislukt". Lees nu uit elke vorm die bruikbaar
+    // is, en log het hele object voor latere diagnose.
     console.error("[bridal-invoice] create failed:", err);
+    const e = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const parts = [
+      typeof e?.message === "string" ? e.message : null,
+      typeof e?.details === "string" ? e.details : null,
+      typeof e?.hint === "string" ? `(${e.hint})` : null,
+      typeof e?.code === "string" ? `[${e.code}]` : null,
+    ].filter((p): p is string => Boolean(p));
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Aanmaken mislukt",
+      error: parts.length > 0 ? parts.join(" ") : "Aanmaken mislukt",
     };
   }
 }
